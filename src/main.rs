@@ -7,7 +7,6 @@ use std::env;
 mod lib;
 use lib::{constants::*, types::*};
 
-type Clientes = Arc<Mutex<Vec<tokio::sync::mpsc::UnboundedSender<Message>>>>;
 
 #[tokio::main]
 async fn main() {
