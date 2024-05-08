@@ -5,25 +5,25 @@ use std::thread::JoinHandle;
 use tokio::sync::mpsc::Sender;
 use warp::ws::Message;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Hash, Clone, Eq)]
 pub struct Coordenada {
     pub x: i32,
     pub y: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Escala {
     pub x: f32,
     pub y: f32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Talla {
     pub anchura: i32,
     pub altura: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Estado {
     pub estado: Movimiento,
     pub puntos_de_camino: Vec<Coordenada>,
@@ -32,7 +32,7 @@ pub struct Estado {
     pub silla_aleatoria: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Articulo {
     pub uri: String,
     pub etiqueta: String,
@@ -42,7 +42,7 @@ pub struct Articulo {
     pub profundidad: Option<i32>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Direccion {
     #[serde(rename = "izquierda")]
     Izquierda,
@@ -68,7 +68,7 @@ pub enum Direccion {
     Silla,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Silla {
     pub x_adjustado: i32,
     pub y_adjustado: i32,
@@ -83,7 +83,7 @@ pub struct Silla {
     pub par: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Sprite {
     pub etiqueta: String,
     pub uri: String,
@@ -101,14 +101,14 @@ pub struct Sprite {
     pub escala: Escala,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Movimiento {
     Move,
     Sit,
     Idle,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Fondo {
     pub etiqueta: String,
     pub uri: String,
@@ -117,7 +117,7 @@ pub struct Fondo {
     pub sitio: Coordenada,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Prohibido {
     pub x: i32,
     pub y: i32,
@@ -125,7 +125,7 @@ pub struct Prohibido {
     pub altura: i32,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Escena {
     pub clave: String,
     pub mundo: Talla,
@@ -140,15 +140,55 @@ pub struct Escena {
 
 pub type Clientes = Arc<Mutex<Vec<tokio::sync::mpsc::UnboundedSender<Message>>>>;
 
+#[derive(Clone)]
 pub struct GameTimer {
     pub ticks: u32,
-    pub time_accumulated: f64,
+    pub time_accumulated: u64,
     pub tasks: Vec<Task>,
 }
 
+#[derive(Clone)]
 pub struct Task {
-    pub execute_on_ms: f64,
-    pub callback: Box<dyn Fn()>,
+    pub execute_on_ms: u64,
+    pub callback: CloneableCallback,
+}
+
+pub struct CloneableCallback {
+    callback: Box<dyn Fn() + 'static>,
+}
+
+impl CloneableCallback {
+    pub fn new<F>(callback: F) -> Self
+    where
+        F: Fn() + 'static,
+    {
+        Self {
+            callback: Box::new(callback),
+        }
+    }
+}
+
+impl std::ops::Deref for CloneableCallback {
+    type Target = dyn Fn();
+
+    fn deref(&self) -> &Self::Target {
+        &*self.callback
+    }
+}
+
+impl Clone for CloneableCallback {
+    fn clone(&self) -> Self {
+        let original = self.callback.as_ref();
+        Self {
+            callback: Box::new(move || original()),
+        }
+    }
+}
+
+impl std::fmt::Debug for CloneableCallback {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.write_str("CloneableCallback")
+    }
 }
 
 pub struct Trabajador {
@@ -195,11 +235,11 @@ pub struct EscenaEstudio {
 pub struct NPCAleatorio {
     pub sillas: Vec<Silla>,
     pub mundo: Talla,
-    pub movimientos_max: u32,
+    pub movimientos_max: i32,
     pub caminos: Vec<Estado>,
     pub npc: Sprite,
     pub sillas_ocupadas: Arc<Mutex<Vec<Silla>>>,
-    pub contador: u32,
+    pub contador: i32,
     pub reloj_juego: GameTimer,
     pub silla_cerca: Option<Coordenada>,
 }

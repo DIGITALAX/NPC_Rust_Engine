@@ -1,7 +1,8 @@
 use crate::lib::types::{
-    ComandoTrabajador, Coordenada, Escena, EscenaEstudio, RespuestaTrabajadora, Sprite, Talla,
+    ComandoTrabajador, Escena, EscenaEstudio, RespuestaTrabajadora, Sprite,
     Trabajador,
 };
+use crate::lib::constants::LISTA_ESCENA;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 
@@ -49,18 +50,14 @@ impl Drop for Trabajador {
 
 impl EscenaEstudio {
     fn new(escena: Escena, trabajador: Trabajador) -> Self {
-        let anchura = escena.mundo.anchura
-            - (escena.sprites.as_ref().unwrap()[0].anchura
-                * escena.sprites.as_ref().unwrap()[0].escala.x)
-                / 2.0;
-        let altura = escena.mundo.altura
-            - (escena.sprites.as_ref().unwrap()[0].altura
-                * escena.sprites.as_ref().unwrap()[0].escala.y)
-                / 2.0;
+        let sprites: &Vec<Sprite> = &escena.sprites;
 
-                trabajador.post_message(ComandoTrabajador::Initialize {
-            sprites: escena.sprites.clone(),
-            prohibidos: escena.prohibido.clone(),
+        let anchura = escena.mundo.anchura - (sprites[0].anchura * sprites[0].escala.x) / 2;
+        let altura = escena.mundo.altura - (sprites[0].altura * sprites[0].escala.y) / 2;
+
+        trabajador.post_message(ComandoTrabajador::Initialize {
+            sprites: Some(escena.sprites.clone()),
+            prohibidos: Some(escena.prohibido.clone()),
             anchura,
             altura,
             clave: escena.clave.clone(),
@@ -78,29 +75,16 @@ impl EscenaEstudio {
     }
 
     fn request_state(&self) -> Option<RespuestaTrabajadora> {
-        self.trabajador.post_message(ComandoTrabajador::RequestState {
-            clave: self.clave.clone(),
-        });
+        self.trabajador
+            .post_message(ComandoTrabajador::RequestState {
+                clave: self.clave.clone(),
+            });
         self.trabajador.get_response()
     }
 }
 
 fn main() {
-    let escena = Escena {
-        clave: String::from("estudio abierto de trabajo"),
-        mundo: Talla {
-            anchura: 1512,
-            altura: 830,
-        },
-        sprites: Some(vec![Sprite {
-            etiqueta: String::from("sprite"),
-            anchura: 50.0,
-            altura: 50.0,
-            escala: Coordenada { x: 1.0, y: 1.0 },
-        }]),
-        prohibido: None,
-        sillas: vec![],
-    };
+    let escena = LISTA_ESCENA[0];
 
     let trabajador = Trabajador::new(|cmd_rx, resp_tx| {
         while let Ok(command) = cmd_rx.recv() {
@@ -111,7 +95,7 @@ fn main() {
                 ComandoTrabajador::Start => {
                     println!("Worker iniciado");
                 }
-                ComandoTrabajador::RequestState { key } => {
+                ComandoTrabajador::RequestState { clave } => {
                     let response = RespuestaTrabajadora::StateResponse {
                         cmd: String::from("stateResponse"),
                         clave,

@@ -1,5 +1,5 @@
 use crate::lib::{
-    types::{Coordenada, Estado, Movimiento, NPCAleatorio, Silla, Sprite, Talla},
+    types::{Coordenada, Estado, Movimiento, NPCAleatorio, Silla, Sprite, Talla, GameTimer},
     utils::between,
 };
 use pathfinding::prelude::astar;
@@ -39,7 +39,11 @@ impl NPCAleatorio {
         if self.contador >= self.movimientos_max {
             let sillas_taken = self.sillas_ocupadas.lock().unwrap().len();
             let sillas_total = self.sillas.len();
-            let probabilidad_sit = if sillas_taken < sillas_total { 0.5 } else { 0.0 };
+            let probabilidad_sit = if sillas_taken < sillas_total {
+                0.5
+            } else {
+                0.0
+            };
             let ajuste_probabilidad = sillas_taken as f32 / sillas_total as f32;
             let probabilidad_final_sit = probabilidad_sit * (1.0 - ajuste_probabilidad);
             let decision: f32 = rand::random();
@@ -85,8 +89,8 @@ impl NPCAleatorio {
 
     fn find_path(&self, destination: Coordenada) -> Vec<Coordenada> {
         let current_npc = Coordenada {
-            x: self.npc.x.round(),
-            y: self.npc.y.round(),
+            x: self.npc.x,
+            y: self.npc.y,
         };
 
         let path = astar(
@@ -96,7 +100,7 @@ impl NPCAleatorio {
             |p| *p == destination,
         );
 
-        path.unwrap_or_else(Vec::new)
+        path.map(|(path, _)| path).unwrap_or_else(Vec::new)
     }
 
     fn successors(&self, p: Coordenada) -> Vec<(Coordenada, u32)> {
@@ -106,8 +110,8 @@ impl NPCAleatorio {
             .into_iter()
             .filter_map(|(dx, dy)| {
                 let new_point = Coordenada {
-                    x: p.x + dx as f32,
-                    y: p.y + dy as f32,
+                    x: p.x + dx ,
+                    y: p.y + dy,
                 };
 
                 if self.is_walkable(new_point) {
@@ -120,18 +124,18 @@ impl NPCAleatorio {
     }
 
     fn is_walkable(&self, p: Coordenada) -> bool {
-        p.x >= 0.0 && p.x < self.mundo.anchura && p.y >= 0.0 && p.y < self.mundo.altura
+        p.x >= 0 && p.x < self.mundo.anchura && p.y >= 0 && p.y < self.mundo.altura
     }
 
     fn get_random_destination(&self) -> Coordenada {
-        let mut x: f32;
-        let mut y: f32;
-        let mut attempts = 0;
-        let min_distance = 500.0;
+        let mut x: i32;
+        let mut y: i32;
+        let mut attempts: i32 = 0;
+        let min_distance: u32 = 500;
 
         loop {
-            x = rand::random::<f32>() * self.mundo.anchura;
-            y = rand::random::<f32>() * self.mundo.altura;
+            x = rand::random::<i32>() * self.mundo.anchura;
+            y = rand::random::<i32>() * self.mundo.altura;
             attempts += 1;
 
             if attempts > 100 {
@@ -166,10 +170,13 @@ impl NPCAleatorio {
 
         let silla_aleatoria = sillas_disponibles
             .clone()
-            .nth(between(0, sillas_disponibles.count() as u64 - 1) as usize)
+            .nth(between(0, sillas_disponibles.count() as i32 - 1) as usize)
             .unwrap();
 
-        self.sillas_ocupadas.lock().unwrap().push(silla_aleatoria.clone());
+        self.sillas_ocupadas
+            .lock()
+            .unwrap()
+            .push(silla_aleatoria.clone());
 
         let mut silla_x = silla_aleatoria.x_adjustado;
         let mut silla_y = silla_aleatoria.y_adjustado;
@@ -188,7 +195,7 @@ impl NPCAleatorio {
             y: silla_y,
         });
 
-        let bt = between(120000, 240000);
+        let bt: i32 = between(120000, 240000);
 
         self.caminos.push(Estado {
             estado: Movimiento::Sit,
@@ -209,27 +216,27 @@ impl NPCAleatorio {
                 let mut sillas_taken = sillas_taken.lock().unwrap();
                 sillas_taken.retain(|silla| silla.etiqueta != silla_aleatoria.etiqueta);
             },
-            bt / 600,
+            (bt / 600) as u64,
         );
     }
 
-    fn find_nearest_walkable(&self, x: f32, y: f32) -> Coordenada {
-        let mut current_y = y;
+    fn find_nearest_walkable(&self, x: i32, y: i32) -> Coordenada {
+        let mut current_y: i32 = y;
 
         while current_y < self.mundo.altura {
             if self.is_walkable(Coordenada { x, y: current_y }) {
                 return Coordenada { x, y: current_y };
             }
-            current_y += 1.0;
+            current_y += 1;
         }
 
         current_y = y;
 
-        while current_y >= 0.0 {
+        while current_y >= 0 {
             if self.is_walkable(Coordenada { x, y: current_y }) {
                 return Coordenada { x, y: current_y };
             }
-            current_y -= 1.0;
+            current_y -= 1;
         }
 
         Coordenada { x, y }
