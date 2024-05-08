@@ -1,4 +1,8 @@
-use crate::{lib::types::{GameTimer, Task}, CloneableCallback};
+use crate::{
+    lib::types::{GameTimer, Task},
+    CloneableCallback,
+};
+use std::sync::{Arc, Mutex};
 
 impl GameTimer {
     pub fn new() -> Self {
@@ -17,12 +21,17 @@ impl GameTimer {
 
     pub fn set_timeout<F>(&mut self, callback: F, delay_ms: u64)
     where
-        F: Fn() + 'static,
+        F: Fn() + 'static + Clone + Send + Sync,
     {
         let execute_on_ms = self.time_accumulated + delay_ms;
+        let callback_arc = Arc::new(Mutex::new(Some(callback)));
         self.tasks.push(Task {
             execute_on_ms,
-            callback: CloneableCallback::new(callback),
+            callback: CloneableCallback::new(move || {
+                if let Some(callback) = callback_arc.lock().unwrap().take() {
+                    callback();
+                }
+            }),
         });
     }
 

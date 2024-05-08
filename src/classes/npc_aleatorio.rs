@@ -208,13 +208,12 @@ impl NPCAleatorio {
         self.contador = 0.0;
         self.npc.x = self.silla_cerca.unwrap().x as f32;
         self.npc.y = self.silla_cerca.unwrap().y as f32;
-
-        let sillas_taken = Arc::clone(&self.sillas_ocupadas);
-
+        let sillas_ocupadas = Arc::clone(&self.sillas_ocupadas);
+        let silla_aleatoria_etiqueta = silla_aleatoria.etiqueta.clone();
         self.reloj_juego.set_timeout(
             move || {
-                let mut sillas_taken = sillas_taken.lock().unwrap();
-                sillas_taken.retain(|silla| silla.etiqueta != silla_aleatoria.etiqueta);
+                let mut sillas_taken = sillas_ocupadas.lock().unwrap();
+                sillas_taken.retain(|silla| silla.etiqueta != silla_aleatoria_etiqueta);
             },
             (bt / 600.0) as u64,
         );

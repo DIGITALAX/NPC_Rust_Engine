@@ -161,10 +161,10 @@ pub struct CloneableCallback {
 impl CloneableCallback {
     pub fn new<F>(callback: F) -> Self
     where
-        F: Fn() + 'static + Sync,
+        F: Fn() + 'static + Send + Sync,
     {
         Self {
-            callback: Box::new(callback) as Box<dyn Fn() + Send + Sync + 'static>,
+            callback: Arc::new(Box::new(callback)),
         }
     }
 }
