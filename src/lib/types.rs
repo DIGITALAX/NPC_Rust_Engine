@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
+use std::sync::{mpsc, Arc, Mutex};
+use std::thread::JoinHandle;
 use warp::ws::Message;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -136,3 +137,67 @@ pub struct Escena {
 }
 
 pub type Clientes = Arc<Mutex<Vec<tokio::sync::mpsc::UnboundedSender<Message>>>>;
+
+pub struct GameTimer {
+    pub ticks: u32,
+    pub time_accumulated: f64,
+    pub tasks: Vec<Task>,
+}
+
+pub struct Task {
+    pub execute_on_ms: f64,
+    pub callback: Box<dyn Fn()>,
+}
+
+pub struct Trabajador {
+    pub sender: mpsc::Sender<ComandoTrabajador>,
+    pub receiver: Arc<Mutex<mpsc::Receiver<RespuestaTrabajadora>>>,
+    pub handle: Option<JoinHandle<()>>,
+}
+
+#[derive(Debug)]
+pub enum ComandoTrabajador {
+    Initialize {
+        sprites: Option<Vec<Sprite>>,
+        prohibidos: Option<Vec<Prohibido>>,
+        anchura: f32,
+        altura: f32,
+        clave: String,
+        sillas_ocupadas: Vec<Silla>,
+        sillas: Vec<Silla>,
+    },
+    Start,
+    RequestState {
+        key: String,
+    },
+}
+
+#[derive(Debug)]
+pub enum RespuestaTrabajadora {
+    StateResponse {
+        cmd: String,
+        clave: String,
+        estados: Vec<Vec<Estado>>,
+    },
+    Error {
+        mensaje: String,
+    },
+}
+
+pub struct EscenaEstudio {
+    pub clave: String,
+    pub sillas_ocupadas: Vec<Silla>,
+    pub trabajador: Trabajador,
+}
+
+pub struct NPCAleatorio {
+    pub sillas: Vec<Silla>,
+    pub mundo: Talla,
+    pub movimientos_max: u32,
+    pub caminos: Vec<Estado>,
+    pub npc: Sprite,
+    pub sillas_ocupadas: Arc<Mutex<Vec<Silla>>>,
+    pub contador: u32,
+    pub reloj_juego: GameTimer,
+    pub silla_cerca: Option<Coordenada>,
+}

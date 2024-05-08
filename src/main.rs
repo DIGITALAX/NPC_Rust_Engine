@@ -1,12 +1,12 @@
-use warp::Filter;
-use warp::ws::{Message, WebSocket};
-use std::sync::{Arc, Mutex};
-use futures::{StreamExt, SinkExt};
 use dotenv::dotenv;
+use futures::{SinkExt, StreamExt};
 use std::env;
+use std::sync::{Arc, Mutex};
+use warp::ws::{Message, WebSocket};
+use warp::Filter;
 mod lib;
-use lib::{constants::*, types::*};
-
+mod classes;
+use lib::types::Clientes;
 
 #[tokio::main]
 async fn main() {
@@ -22,16 +22,15 @@ async fn main() {
     let ws_route = warp::path("ws")
         .and(warp::ws())
         .and(con_clientes(clientes.clone()))
-        .map(|ws: warp::ws::Ws, clientes| ws.on_upgrade(move |socket| manejar_conexion(socket, clientes)));
+        .map(|ws: warp::ws::Ws, clientes| {
+            ws.on_upgrade(move |socket| manejar_conexion(socket, clientes))
+        });
 
-    let hello = warp::path!("hello" / String)
-        .map(|name| format!("Hello, {}!", name));
+    let hello = warp::path!("hello" / String).map(|name| format!("Hello, {}!", name));
 
     let routes = ws_route.or(hello);
 
-    warp::serve(routes)
-        .run(([0, 0, 0, 0], port))
-        .await;
+    warp::serve(routes).run(([0, 0, 0, 0], port)).await;
 }
 
 async fn manejar_conexion(ws: WebSocket, clientes: Clientes) {
@@ -72,13 +71,16 @@ async fn manejar_conexion(ws: WebSocket, clientes: Clientes) {
     }
 
     {
-        let mut clientes = clientes.lock().unwrap();
+        let mut clientes: std::sync::MutexGuard<Vec<tokio::sync::mpsc::UnboundedSender<Message>>> =
+            clientes.lock().unwrap();
         if let Some(pos) = clientes.iter().position(|c| c.is_closed()) {
             clientes.remove(pos);
         }
     }
 }
 
-fn con_clientes(clientes: Clientes) -> impl Filter<Extract = (Clientes,), Error = std::convert::Infallible> + Clone {
+fn con_clientes(
+    clientes: Clientes,
+) -> impl Filter<Extract = (Clientes,), Error = std::convert::Infallible> + Clone {
     warp::any().map(move || clientes.clone())
 }
