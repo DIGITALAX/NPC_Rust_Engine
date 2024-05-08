@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::JoinHandle;
+use tokio::sync::mpsc::Sender;
 use warp::ws::Message;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -168,7 +170,7 @@ pub enum ComandoTrabajador {
     },
     Start,
     RequestState {
-        key: String,
+        clave: String,
     },
 }
 
@@ -200,4 +202,10 @@ pub struct NPCAleatorio {
     pub contador: u32,
     pub reloj_juego: GameTimer,
     pub silla_cerca: Option<Coordenada>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NPCStudioEngine {
+    pub escenas: Arc<Mutex<HashMap<String, Escena>>>,
+    pub enviador: Sender<ComandoTrabajador>,
 }

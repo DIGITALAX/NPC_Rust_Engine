@@ -1,86 +1,97 @@
-use dotenv::dotenv;
-use futures::{SinkExt, StreamExt};
-use std::env;
+mod classes;
+mod lib;
+use lib::types::*;
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use tokio::sync::mpsc::{self};
 use warp::ws::{Message, WebSocket};
 use warp::Filter;
-mod lib;
-mod classes;
-use lib::types::Clientes;
 
-#[tokio::main]
-async fn main() {
-    dotenv().ok();
+impl NPCStudioEngine {
+    fn new() -> Self {
+        let (tx, mut rx) = mpsc::channel(32);
 
-    let port: u16 = env::var("PORT")
-        .unwrap_or_else(|_| "10000".to_string())
-        .parse()
-        .expect("Invalid port number");
+        let escenas = Arc::new(Mutex::new(HashMap::new()));
+        let escenas_clone = escenas.clone();
 
-    let clientes: Clientes = Arc::new(Mutex::new(Vec::new()));
+        tokio::spawn(async move {
+            while let Some(command) = rx.recv().await {
+                match command {
+                    ComandoTrabajador::RequestState { clave, enviador } => {
+                        let escenas = escenas_clone.lock().unwrap();
+                        if let Some(escena) = escenas.get(&clave) {
+                            let response = RespuestaTrabajadora::StateResponse {
+                                cmd: String::from("stateResponse"),
+                                clave: clave.clone(),
+                                estados: vec![vec![Estado {
+                                    estado: String::from("idle"),
+                                    puntos_de_camino: vec![Coordenada { x: 0, y: 0 }],
+                                    duracion: None,
+                                    npc_etiqueta: String::from("npc_1"),
+                                }]],
+                            };
 
-    let ws_route = warp::path("ws")
-        .and(warp::ws())
-        .and(con_clientes(clientes.clone()))
-        .map(|ws: warp::ws::Ws, clientes| {
-            ws.on_upgrade(move |socket| manejar_conexion(socket, clientes))
-        });
-
-    let hello = warp::path!("hello" / String).map(|name| format!("Hello, {}!", name));
-
-    let routes = ws_route.or(hello);
-
-    warp::serve(routes).run(([0, 0, 0, 0], port)).await;
-}
-
-async fn manejar_conexion(ws: WebSocket, clientes: Clientes) {
-    let (mut sender, mut receiver) = ws.split();
-    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
-
-    {
-        let mut clientes = clientes.lock().unwrap();
-        clientes.push(tx);
-    }
-
-    tokio::spawn(async move {
-        while let Some(message) = rx.recv().await {
-            let _ = sender.send(message).await;
-        }
-    });
-
-    while let Some(result) = receiver.next().await {
-        match result {
-            Ok(msg) => {
-                if msg.is_text() {
-                    let text = msg.to_str().unwrap();
-                    println!("Received: {}", text);
-
-                    let response = format!("Echo: {}", text);
-
-                    let clientes = clientes.lock().unwrap();
-                    for client in clientes.iter() {
-                        let _ = client.send(Message::text(response.clone()));
+                            let _ = enviador.send(response).await;
+                        }
                     }
                 }
             }
-            Err(e) => {
-                eprintln!("Error receiving message: {:?}", e);
-                break;
-            }
+        });
+
+        NPCStudioEngine {
+            escenas,
+            enviador: tx,
         }
     }
 
-    {
-        let mut clientes: std::sync::MutexGuard<Vec<tokio::sync::mpsc::UnboundedSender<Message>>> =
-            clientes.lock().unwrap();
-        if let Some(pos) = clientes.iter().position(|c| c.is_closed()) {
-            clientes.remove(pos);
-        }
+    async fn handle_ws(self: Arc<Self>, ws: WebSocket) {
+        let (tx, mut rx) = ws.split();
+        let (response_tx, response_rx) = mpsc::channel(1);
+
+        let sender = self.enviador.clone();
+        tokio::spawn(async move {
+            while let Some(Ok(msg)) = rx.recv().await {
+                if let Ok(text) = msg.to_str() {
+                    let msg: HashMap<String, String> = serde_json::from_str(text).unwrap();
+
+                    if let Some(clave) = msg.get("claveEscena") {
+                        let _ = sender
+                            .send(ComandoTrabajador::RequestState {
+                                clave: clave.clone(),
+                                enviador: response_tx.clone(),
+                            })
+                            .await;
+
+                        if let Some(response) = response_rx.recv().await {
+                            let response = serde_json::to_string(&response).unwrap();
+                            let _ = tx.send(Message::text(response)).await;
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    fn add_escena(&mut self, escena: Escena) {
+        let mut escenas = self.escenas.lock().unwrap();
+        escenas.insert(escena.clave.clone(), escena);
     }
 }
 
-fn con_clientes(
-    clientes: Clientes,
-) -> impl Filter<Extract = (Clientes,), Error = std::convert::Infallible> + Clone {
-    warp::any().map(move || clientes.clone())
+#[tokio::main]
+async fn main() {
+    dotenv::dotenv().ok();
+    env_logger::init();
+
+    let engine = Arc::new(NPCStudioEngine::new());
+
+    let engine_clone = engine.clone();
+    let ws_route = warp::path("ws")
+        .and(warp::ws())
+        .map(move |ws: warp::ws::Ws| {
+            let engine_clone = engine_clone.clone();
+            ws.on_upgrade(move |socket| engine_clone.handle_ws(socket))
+        });
+
+    warp::serve(ws_route).run(([0, 0, 0, 0], 3030)).await;
 }
