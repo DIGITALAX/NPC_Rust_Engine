@@ -1,7 +1,7 @@
 use std::f64::consts::PI;
 use rand::Rng;
 
-pub fn between(min: i32, max: i32) -> i32 {
+pub fn between(min: f32, max: f32) -> f32 {
     let mut rng = rand::thread_rng();
     rng.gen_range(min..=max)
 }

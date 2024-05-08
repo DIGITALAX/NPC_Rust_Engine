@@ -5,7 +5,7 @@ use std::thread::JoinHandle;
 use tokio::sync::mpsc::Sender;
 use warp::ws::Message;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Hash, Clone, Eq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Coordenada {
     pub x: i32,
     pub y: i32,
@@ -19,15 +19,15 @@ pub struct Escala {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Talla {
-    pub anchura: i32,
-    pub altura: i32,
+    pub anchura: f32,
+    pub altura: f32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Estado {
     pub estado: Movimiento,
     pub puntos_de_camino: Vec<Coordenada>,
-    pub duracion: Option<i32>,
+    pub duracion: Option<f32>,
     pub npc_etiqueta: String,
     pub silla_aleatoria: Option<String>,
 }
@@ -39,7 +39,7 @@ pub struct Articulo {
     pub sitio: Coordenada,
     pub escala: Escala,
     pub talla: Coordenada,
-    pub profundidad: Option<i32>,
+    pub profundidad: Option<f32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -70,10 +70,10 @@ pub enum Direccion {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Silla {
-    pub x_adjustado: i32,
-    pub y_adjustado: i32,
+    pub x_adjustado: f32,
+    pub y_adjustado: f32,
     pub profundidad: bool,
-    pub depth: Option<i32>,
+    pub depth: Option<f32>,
     pub anim: Direccion,
     pub etiqueta: String,
     pub sitio: Coordenada,
@@ -87,17 +87,17 @@ pub struct Silla {
 pub struct Sprite {
     pub etiqueta: String,
     pub uri: String,
-    pub x: i32,
-    pub y: i32,
-    pub altura: i32,
-    pub anchura: i32,
-    pub anchura_borde: i32,
-    pub altura_borde: i32,
-    pub margen: i32,
+    pub x: f32,
+    pub y: f32,
+    pub altura: f32,
+    pub anchura: f32,
+    pub anchura_borde: f32,
+    pub altura_borde: f32,
+    pub margen: f32,
     pub tapa: String,
-    pub marco_inicio: i32,
-    pub marco_final: i32,
-    pub movimientos_max: i32,
+    pub marco_inicio: f32,
+    pub marco_final: f32,
+    pub movimientos_max: f32,
     pub escala: Escala,
 }
 
@@ -112,17 +112,17 @@ pub enum Movimiento {
 pub struct Fondo {
     pub etiqueta: String,
     pub uri: String,
-    pub anchura: i32,
-    pub altura: i32,
+    pub anchura: f32,
+    pub altura: f32,
     pub sitio: Coordenada,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Prohibido {
-    pub x: i32,
-    pub y: i32,
-    pub anchura: i32,
-    pub altura: i32,
+    pub x: f32,
+    pub y: f32,
+    pub anchura: f32,
+    pub altura: f32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -154,16 +154,17 @@ pub struct Task {
 }
 
 pub struct CloneableCallback {
-    callback: Box<dyn Fn() + 'static>,
+    callback: Arc<Box<dyn Fn() + Send + Sync + 'static>>,
+
 }
 
 impl CloneableCallback {
     pub fn new<F>(callback: F) -> Self
     where
-        F: Fn() + 'static,
+        F: Fn() + 'static + Sync,
     {
         Self {
-            callback: Box::new(callback),
+            callback: Box::new(callback) as Box<dyn Fn() + Send + Sync + 'static>,
         }
     }
 }
@@ -175,12 +176,11 @@ impl std::ops::Deref for CloneableCallback {
         &*self.callback
     }
 }
-
 impl Clone for CloneableCallback {
     fn clone(&self) -> Self {
-        let original = self.callback.as_ref();
+        let callback_clone = self.callback.clone();
         Self {
-            callback: Box::new(move || original()),
+            callback: callback_clone,
         }
     }
 }
@@ -191,10 +191,11 @@ impl std::fmt::Debug for CloneableCallback {
     }
 }
 
+#[derive(Clone)]
 pub struct Trabajador {
     pub sender: mpsc::Sender<ComandoTrabajador>,
     pub receiver: Arc<Mutex<mpsc::Receiver<RespuestaTrabajadora>>>,
-    pub handle: Option<JoinHandle<()>>,
+    pub handle: Option<Arc<Mutex<JoinHandle<()>>>>,
 }
 
 #[derive(Debug)]
@@ -214,7 +215,7 @@ pub enum ComandoTrabajador {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum RespuestaTrabajadora {
     StateResponse {
         cmd: String,
@@ -226,6 +227,7 @@ pub enum RespuestaTrabajadora {
     },
 }
 
+#[derive(Clone)]
 pub struct EscenaEstudio {
     pub clave: String,
     pub sillas_ocupadas: Vec<Silla>,
@@ -235,17 +237,17 @@ pub struct EscenaEstudio {
 pub struct NPCAleatorio {
     pub sillas: Vec<Silla>,
     pub mundo: Talla,
-    pub movimientos_max: i32,
+    pub movimientos_max: f32,
     pub caminos: Vec<Estado>,
     pub npc: Sprite,
     pub sillas_ocupadas: Arc<Mutex<Vec<Silla>>>,
-    pub contador: i32,
+    pub contador: f32,
     pub reloj_juego: GameTimer,
     pub silla_cerca: Option<Coordenada>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct NPCStudioEngine {
-    pub escenas: Arc<Mutex<HashMap<String, Escena>>>,
+    pub escenas: Arc<Mutex<HashMap<String, EscenaEstudio>>>,
     pub enviador: Sender<ComandoTrabajador>,
 }

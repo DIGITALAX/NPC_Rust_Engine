@@ -21,10 +21,12 @@ impl Trabajador {
             worker_func(cmd_rx, resp_tx);
         });
 
+        let handle_arc = Arc::new(Mutex::new(handle));
+
         Trabajador {
             sender: cmd_tx,
             receiver,
-            handle: Some(handle),
+            handle: Some(handle_arc),
         }
     }
 
@@ -42,18 +44,48 @@ impl Trabajador {
 
 impl Drop for Trabajador {
     fn drop(&mut self) {
-        if let Some(handle) = self.handle.take() {
-            handle.join().expect("Error uniendo Worker");
+        if let Some(handle_arc) = self.handle.take() {
+            if let Ok(handle_mutex) = Arc::try_unwrap(handle_arc) {
+                if let Ok(mut handle) = handle_mutex.into_inner() {
+                    handle.join().expect("Error uniendo Worker");
+                }
+            }
         }
     }
 }
 
+impl Default for Trabajador {
+    fn default() -> Self {
+        Trabajador::new(|cmd_rx, resp_tx| {
+            while let Ok(command) = cmd_rx.recv() {
+                match command {
+                    ComandoTrabajador::Initialize { clave, .. } => {
+                        println!("Worker inicializado con la clave: {}", clave);
+                    }
+                    ComandoTrabajador::Start => {
+                        println!("Worker iniciado");
+                    }
+                    ComandoTrabajador::RequestState { clave } => {
+                        let response = RespuestaTrabajadora::StateResponse {
+                            cmd: String::from("stateResponse"),
+                            clave,
+                            estados: vec![vec![]],
+                        };
+                        resp_tx.send(response).expect("Error enviando respuesta");
+                    }
+                }
+            }
+        })
+    }
+}
+
+
 impl EscenaEstudio {
-    fn new(escena: Escena, trabajador: Trabajador) -> Self {
+    pub fn new(escena: Escena, trabajador: Trabajador) -> Self {
         let sprites: &Vec<Sprite> = &escena.sprites;
 
-        let anchura = escena.mundo.anchura - (sprites[0].anchura * sprites[0].escala.x) / 2;
-        let altura = escena.mundo.altura - (sprites[0].altura * sprites[0].escala.y) / 2;
+        let anchura = escena.mundo.anchura - (sprites[0].anchura * sprites[0].escala.x) / 2.0;
+        let altura = escena.mundo.altura - (sprites[0].altura * sprites[0].escala.y) / 2.0;
 
         trabajador.post_message(ComandoTrabajador::Initialize {
             sprites: Some(escena.sprites.clone()),
@@ -74,7 +106,7 @@ impl EscenaEstudio {
         }
     }
 
-    fn request_state(&self) -> Option<RespuestaTrabajadora> {
+    pub fn request_state(&self) -> Option<RespuestaTrabajadora> {
         self.trabajador
             .post_message(ComandoTrabajador::RequestState {
                 clave: self.clave.clone(),
@@ -84,7 +116,7 @@ impl EscenaEstudio {
 }
 
 fn main() {
-    let escena = LISTA_ESCENA[0];
+    let escena = &LISTA_ESCENA[0];
 
     let trabajador = Trabajador::new(|cmd_rx, resp_tx| {
         while let Ok(command) = cmd_rx.recv() {
@@ -107,7 +139,7 @@ fn main() {
         }
     });
 
-    let estudio = EscenaEstudio::new(escena, trabajador);
+    let estudio = EscenaEstudio::new(escena.clone(), trabajador);
 
     if let Some(response) = estudio.request_state() {
         println!("{:?}", response);
