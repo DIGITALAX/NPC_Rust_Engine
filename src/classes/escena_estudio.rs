@@ -1,13 +1,11 @@
 use crate::bib::types::{
-    ComandoTrabajador, Escena, EscenaEstudio, RespuestaTrabajadora, Sprite,
-    Trabajador,
+    ComandoTrabajador, Escena, EscenaEstudio, RespuestaTrabajadora, Trabajador,
 };
-use crate::bib::constants::LISTA_ESCENA;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 
 impl Trabajador {
-    fn new<F>(worker_func: F) -> Self
+    fn new<F>(trabajador_func: F) -> Self
     where
         F: FnOnce(mpsc::Receiver<ComandoTrabajador>, mpsc::Sender<RespuestaTrabajadora>)
             + Send
@@ -18,7 +16,7 @@ impl Trabajador {
         let receiver = Arc::new(Mutex::new(resp_rx));
 
         let handle = thread::spawn(move || {
-            worker_func(cmd_rx, resp_tx);
+            trabajador_func(cmd_rx, resp_tx);
         });
 
         let handle_arc = Arc::new(Mutex::new(handle));
@@ -33,24 +31,12 @@ impl Trabajador {
     fn post_message(&self, command: ComandoTrabajador) {
         self.sender
             .send(command)
-            .expect("Error enviando mensaje al Worker");
+            .expect("Error enviando mensaje al Trabajador");
     }
 
     fn get_response(&self) -> Option<RespuestaTrabajadora> {
         let receiver = self.receiver.lock().unwrap();
         receiver.try_recv().ok()
-    }
-}
-
-impl Drop for Trabajador {
-    fn drop(&mut self) {
-        if let Some(handle_arc) = self.handle.take() {
-            if let Ok(handle_mutex) = Arc::try_unwrap(handle_arc) {
-                if let Ok(handle) = handle_mutex.into_inner() {
-                    handle.join().expect("Error uniendo Worker");
-                }
-            }
-        }
     }
 }
 
@@ -60,10 +46,10 @@ impl Default for Trabajador {
             while let Ok(command) = cmd_rx.recv() {
                 match command {
                     ComandoTrabajador::Initialize { clave, .. } => {
-                        println!("Worker inicializado con la clave: {}", clave);
+                        println!("Trabajador inicializado con la clave: {}", clave);
                     }
                     ComandoTrabajador::Start => {
-                        println!("Worker iniciado");
+                        println!("Trabajador iniciado");
                     }
                     ComandoTrabajador::RequestState { clave } => {
                         let response = RespuestaTrabajadora::StateResponse {
@@ -79,17 +65,16 @@ impl Default for Trabajador {
     }
 }
 
-
 impl EscenaEstudio {
     pub fn new(escena: Escena, trabajador: Trabajador) -> Self {
-        let sprites: &Vec<Sprite> = &escena.sprites;
-
+        let sprites = escena.sprites.clone();
+        let prohibidos = escena.prohibido.clone();
         let anchura = escena.mundo.anchura - (sprites[0].anchura * sprites[0].escala.x) / 2.0;
         let altura = escena.mundo.altura - (sprites[0].altura * sprites[0].escala.y) / 2.0;
 
         trabajador.post_message(ComandoTrabajador::Initialize {
-            sprites: Some(escena.sprites.clone()),
-            prohibidos: Some(escena.prohibido.clone()),
+            sprites: sprites,
+            prohibidos: prohibidos,
             anchura,
             altura,
             clave: escena.clave.clone(),
@@ -112,36 +97,5 @@ impl EscenaEstudio {
                 clave: self.clave.clone(),
             });
         self.trabajador.get_response()
-    }
-}
-
-fn main() {
-    let escena = &LISTA_ESCENA[0];
-
-    let trabajador = Trabajador::new(|cmd_rx, resp_tx| {
-        while let Ok(command) = cmd_rx.recv() {
-            match command {
-                ComandoTrabajador::Initialize { clave, .. } => {
-                    println!("Worker inicializado con la clave: {}", clave);
-                }
-                ComandoTrabajador::Start => {
-                    println!("Worker iniciado");
-                }
-                ComandoTrabajador::RequestState { clave } => {
-                    let response = RespuestaTrabajadora::StateResponse {
-                        cmd: String::from("stateResponse"),
-                        clave,
-                        estados: vec![vec![]],
-                    };
-                    resp_tx.send(response).expect("Error enviando respuesta");
-                }
-            }
-        }
-    });
-
-    let estudio = EscenaEstudio::new(escena.clone(), trabajador);
-
-    if let Some(response) = estudio.request_state() {
-        println!("{:?}", response);
     }
 }

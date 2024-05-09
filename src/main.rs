@@ -4,7 +4,7 @@ use dotenv::dotenv;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Request, Response, Server};
 use std::env;
-use std::io::{Read, Write, BufRead, BufReader};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use tokio::task;
 mod bib;
@@ -26,19 +26,11 @@ async fn main() -> std::io::Result<()> {
     let addr = ([127, 0, 0, 1], puerto).into();
     let server = Server::bind(&addr).serve(make_svc);
 
-    let nuevas_escenas: Vec<EscenaEstudio> = LISTA_ESCENA
-        .iter()
-        .map(|escena| EscenaEstudio::new(escena.clone(), Trabajador::default()))
-        .collect();
-
     task::spawn(async move {
-        let mut reloj = GameTimer::new();
-
-        loop {
-            let delta: u64 = 10000;
-            reloj.tick(delta);
-            tokio::time::sleep(tokio::time::Duration::from_millis(SUEÑO)).await;
-        }
+        let nuevas_escenas: Vec<EscenaEstudio> = LISTA_ESCENA
+            .iter()
+            .map(|escena| EscenaEstudio::new(escena.clone(), Trabajador::default()))
+            .collect();
     });
 
     tokio::spawn(async move {

@@ -202,8 +202,8 @@ pub struct Trabajador {
 #[derive(Debug)]
 pub enum ComandoTrabajador {
     Initialize {
-        sprites: Option<Vec<Sprite>>,
-        prohibidos: Option<Vec<Prohibido>>,
+        sprites: Vec<Sprite>,
+        prohibidos: Vec<Prohibido>,
         anchura: f32,
         altura: f32,
         clave: String,
