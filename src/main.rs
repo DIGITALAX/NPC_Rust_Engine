@@ -3,12 +3,17 @@ use bib::types::*;
 use dotenv::dotenv;
 use hyper::service::{make_service_fn, service_fn};
 use hyper::{Body, Request, Response, Server};
+use std::collections::HashMap;
 use std::env;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
-use tokio::task;
+use tokio::{sync, task};
 mod bib;
 mod classes;
+
+lazy_static::lazy_static! {
+    static ref SCENE_MAP: sync::RwLock<HashMap<String, EscenaEstudio>> = sync::RwLock::new(HashMap::new());
+}
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -31,6 +36,12 @@ async fn main() -> std::io::Result<()> {
             .iter()
             .map(|escena| EscenaEstudio::new(escena.clone(), Trabajador::default()))
             .collect();
+
+        let mut scene_map = SCENE_MAP.write().await;
+
+        for escena in nuevas_escenas {
+            scene_map.insert(escena.clave.clone(), escena);
+        }
     });
 
     tokio::spawn(async move {
@@ -44,7 +55,7 @@ async fn main() -> std::io::Result<()> {
             Ok(mut corriente) => {
                 let render_clave_clone = render_clave.clone();
                 task::spawn(async move {
-                    if let Err(err) = handle_tcp_client(&mut corriente, &render_clave_clone) {
+                    if let Err(err) = handle_tcp_client(&mut corriente, &render_clave_clone).await {
                         eprintln!("Error al manejar la conexión del cliente: {}", err);
                     }
                 });
@@ -90,7 +101,7 @@ async fn handle_request(req: Request<Body>) -> Result<Response<Body>, hyper::Err
     }
 }
 
-fn handle_tcp_client(corriente: &mut TcpStream, render_clave: &str) -> std::io::Result<()> {
+async fn handle_tcp_client(corriente: &mut TcpStream, render_clave: &str) -> std::io::Result<()> {
     let mut buffer = [0; 1024];
     corriente.read(&mut buffer)?;
 
@@ -112,12 +123,76 @@ fn handle_tcp_client(corriente: &mut TcpStream, render_clave: &str) -> std::io::
                 }
                 Ok(_) => {
                     println!("Mensaje recibido del cliente: {}", msg);
-                    match msg.trim() {
-                        "enviarSceneIndex" => {
-                            writer.write_all(b"Respuesta1\n")?;
+                    let parts: Vec<&str> = msg.trim().split("+").collect();
+                    if parts.len() != 2 {
+                        writer.write_all(b"Mensaje no reconocido\n")?;
+                        writer.flush()?;
+                        continue;
+                    }
+                    let command = parts[0];
+                    let scene_key = parts[1];
+                    match command {
+                        "indiceDeEscena" => {
+                            let scene_guard = SCENE_MAP.read().await;
+                            if let Some(scene) = scene_guard.get(scene_key) {
+                                if let Some(response) = scene.request_state() {
+                                    match response {
+                                        RespuestaTrabajadora::StateResponse { estados, .. } => {
+                                            let scene_info = LISTA_ESCENA
+                                                .iter()
+                                                .find(|escena| escena.clave == scene_key);
+                                            if let Some(scene_info) = scene_info {
+                                                let json_response = serde_json::json!({
+                                                    "estados": estados,
+                                                    "escena": scene_info,
+                                                });
+                                                let serialized_response =
+                                                    serde_json::to_string(&json_response)
+                                                        .unwrap_or_else(|_| {
+                                                            String::from("Error de serialización")
+                                                        });
+                                                writer.write_all(serialized_response.as_bytes())?;
+                                            } else {
+                                                writer.write_all(b"Escena no encontrada\n")?;
+                                            }
+                                        }
+                                        RespuestaTrabajadora::Error { mensaje } => {
+                                            writer.write_all(
+                                                format!("Error: {}", mensaje).as_bytes(),
+                                            )?;
+                                        }
+                                    }
+                                } else {
+                                    writer.write_all(b"Error obteniendo estado de la escena\n")?;
+                                }
+                            } else {
+                                writer.write_all(b"Escena no encontrada\n")?;
+                            }
                         }
                         "datosDeEscena" => {
-                            writer.write_all(b"Respuesta2\n")?;
+                            let scene_guard = SCENE_MAP.read().await;
+                            if let Some(scene) = scene_guard.get(scene_key) {
+                                if let Some(response) = scene.request_state() {
+                                    match response {
+                                        RespuestaTrabajadora::StateResponse { estados, .. } => {
+                                            let serialized_response =
+                                                serde_json::to_string(&estados).unwrap_or_else(
+                                                    |_| String::from("Error de serialización"),
+                                                );
+                                            writer.write_all(serialized_response.as_bytes())?;
+                                        }
+                                        RespuestaTrabajadora::Error { mensaje } => {
+                                            writer.write_all(
+                                                format!("Error: {}", mensaje).as_bytes(),
+                                            )?;
+                                        }
+                                    }
+                                } else {
+                                    writer.write_all(b"Error obteniendo estado de la escena\n")?;
+                                }
+                            } else {
+                                writer.write_all(b"Escena no encontrada\n")?;
+                            }
                         }
                         _ => {
                             writer.write_all(b"Mensaje no reconocido\n")?;

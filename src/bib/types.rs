@@ -1,10 +1,10 @@
+use pathfinding::grid::Grid;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::JoinHandle;
 use tokio::sync::mpsc::Sender;
 use warp::reject::Reject;
-use warp::ws::Message;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Coordenada {
@@ -139,8 +139,6 @@ pub struct Escena {
     pub sprites: Vec<Sprite>,
 }
 
-pub type Clientes = Arc<Mutex<Vec<tokio::sync::mpsc::UnboundedSender<Message>>>>;
-
 #[derive(Clone)]
 pub struct GameTimer {
     pub ticks: u32,
@@ -243,6 +241,7 @@ pub struct NPCAleatorio {
     pub sillas_ocupadas: Arc<Mutex<Vec<Silla>>>,
     pub contador: f32,
     pub reloj_juego: GameTimer,
+    pub grid: Grid,
     pub silla_cerca: Option<Coordenada>,
 }
 
@@ -261,12 +260,6 @@ impl Clone for EngineWrapper {
         Self {
             engine: Arc::clone(&self.engine),
         }
-    }
-}
-
-impl EngineWrapper {
-    pub fn new(engine: Arc<NPCStudioEngine>) -> Self {
-        Self { engine }
     }
 }
 

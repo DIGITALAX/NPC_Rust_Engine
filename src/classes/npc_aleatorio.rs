@@ -22,6 +22,7 @@ impl NPCAleatorio {
             movimientos_max: sprite.movimientos_max,
             caminos: Vec::new(),
             npc: sprite,
+            grid,
             contador: 0.0,
             silla_cerca: None,
         }
