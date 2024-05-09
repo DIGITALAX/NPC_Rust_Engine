@@ -4,6 +4,7 @@ use std::sync::{mpsc, Arc, Mutex};
 use std::thread::JoinHandle;
 use tokio::sync::mpsc::Sender;
 use warp::ws::Message;
+use warp::reject::Reject;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Coordenada {
@@ -251,3 +252,27 @@ pub struct NPCStudioEngine {
     pub escenas: Arc<Mutex<HashMap<String, EscenaEstudio>>>,
     pub enviador: Sender<ComandoTrabajador>,
 }
+
+
+pub struct EngineWrapper {
+    pub engine: Arc<NPCStudioEngine>,
+}
+
+impl Clone for EngineWrapper {
+    fn clone(&self) -> Self {
+        Self {
+            engine: Arc::clone(&self.engine),
+        }
+    }
+}
+
+impl EngineWrapper {
+   pub fn new(engine: Arc<NPCStudioEngine>) -> Self {
+        Self { engine }
+    }
+}
+
+#[derive(Debug)]
+pub struct UnauthorizedError;
+
+impl Reject for UnauthorizedError {}

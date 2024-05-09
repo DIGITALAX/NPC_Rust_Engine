@@ -1,147 +1,148 @@
-use crate::lib::constants::*;
-use crate::lib::types::*;
+use bib::constants::*;
+use bib::types::*;
 use dotenv::dotenv;
-use env_logger;
-use futures::{SinkExt, StreamExt};
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-use tokio::sync::mpsc::{self, Receiver, Sender};
-use warp::ws::{Message, WebSocket};
-use warp::Filter;
-
+use hyper::service::{make_service_fn, service_fn};
+use hyper::{Body, Request, Response, Server};
+use std::env;
+use std::io::{Read, Write, BufRead, BufReader};
+use std::net::{TcpListener, TcpStream};
+use tokio::task;
+mod bib;
 mod classes;
-mod lib;
 
-impl NPCStudioEngine {
-    fn new() -> Self {
-        let (tx, mut rx) = mpsc::channel(32);
-        let escenas = Arc::new(Mutex::new(HashMap::<String, EscenaEstudio>::new()));
-        let escenas_clone = Arc::clone(&escenas);
-        tokio::spawn(async move {
-            while let Some(command) = rx.recv().await {
-                let (response_tx, mut response_rx): (
-                    Sender<RespuestaTrabajadora>,
-                    Receiver<RespuestaTrabajadora>,
-                ) = mpsc::channel(1);
-        
-                match command {
-                    ComandoTrabajador::RequestState { clave } => {
-                        let escenas = escenas_clone.lock().unwrap().clone();
-                        if let Some(escena_estudio) = escenas.get(&clave) {
-                            let estados: Vec<Estado> = match escena_estudio.request_state() {
-                                Some(RespuestaTrabajadora::StateResponse { estados, .. }) => {
-                                    estados
-                                        .into_iter()
-                                        .flat_map(|inner_vec| inner_vec)
-                                        .collect()
-                                }
-                                _ => vec![],
-                            };
-                            let estados: Vec<Vec<Estado>> = vec![estados];
-                            let response = RespuestaTrabajadora::StateResponse {
-                                cmd: String::from("stateResponse"),
-                                clave: clave.clone(),
-                                estados,
-                            };
-                            let _ = response_tx.send(response).await;
-                        }
+#[tokio::main]
+async fn main() -> std::io::Result<()> {
+    dotenv().ok();
+
+    let puerto: String = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+    let puerto = puerto.parse::<u16>().expect("Puerto Invalido");
+    let render_clave = env::var("RENDER_KEY").expect("Sin Clave");
+    let listener = TcpListener::bind(("0.0.0.0", puerto))?;
+    println!("El Servidor está escuchando el puerto {}", puerto);
+    let make_svc = make_service_fn(move |_conn| async move {
+        Ok::<_, hyper::Error>(service_fn(move |req| handle_request(req)))
+    });
+
+    let addr = ([127, 0, 0, 1], puerto).into();
+    let server = Server::bind(&addr).serve(make_svc);
+
+    let nuevas_escenas: Vec<EscenaEstudio> = LISTA_ESCENA
+        .iter()
+        .map(|escena| EscenaEstudio::new(escena.clone(), Trabajador::default()))
+        .collect();
+
+    task::spawn(async move {
+        let mut reloj = GameTimer::new();
+
+        loop {
+            let delta: u64 = 10000;
+            reloj.tick(delta);
+            tokio::time::sleep(tokio::time::Duration::from_millis(SUEÑO)).await;
+        }
+    });
+
+    tokio::spawn(async move {
+        if let Err(e) = server.await {
+            eprintln!("Error en el servidor HTTP: {}", e);
+        }
+    });
+
+    for corriente in listener.incoming() {
+        match corriente {
+            Ok(mut corriente) => {
+                let render_clave_clone = render_clave.clone();
+                task::spawn(async move {
+                    if let Err(err) = handle_tcp_client(&mut corriente, &render_clave_clone) {
+                        eprintln!("Error al manejar la conexión del cliente: {}", err);
                     }
-                    ComandoTrabajador::Initialize { .. } => {
-                        let mut escenas = escenas_clone.lock().unwrap().clone();
-                        let lista_escena: &[Escena; 1] = &*LISTA_ESCENA;
-        
-                        for escena in lista_escena.iter() {
-                            escenas.insert(
-                                escena.clave.clone(),
-                                EscenaEstudio::new(escena.clone(), Default::default()),
-                            );
-                        }
-        
-                        let mut escenas_guard = escenas_clone.lock().unwrap();
-                        *escenas_guard = escenas;
-                    }
-        
-                    ComandoTrabajador::Start => {}
-                }
+                });
             }
-        });
-
-        NPCStudioEngine {
-            escenas,
-            enviador: tx,
+            Err(e) => {
+                eprintln!("Error: {}", e);
+            }
         }
     }
 
-    async fn handle_ws(self: Arc<Self>, ws: WebSocket) {
-        let (mut tx, mut rx) = ws.split();
-        let (_, mut response_rx): (Sender<RespuestaTrabajadora>, Receiver<RespuestaTrabajadora>) =
-            mpsc::channel(1);
+    Ok(())
+}
 
-        let sender = self.enviador.clone();
-        tokio::spawn(async move {
-            while let Some(Ok(msg)) = rx.next().await {
-                if let Ok(text) = msg.to_str() {
-                    let msg: HashMap<String, String> = serde_json::from_str(text).unwrap();
-
-                    if let Some(clave) = msg.get("claveEscena") {
-                        let _ = sender
-                            .send(ComandoTrabajador::RequestState {
-                                clave: clave.clone(),
-                            })
-                            .await;
-
-                        if let Some(response) = response_rx.recv().await {
-                            let response = serde_json::to_string(&response).unwrap();
-                            let _ = tx.send(Message::text(response)).await;
-                        }
-                    }
+async fn handle_request(req: Request<Body>) -> Result<Response<Body>, hyper::Error> {
+    match (req.method(), req.uri().path()) {
+        (&hyper::Method::GET, "/") => {
+            if let Some(origin) = req.headers().get("Origin") {
+                let origin_str = origin.to_str().unwrap_or("");
+                if origin_str == "https://npcstudio.xyz" {
+                    return Ok(Response::new(Body::from(
+                        "Conexion de WebSocket establecida",
+                    )));
+                } else {
+                    eprintln!(
+                        "Intento de conexión WebSocket desde un origen no permitido: {}",
+                        origin_str
+                    );
+                    let mut res = Response::default();
+                    *res.status_mut() = hyper::StatusCode::UNAUTHORIZED;
+                    return Ok(res);
                 }
+            } else {
+                let mut res = Response::default();
+                *res.status_mut() = hyper::StatusCode::BAD_REQUEST;
+                return Ok(res);
             }
-        });
-    }
-
-    fn add_escena(&mut self, escena: Escena) {
-        let mut escenas = self.escenas.lock().unwrap();
-        escenas.insert(
-            escena.clave.clone(),
-            EscenaEstudio::new(escena, Default::default()),
-        );
-    }
-
-    fn initialize_escenas(&self) {
-        let sender = self.enviador.clone();
-        tokio::spawn(async move {
-            let _ = sender
-                .send(ComandoTrabajador::Initialize {
-                    sprites: None,
-                    prohibidos: None,
-                    anchura: 0.0,
-                    altura: 0.0,
-                    clave: String::from("default"),
-                    sillas_ocupadas: vec![],
-                    sillas: vec![],
-                })
-                .await;
-        });
+        }
+        _ => {
+            let mut res = Response::default();
+            *res.status_mut() = hyper::StatusCode::NOT_FOUND;
+            Ok(res)
+        }
     }
 }
 
-#[tokio::main]
-async fn main() {
-    dotenv().ok();
-    env_logger::init();
-    let render_key = std::env::var("RENDER_KEY").expect("RENDER_KEY no encontrado en .env");
+fn handle_tcp_client(corriente: &mut TcpStream, render_clave: &str) -> std::io::Result<()> {
+    let mut buffer = [0; 1024];
+    corriente.read(&mut buffer)?;
 
-    let engine = Arc::new(NPCStudioEngine::new());
-    engine.initialize_escenas();
+    let clave_recibida = String::from_utf8_lossy(&buffer[..]);
+    if clave_recibida.trim() == render_clave {
+        corriente.write_all(b"Conexion establecida!\n")?;
+        println!("Cliente Se Conectó.");
 
-    let engine_clone = engine.clone();
-    let ws_route = warp::path("ws")
-        .and(warp::ws())
-        .map(move |ws: warp::ws::Ws| {
-            let engine_clone = engine_clone.clone();
-            ws.on_upgrade(move |socket| engine_clone.handle_ws(socket))
-        });
+        let corriente_clone = corriente.try_clone()?;
+        let mut reader = BufReader::new(corriente);
+        let mut writer = corriente_clone;
 
-    warp::serve(ws_route).run(([0, 0, 0, 0], 3030)).await;
+        loop {
+            let mut msg = String::new();
+            match reader.read_line(&mut msg) {
+                Ok(0) => {
+                    println!("Cliente desconectado.");
+                    return Ok(());
+                }
+                Ok(_) => {
+                    println!("Mensaje recibido del cliente: {}", msg);
+                    match msg.trim() {
+                        "enviarSceneIndex" => {
+                            writer.write_all(b"Respuesta1\n")?;
+                        }
+                        "datosDeEscena" => {
+                            writer.write_all(b"Respuesta2\n")?;
+                        }
+                        _ => {
+                            writer.write_all(b"Mensaje no reconocido\n")?;
+                        }
+                    }
+                    writer.flush()?;
+                }
+                Err(e) => {
+                    eprintln!("Error al leer del cliente: {}", e);
+                    return Err(e);
+                }
+            }
+        }
+    } else {
+        corriente.write_all(b"Clave Invalida!")?;
+        println!("Conexion al Cliente Rechazada.");
+    }
+
+    Ok(())
 }

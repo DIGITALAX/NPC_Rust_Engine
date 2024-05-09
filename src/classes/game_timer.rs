@@ -1,5 +1,5 @@
 use crate::{
-    lib::types::{GameTimer, Task},
+    bib::types::{GameTimer, Task},
     CloneableCallback,
 };
 use std::sync::{Arc, Mutex};

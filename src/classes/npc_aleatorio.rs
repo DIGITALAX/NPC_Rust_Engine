@@ -1,4 +1,4 @@
-use crate::lib::{
+use crate::bib::{
     types::{Coordenada, Estado, GameTimer, Movimiento, NPCAleatorio, Silla, Sprite, Talla},
     utils::between,
 };

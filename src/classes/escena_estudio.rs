@@ -1,8 +1,8 @@
-use crate::lib::types::{
+use crate::bib::types::{
     ComandoTrabajador, Escena, EscenaEstudio, RespuestaTrabajadora, Sprite,
     Trabajador,
 };
-use crate::lib::constants::LISTA_ESCENA;
+use crate::bib::constants::LISTA_ESCENA;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
 
@@ -46,7 +46,7 @@ impl Drop for Trabajador {
     fn drop(&mut self) {
         if let Some(handle_arc) = self.handle.take() {
             if let Ok(handle_mutex) = Arc::try_unwrap(handle_arc) {
-                if let Ok(mut handle) = handle_mutex.into_inner() {
+                if let Ok(handle) = handle_mutex.into_inner() {
                     handle.join().expect("Error uniendo Worker");
                 }
             }

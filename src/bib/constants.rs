@@ -1,7 +1,9 @@
-use crate::lib::types::{
+use crate::bib::types::{
     Articulo, Coordenada, Direccion, Escala, Escena, Fondo, Prohibido, Silla, Sprite, Talla,
 };
 use once_cell::sync::Lazy;
+
+pub const SUEÑO: u64 = 10000;
 
 pub static LISTA_ESCENA: Lazy<[Escena; 1]> = Lazy::new(|| {
     [
