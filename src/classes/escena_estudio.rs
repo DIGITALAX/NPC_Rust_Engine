@@ -1,8 +1,11 @@
 use crate::bib::types::{
-    ComandoTrabajador, Escena, EscenaEstudio, RespuestaTrabajadora, Trabajador,
+    ComandoTrabajador, Escena, EscenaEstudio, Estado, GameTimer, NPCAleatorio, Prohibido,
+    RespuestaTrabajadora, Talla, Trabajador,
 };
+use pathfinding::grid::Grid;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread;
+use tokio::time::Duration;
 
 impl Trabajador {
     fn new<F>(trabajador_func: F) -> Self
@@ -14,6 +17,7 @@ impl Trabajador {
         let (cmd_tx, cmd_rx) = mpsc::channel();
         let (resp_tx, resp_rx) = mpsc::channel();
         let receiver = Arc::new(Mutex::new(resp_rx));
+        let escena = Arc::new(Mutex::new(None));
 
         let handle = thread::spawn(move || {
             trabajador_func(cmd_rx, resp_tx);
@@ -25,6 +29,7 @@ impl Trabajador {
             sender: cmd_tx,
             receiver,
             handle: Some(handle_arc),
+            escena: escena.clone(),
         }
     }
 
@@ -43,21 +48,63 @@ impl Trabajador {
 impl Default for Trabajador {
     fn default() -> Self {
         Trabajador::new(|cmd_rx, resp_tx| {
+            let escena: Arc<Mutex<Option<Vec<Arc<Mutex<NPCAleatorio>>>>>> =
+                Arc::new(Mutex::new(None));
             while let Ok(command) = cmd_rx.recv() {
                 match command {
-                    ComandoTrabajador::Initialize { clave, .. } => {
-                        println!("Trabajador inicializado con la clave: {}", clave);
+                    ComandoTrabajador::Initialize {
+                        sprites,
+                        prohibidos,
+                        anchura,
+                        altura,
+                        sillas_ocupadas,
+                        sillas,
+                    } => {
+                        let mut grid = Grid::new(anchura as usize, altura as usize);
+
+                        for area in prohibidos {
+                            mark_prohibited(&mut grid, area);
+                        }
+
+                        let new_escena = sprites
+                            .iter()
+                            .map(|sprite| {
+                                let npc = NPCAleatorio::new(
+                                    sprite.clone(),
+                                    Arc::new(Mutex::new(sillas_ocupadas.clone())),
+                                    sillas.clone(),
+                                    Talla { anchura, altura },
+                                    grid.clone(),
+                                    GameTimer::new(),
+                                );
+                                Arc::new(Mutex::new(npc))
+                            })
+                            .collect();
+
+                        let mut guard = escena.lock().unwrap();
+                        *guard = Some(new_escena);
                     }
                     ComandoTrabajador::Start => {
-                        println!("Trabajador iniciado");
+                        if let Some(escena) = &*escena.lock().unwrap() {
+                            for sprite in escena.iter() {
+                                sprite.lock().unwrap().update(10000);
+                            }
+                            thread::sleep(Duration::from_millis(10000));
+                        }
                     }
                     ComandoTrabajador::RequestState { clave } => {
-                        let response = RespuestaTrabajadora::StateResponse {
-                            cmd: String::from("stateResponse"),
-                            clave,
-                            estados: vec![vec![]],
-                        };
-                        resp_tx.send(response).expect("Error enviando respuesta");
+                        if let Some(escena) = &*escena.lock().unwrap() {
+                            let estados: Vec<Vec<Estado>> = escena
+                                .iter()
+                                .map(|npc| npc.lock().unwrap().get_state().into_iter().collect())
+                                .collect();
+                            let response = RespuestaTrabajadora::StateResponse {
+                                cmd: String::from("stateResponse"),
+                                clave,
+                                estados,
+                            };
+                            resp_tx.send(response).expect("Error enviando respuesta");
+                        }
                     }
                 }
             }
@@ -77,7 +124,6 @@ impl EscenaEstudio {
             prohibidos: prohibidos,
             anchura,
             altura,
-            clave: escena.clave.clone(),
             sillas_ocupadas: Vec::new(),
             sillas: escena.sillas.clone(),
         });
@@ -97,5 +143,18 @@ impl EscenaEstudio {
                 clave: self.clave.clone(),
             });
         self.trabajador.get_response()
+    }
+}
+
+fn mark_prohibited(grid: &mut Grid, area: Prohibido) {
+    let start_x = area.x.floor() as usize;
+    let start_y = area.y.floor() as usize;
+    let end_x = (area.x + area.anchura).ceil() as usize;
+    let end_y = (area.y + area.altura).ceil() as usize;
+
+    for x in start_x..end_x {
+        for y in start_y..end_y {
+            grid.add_vertex((x, y));
+        }
     }
 }

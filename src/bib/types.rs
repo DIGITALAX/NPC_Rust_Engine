@@ -3,8 +3,8 @@ use std::collections::HashMap;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::JoinHandle;
 use tokio::sync::mpsc::Sender;
-use warp::ws::Message;
 use warp::reject::Reject;
+use warp::ws::Message;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Coordenada {
@@ -156,7 +156,6 @@ pub struct Task {
 
 pub struct CloneableCallback {
     callback: Arc<Box<dyn Fn() + Send + Sync + 'static>>,
-
 }
 
 impl CloneableCallback {
@@ -194,6 +193,7 @@ impl std::fmt::Debug for CloneableCallback {
 
 #[derive(Clone)]
 pub struct Trabajador {
+    pub escena: Arc<Mutex<Option<Vec<Arc<Mutex<NPCAleatorio>>>>>>,
     pub sender: mpsc::Sender<ComandoTrabajador>,
     pub receiver: Arc<Mutex<mpsc::Receiver<RespuestaTrabajadora>>>,
     pub handle: Option<Arc<Mutex<JoinHandle<()>>>>,
@@ -206,7 +206,6 @@ pub enum ComandoTrabajador {
         prohibidos: Vec<Prohibido>,
         anchura: f32,
         altura: f32,
-        clave: String,
         sillas_ocupadas: Vec<Silla>,
         sillas: Vec<Silla>,
     },
@@ -253,7 +252,6 @@ pub struct NPCStudioEngine {
     pub enviador: Sender<ComandoTrabajador>,
 }
 
-
 pub struct EngineWrapper {
     pub engine: Arc<NPCStudioEngine>,
 }
@@ -267,7 +265,7 @@ impl Clone for EngineWrapper {
 }
 
 impl EngineWrapper {
-   pub fn new(engine: Arc<NPCStudioEngine>) -> Self {
+    pub fn new(engine: Arc<NPCStudioEngine>) -> Self {
         Self { engine }
     }
 }

@@ -2,7 +2,7 @@ use crate::bib::{
     types::{Coordenada, Estado, GameTimer, Movimiento, NPCAleatorio, Silla, Sprite, Talla},
     utils::between,
 };
-use pathfinding::prelude::astar;
+use pathfinding::{grid::Grid, prelude::astar};
 use std::sync::{Arc, Mutex};
 
 impl NPCAleatorio {
@@ -11,9 +11,11 @@ impl NPCAleatorio {
         sillas_ocupadas: Arc<Mutex<Vec<Silla>>>,
         sillas: Vec<Silla>,
         mundo: Talla,
+        grid: Grid,
+        reloj_juego: GameTimer,
     ) -> Self {
         NPCAleatorio {
-            reloj_juego: GameTimer::new(),
+            reloj_juego,
             sillas_ocupadas,
             sillas,
             mundo,
