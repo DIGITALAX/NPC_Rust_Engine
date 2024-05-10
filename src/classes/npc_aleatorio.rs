@@ -2,8 +2,9 @@ use crate::bib::{
     types::{Coordenada, Estado, GameTimer, Movimiento, NPCAleatorio, Silla, Sprite, Talla},
     utils::between,
 };
-use pathfinding::{grid::Grid, prelude::astar};
+use pathfinding::map::MapManager;
 use std::sync::{Arc, Mutex};
+use tokio::sync::RwLock;
 
 impl NPCAleatorio {
     pub fn new(
@@ -11,7 +12,8 @@ impl NPCAleatorio {
         sillas_ocupadas: Arc<Mutex<Vec<Silla>>>,
         sillas: Vec<Silla>,
         mundo: Talla,
-        grid: Grid,
+        mapa_id: i64,
+        mapa: Arc<RwLock<MapManager>>,
         reloj_juego: GameTimer,
     ) -> Self {
         NPCAleatorio {
@@ -22,7 +24,8 @@ impl NPCAleatorio {
             movimientos_max: sprite.movimientos_max,
             caminos: Vec::new(),
             npc: sprite,
-            grid,
+            mapa_id,
+            mapa,
             contador: 0.0,
             silla_cerca: None,
         }
@@ -32,13 +35,13 @@ impl NPCAleatorio {
         self.caminos.clone()
     }
 
-    pub fn update(&mut self, delta_time: u64) {
+    pub async fn update(&mut self, delta_time: u64) {
         self.reloj_juego.tick(delta_time);
-        self.set_random_direction();
+        self.set_random_direction().await;
         self.clean_old_paths();
     }
 
-    fn set_random_direction(&mut self) {
+    async fn set_random_direction(&mut self) {
         if self.contador >= self.movimientos_max {
             let sillas_taken = self.sillas_ocupadas.lock().unwrap().len();
             let sillas_total = self.sillas.len();
@@ -52,12 +55,12 @@ impl NPCAleatorio {
             let decision: f32 = rand::random();
 
             if decision < probabilidad_final_sit {
-                self.go_sit();
+                self.go_sit().await;
             } else {
                 self.go_idle();
             }
         } else {
-            self.go_move();
+            self.go_move().await;
         }
     }
 
@@ -75,12 +78,12 @@ impl NPCAleatorio {
         self.contador = 0.0;
     }
 
-    fn go_move(&mut self) {
+    async fn go_move(&mut self) {
         self.contador += 1.0;
         let destinacion = self.get_random_destination();
         self.caminos.push(Estado {
             estado: Movimiento::Move,
-            puntos_de_camino: self.find_path(destinacion),
+            puntos_de_camino: self.find_path(destinacion).await,
             npc_etiqueta: self.npc.etiqueta.clone(),
             duracion: None,
             silla_aleatoria: None,
@@ -90,39 +93,17 @@ impl NPCAleatorio {
         self.npc.y = destinacion.y as f32;
     }
 
-    fn find_path(&self, destination: Coordenada) -> Vec<Coordenada> {
-        let current_npc = Coordenada {
-            x: self.npc.x as i32,
-            y: self.npc.y as i32,
-        };
+    async fn find_path(&self, destination: Coordenada) -> Vec<Coordenada> {
+        let start = (self.npc.x.floor() as i32, self.npc.y.floor() as i32);
+        let mapa_guard = self.mapa.read().await;
+        let result = mapa_guard
+            .find_path(&self.mapa_id, start, (destination.x, destination.y))
+            .await;
 
-        let path = astar(
-            &current_npc,
-            |p| self.successors(*p),
-            |p| distance(p, &destination) as u32,
-            |p| *p == destination,
-        );
-
-        path.map(|(path, _)| path).unwrap_or_else(Vec::new)
-    }
-
-    fn successors(&self, p: Coordenada) -> Vec<(Coordenada, u32)> {
-        let directions = vec![(1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.0, -1.0)];
-
-        directions
+        result
+            .unwrap_or_default()
             .into_iter()
-            .filter_map(|(dx, dy)| {
-                let new_point = Coordenada {
-                    x: p.x + dx as i32,
-                    y: p.y + dy as i32,
-                };
-
-                if self.is_walkable(new_point) {
-                    Some((new_point, 1))
-                } else {
-                    None
-                }
-            })
+            .map(|(x, y)| Coordenada { x, y })
             .collect()
     }
 
@@ -137,8 +118,8 @@ impl NPCAleatorio {
         let min_distance: f32 = 500.0;
 
         loop {
-            x = rand::random::<i32>() * self.mundo.anchura as i32;
-            y = rand::random::<i32>() * self.mundo.altura as i32;
+            x = rand::random::<i32>() % self.mundo.anchura as i32;
+            y = rand::random::<i32>() % self.mundo.altura as i32;
             attempts += 1.0;
 
             if attempts > 100.0 {
@@ -161,7 +142,7 @@ impl NPCAleatorio {
         Coordenada { x, y }
     }
 
-    fn go_sit(&mut self) {
+    async fn go_sit(&mut self) {
         let sillas_disponibles = self.sillas.iter().filter(|silla| {
             !self
                 .sillas_ocupadas
@@ -202,7 +183,7 @@ impl NPCAleatorio {
 
         self.caminos.push(Estado {
             estado: Movimiento::Sit,
-            puntos_de_camino: self.find_path(self.silla_cerca.unwrap()),
+            puntos_de_camino: self.find_path(self.silla_cerca.unwrap()).await,
             duracion: Some(bt),
             npc_etiqueta: self.npc.etiqueta.clone(),
             silla_aleatoria: Some(silla_aleatoria.etiqueta.clone()),

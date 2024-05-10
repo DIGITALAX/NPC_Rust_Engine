@@ -1,10 +1,11 @@
-use pathfinding::grid::Grid;
+use pathfinding::map::MapManager;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::{mpsc, Arc, Mutex};
-use std::thread::JoinHandle;
-use tokio::sync::mpsc::Sender;
-use warp::reject::Reject;
+use std::{
+    collections::HashMap,
+    sync::{mpsc, Arc, Mutex},
+    thread::JoinHandle,
+};
+use tokio::sync::{mpsc::Sender, RwLock};
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Coordenada {
@@ -241,7 +242,8 @@ pub struct NPCAleatorio {
     pub sillas_ocupadas: Arc<Mutex<Vec<Silla>>>,
     pub contador: f32,
     pub reloj_juego: GameTimer,
-    pub grid: Grid,
+    pub mapa_id: i64,
+    pub mapa: Arc<RwLock<MapManager>>,
     pub silla_cerca: Option<Coordenada>,
 }
 
@@ -262,8 +264,3 @@ impl Clone for EngineWrapper {
         }
     }
 }
-
-#[derive(Debug)]
-pub struct UnauthorizedError;
-
-impl Reject for UnauthorizedError {}
