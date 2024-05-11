@@ -74,10 +74,16 @@ async fn manejar_conexion(
     render_clave: String,
     rx: Arc<Mutex<Receiver<HashMap<String, EscenaEstudio>>>>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let peer_addr = stream.peer_addr()?;
+    println!("Conexión desde: {}", peer_addr);
+
     let ws_stream = accept_hdr_async(stream, |req: &Request, response: Response| {
         let uri = req.uri();
         let query: Option<&str> = uri.query();
         let origen: Option<&hyper::header::HeaderValue> = req.headers().get("origin");
+
+        println!("Método HTTP: {}", req.method()); 
+        println!("Headers: {:?}", req.headers());  
 
         if let Some(query) = query {
             let key_from_client = query.split('=').nth(1);

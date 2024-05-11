@@ -187,6 +187,7 @@ impl std::fmt::Debug for CloneableCallback {
     }
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Serialize)]
 pub enum RespuestaTrabajadora<'a> {
     StateResponse {
