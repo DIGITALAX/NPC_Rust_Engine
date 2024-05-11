@@ -1,11 +1,8 @@
-use pathfinding::map::MapManager;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
-    sync::{mpsc, Arc, Mutex},
-    thread::JoinHandle,
+    sync::{Arc, Mutex},
 };
-use tokio::sync::{mpsc::Sender, RwLock};
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Coordenada {
@@ -190,30 +187,6 @@ impl std::fmt::Debug for CloneableCallback {
     }
 }
 
-#[derive(Clone)]
-pub struct Trabajador {
-    pub escena: Arc<Mutex<Option<Vec<Arc<Mutex<NPCAleatorio>>>>>>,
-    pub sender: mpsc::Sender<ComandoTrabajador>,
-    pub receiver: Arc<Mutex<mpsc::Receiver<RespuestaTrabajadora>>>,
-    pub handle: Option<Arc<Mutex<JoinHandle<()>>>>,
-}
-
-#[derive(Debug)]
-pub enum ComandoTrabajador {
-    Initialize {
-        sprites: Vec<Sprite>,
-        prohibidos: Vec<Prohibido>,
-        anchura: f32,
-        altura: f32,
-        sillas_ocupadas: Vec<Silla>,
-        sillas: Vec<Silla>,
-    },
-    Start,
-    RequestState {
-        clave: String,
-    },
-}
-
 #[derive(Debug, Serialize)]
 pub enum RespuestaTrabajadora {
     StateResponse {
@@ -230,9 +203,10 @@ pub enum RespuestaTrabajadora {
 pub struct EscenaEstudio {
     pub clave: String,
     pub sillas_ocupadas: Vec<Silla>,
-    pub trabajador: Trabajador,
+    pub npcs: Vec<NPCAleatorio>,
 }
 
+#[derive(Clone)]
 pub struct NPCAleatorio {
     pub sillas: Vec<Silla>,
     pub mundo: Talla,
@@ -242,15 +216,13 @@ pub struct NPCAleatorio {
     pub sillas_ocupadas: Arc<Mutex<Vec<Silla>>>,
     pub contador: f32,
     pub reloj_juego: GameTimer,
-    pub mapa_id: i64,
-    pub mapa: Arc<RwLock<MapManager>>,
     pub silla_cerca: Option<Coordenada>,
+    pub mapa: Mapa,
 }
 
 #[derive(Clone)]
 pub struct NPCStudioEngine {
     pub escenas: Arc<Mutex<HashMap<String, EscenaEstudio>>>,
-    pub enviador: Sender<ComandoTrabajador>,
 }
 
 pub struct EngineWrapper {
@@ -263,4 +235,17 @@ impl Clone for EngineWrapper {
             engine: Arc::clone(&self.engine),
         }
     }
+}
+
+impl std::fmt::Debug for NPCAleatorio {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "NPCAleatorio {{ /* campos personalizados aquí */ }}")
+    }
+}
+
+#[derive(Clone)]
+pub struct Mapa {
+    pub anchura: usize,
+    pub altura: usize,
+    pub prohibidos: Vec<Vec<bool>>,
 }

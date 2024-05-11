@@ -16,6 +16,7 @@ impl GameTimer {
     pub fn tick(&mut self, delta_time: u64) {
         self.ticks += 1;
         self.time_accumulated += delta_time;
+        println!("time {}", self.time_accumulated);
         self.update_tasks();
     }
 
