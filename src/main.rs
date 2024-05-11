@@ -30,7 +30,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let render_clave = std::env::var("RENDER_KEY").expect("Sin Clave");
     let puerto: String = env::var("PORT").unwrap_or_else(|_| "10000".to_string());
     let puerto: u16 = puerto.parse::<u16>().expect("Puerto Inválido");
-    let addr: SocketAddr = SocketAddr::from(([127, 0, 0, 1], puerto));
+    let addr = format!("0.0.0.0:{}", puerto);
+    let addr: SocketAddr = addr.parse().expect("Dirección Inválida");
+    // let addr: SocketAddr = SocketAddr::from(([127, 0, 0, 1], puerto));
     let oyente = TcpListener::bind(&addr)
         .await
         .expect("No se pudo vincular a la dirección");
