@@ -138,7 +138,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 1]> = Lazy::new(|| {
                     talla: Coordenada { x: 163, y: 267 },
                     uri: String::from("QmaNMrJo7TqEpvsveTFJk7zwBbS4SukM3gnuVwhiY5sCoa"),
                     escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
+                    profundidad: Some(1000.0),
                 },
                 Articulo {
                     etiqueta: String::from("audio1"),

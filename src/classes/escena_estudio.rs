@@ -3,6 +3,7 @@ use crate::bib::types::{
     Talla,
 };
 use std::sync::{Arc, Mutex};
+use rayon::prelude::*;
 
 impl EscenaEstudio {
     pub async fn new(escena: Escena) -> Self {
@@ -36,9 +37,9 @@ impl EscenaEstudio {
     }
 
     pub fn start_loop(&mut self, delta: u64) {
-        for npc in &mut self.npcs {
+        self.npcs.par_iter_mut().for_each(|npc| {
             npc.update(delta);
-        }
+        });
     }
 
     pub fn request_state(&mut self) -> Option<RespuestaTrabajadora> {

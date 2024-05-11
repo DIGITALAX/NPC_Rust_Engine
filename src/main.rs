@@ -48,7 +48,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
     let (tx, rx) = channel::<HashMap<String, EscenaEstudio>>(100);
     let rx = Arc::new(Mutex::new(rx));
-    let mapa_clone = mapa_escena.clone();
+    let mapa_clone = Arc::new(Mutex::new(mapa_escena));
 
     spawn(async move {
         bucle_juego(mapa_clone, tx).await;
@@ -82,15 +82,15 @@ async fn manejar_conexion(
 
             if let Some(key) = key_from_client {
                 if key.trim_end_matches("&EIO") == render_clave.trim() {
-                    // if let Some(origen) = origen {
-                    // if origen == "https://npcstudio.xyz" {
-                    Ok(response)
-                    // } else {
-                    //     Err(ErrorResponse::new(Some("Forbidden".to_string())))
-                    // }
-                    // } else {
-                    //     Err(ErrorResponse::new(Some("Forbidden".to_string())))
-                    // }
+                    if let Some(origen) = origen {
+                        if origen == "https://npcstudio.xyz" {
+                            Ok(response)
+                        } else {
+                            Err(ErrorResponse::new(Some("Forbidden".to_string())))
+                        }
+                    } else {
+                        Err(ErrorResponse::new(Some("Forbidden".to_string())))
+                    }
                 } else {
                     Err(ErrorResponse::new(Some("Forbidden".to_string())))
                 }
@@ -231,16 +231,20 @@ async fn manejar_conexion(
 }
 
 async fn bucle_juego(
-    mut escenas: HashMap<String, EscenaEstudio>,
+    escenas: Arc<Mutex<HashMap<String, EscenaEstudio>>>,
     tx: Sender<HashMap<String, EscenaEstudio>>,
 ) {
     loop {
-        for (_, escena) in escenas.iter_mut() {
-            escena.start_loop(1000);
+        {
+            let mut escenas = escenas.lock().await;
+            for (_, escena) in escenas.iter_mut() {
+                escena.start_loop(1000);
+            }
         }
-
-        if let Err(err) = tx.send(escenas.clone()).await {
-            eprintln!("Error al enviar actualizaciones de escenas: {}", err);
+        if let Ok(escenas) = escenas.try_lock() {
+            if let Err(err) = tx.send(escenas.clone()).await {
+                eprintln!("Error al enviar actualizaciones de escenas: {}", err);
+            }
         }
 
         time::sleep(Duration::from_secs(1)).await;

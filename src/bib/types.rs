@@ -199,7 +199,7 @@ pub enum RespuestaTrabajadora<'a> {
     },
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct EscenaEstudio {
     pub clave: String,
     pub sillas_ocupadas: Vec<Silla>,
