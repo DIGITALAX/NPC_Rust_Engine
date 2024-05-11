@@ -84,14 +84,15 @@ async fn manejar_conexion(
 
         println!("Método HTTP: {}", req.method()); 
         println!("Headers: {:?}", req.headers());  
+  
 
         if let Some(query) = query {
             let key_from_client = query.split('=').nth(1);
-
+            println!("query: {:?}",  query);  
             if let Some(key) = key_from_client {
                 if key.trim_end_matches("&EIO") == render_clave.trim() {
                     if let Some(origen) = origen {
-                        if origen == "https://npcstudio.xyz" {
+                        if origen == "https://www.npcstudio.xyz" {
                             Ok(response)
                         } else {
                             Err(ErrorResponse::new(Some("Forbidden".to_string())))
