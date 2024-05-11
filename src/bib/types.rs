@@ -188,11 +188,11 @@ impl std::fmt::Debug for CloneableCallback {
 }
 
 #[derive(Debug, Serialize)]
-pub enum RespuestaTrabajadora {
+pub enum RespuestaTrabajadora<'a> {
     StateResponse {
         cmd: String,
         clave: String,
-        estados: Vec<Vec<Estado>>,
+        estados: Vec<&'a Vec<Estado>>,
     },
     Error {
         mensaje: String,

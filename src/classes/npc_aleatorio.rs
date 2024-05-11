@@ -31,19 +31,18 @@ impl NPCAleatorio {
         }
     }
 
-    pub fn get_state(&self) -> Vec<Estado> {
-        self.caminos.clone()
+    pub fn get_state(&self) -> &Vec<Estado> {
+        &self.caminos
     }
 
-    pub fn update(&mut self, delta_time: u64) -> Self {
+    pub fn update(&mut self, delta_time: u64) {
         self.reloj_juego.tick(delta_time);
         self.set_random_direction();
         self.clean_old_paths();
-        self.clone()
+
     }
 
     fn set_random_direction(&mut self) {
-        println!("contador, {}, {}", self.contador, self.npc.etiqueta);
         if self.contador >= self.movimientos_max {
             let sillas_taken = self.sillas_ocupadas.lock().unwrap().len();
             let sillas_total = self.sillas.len();

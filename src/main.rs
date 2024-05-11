@@ -1,10 +1,14 @@
 use dotenv::dotenv;
 use futures_util::{future::try_join_all, SinkExt, StreamExt};
 use serde_json::{from_str, json, to_string, Value};
-use std::{collections::HashMap, env, net::SocketAddr, time::Duration};
+use std::{collections::HashMap, env, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{
     net::{TcpListener, TcpStream},
     spawn,
+    sync::{
+        mpsc::{channel, Receiver, Sender},
+        Mutex,
+    },
     time::{self},
 };
 use tokio_tungstenite::{
@@ -42,18 +46,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     for escena in resultados {
         mapa_escena.insert(escena.clave.clone(), escena);
     }
-
+    let (tx, rx) = channel::<HashMap<String, EscenaEstudio>>(100);
+    let rx = Arc::new(Mutex::new(rx));
     let mapa_clone = mapa_escena.clone();
 
     spawn(async move {
-        bucle_juego(mapa_clone).await;
+        bucle_juego(mapa_clone, tx).await;
     });
 
     while let Ok((stream, _)) = oyente.accept().await {
         let render_clone = render_clave.clone();
-        let mapa_clone: HashMap<String, EscenaEstudio> = mapa_escena.clone();
+        let rx_clone = rx.clone();
         spawn(async move {
-            if let Err(err) = manejar_conexion(stream, render_clone, mapa_clone).await {
+            if let Err(err) = manejar_conexion(stream, render_clone, rx_clone).await {
                 eprintln!("Error al manejar la conexión: {}", err);
             }
         });
@@ -65,7 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 async fn manejar_conexion(
     stream: TcpStream,
     render_clave: String,
-    mapa_escena: HashMap<String, EscenaEstudio>,
+    rx: Arc<Mutex<Receiver<HashMap<String, EscenaEstudio>>>>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let ws_stream = accept_hdr_async(stream, |req: &Request, response: Response| {
         let uri = req.uri();
@@ -100,17 +105,6 @@ async fn manejar_conexion(
 
     let (mut write, mut read) = ws_stream.split();
 
-    write
-        .send(Message::Text(format!(
-            "{{ \"{}\": {} }}",
-            "here",
-            json!({})
-        )))
-        .await
-        .expect("Error sending connect message");
-
-    let mapa_clone = mapa_escena.clone();
-
     while let Some(Ok(msg)) = read.next().await {
         match msg {
             Message::Text(text) => {
@@ -118,47 +112,23 @@ async fn manejar_conexion(
                     if let Some(tipo) = parsed.get("tipo").and_then(Value::as_str) {
                         if tipo == "datosDeEscena" || tipo == "indiceDeEscena" {
                             if let Some(clave) = parsed.get("clave").and_then(Value::as_str) {
-                                let guardia: HashMap<String, EscenaEstudio> = mapa_clone.clone();
+                                let escenas = {
+                                    let mut rx = rx.lock().await;
+                                    rx.recv().await
+                                };
 
-                                if let Some(scene) = guardia.get(clave) {
-                                    if let Some(response) = scene.request_state() {
-                                        match response {
-                                            RespuestaTrabajadora::StateResponse {
-                                                estados, ..
-                                            } => {
-                                                if text.trim() == "datosDeEscena" {
-                                                    let json_response = json!({
-                                                        "nombre": clave,
-                                                        "estados": &estados
-                                                    });
-                                                    let serialized_response = to_string(
-                                                        &json_response,
-                                                    )
-                                                    .unwrap_or_else(|_| {
-                                                        String::from("Error de serialización")
-                                                    });
-
-                                                    if let Err(err) = write
-                                                        .send(Message::Text(serialized_response))
-                                                        .await
-                                                    {
-                                                        eprintln!(
-                                                "Error al enviar la respuesta de estado de la escena: {}",
-                                                err
-                                            );
-                                                        break;
-                                                    }
-                                                } else {
-                                                    let scene_info = LISTA_ESCENA
-                                                        .iter()
-                                                        .find(|escena| escena.clave == clave);
-                                                    if let Some(scene_info) = scene_info {
+                                if let Some(mut escenas) = escenas {
+                                    if let Some(scene) = escenas.get_mut(clave) {
+                                        if let Some(response) = scene.request_state() {
+                                            match response {
+                                                RespuestaTrabajadora::StateResponse {
+                                                    estados,
+                                                    ..
+                                                } => {
+                                                    if text.trim() == "datosDeEscena" {
                                                         let json_response = json!({
-                                                            "nombre": "configurarEscena",
-                                                            "datos": {
-                                                            "estados": estados,
-                                                            "escena": scene_info,
-                                                            }
+                                                            "nombre": clave,
+                                                            "estados": &estados
                                                         });
                                                         let serialized_response =
                                                             to_string(&json_response)
@@ -180,32 +150,67 @@ async fn manejar_conexion(
                                                 );
                                                             break;
                                                         }
+                                                    } else {
+                                                        let scene_info = LISTA_ESCENA
+                                                            .iter()
+                                                            .find(|escena| escena.clave == clave);
+                                                        if let Some(scene_info) = scene_info {
+                                                            let json_response = json!({
+                                                                "nombre": "configurarEscena",
+                                                                "datos": {
+                                                                "estados": estados,
+                                                                "escena": scene_info,
+                                                                }
+                                                            });
+                                                            let serialized_response =
+                                                                to_string(&json_response)
+                                                                    .unwrap_or_else(|_| {
+                                                                        String::from(
+                                                                    "Error de serialización",
+                                                                )
+                                                                    });
+
+                                                            if let Err(err) = write
+                                                                .send(Message::Text(
+                                                                    serialized_response,
+                                                                ))
+                                                                .await
+                                                            {
+                                                                eprintln!(
+                                                        "Error al enviar la respuesta de estado de la escena: {}",
+                                                        err
+                                                    );
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                                RespuestaTrabajadora::Error { mensaje } => {
+                                                    if let Err(err) = write
+                                                        .send(Message::Text(mensaje.to_string()))
+                                                        .await
+                                                    {
+                                                        eprintln!(
+                                                    "Error al enviar mensaje de error al cliente: {}",
+                                                    err
+                                                );
+                                                        break;
                                                     }
                                                 }
                                             }
-                                            RespuestaTrabajadora::Error { mensaje } => {
-                                                if let Err(err) = write
-                                                    .send(Message::Text(mensaje.to_string()))
-                                                    .await
-                                                {
-                                                    eprintln!(
-                                                "Error al enviar mensaje de error al cliente: {}",
-                                                err
-                                            );
-                                                    break;
-                                                }
+                                        } else {
+                                            if let Err(err) = write
+                                                .send(Message::Text(
+                                                    "Escena no encontrada".to_string(),
+                                                ))
+                                                .await
+                                            {
+                                                eprintln!(
+                                                    "Error al enviar mensaje de error al cliente: {}",
+                                                    err
+                                                );
+                                                break;
                                             }
-                                        }
-                                    } else {
-                                        if let Err(err) = write
-                                            .send(Message::Text("Escena no encontrada".to_string()))
-                                            .await
-                                        {
-                                            eprintln!(
-                                                "Error al enviar mensaje de error al cliente: {}",
-                                                err
-                                            );
-                                            break;
                                         }
                                     }
                                 }
@@ -225,10 +230,17 @@ async fn manejar_conexion(
     Ok(())
 }
 
-async fn bucle_juego(escenas: HashMap<String, EscenaEstudio>) {
+async fn bucle_juego(
+    mut escenas: HashMap<String, EscenaEstudio>,
+    tx: Sender<HashMap<String, EscenaEstudio>>,
+) {
     loop {
-        for (_, escena) in escenas.iter() {
-            escena.clone().start_loop(1000)
+        for (_, escena) in escenas.iter_mut() {
+            escena.start_loop(1000);
+        }
+
+        if let Err(err) = tx.send(escenas.clone()).await {
+            eprintln!("Error al enviar actualizaciones de escenas: {}", err);
         }
 
         time::sleep(Duration::from_secs(1)).await;

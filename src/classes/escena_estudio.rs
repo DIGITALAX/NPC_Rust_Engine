@@ -35,18 +35,20 @@ impl EscenaEstudio {
         }
     }
 
-    pub fn start_loop(mut self, delta: u64) {
+    pub fn start_loop(&mut self, delta: u64) {
         for npc in &mut self.npcs {
             npc.update(delta);
         }
     }
 
-    pub fn request_state(&self) -> Option<RespuestaTrabajadora> {
-        let mut estados: Vec<Vec<Estado>> = Vec::new();
+    pub fn request_state(&mut self) -> Option<RespuestaTrabajadora> {
+        let mut estados: Vec<&Vec<Estado>> = Vec::new();
 
-        for npc in self.npcs.iter() {
+        for npc in &mut self.npcs {
             estados.push(npc.get_state());
         }
+
+        println!("estados {:?}", estados);
 
         if estados.is_empty() {
             None
@@ -98,7 +100,7 @@ impl Mapa {
                 if nx >= 0 && nx < self.anchura as i32 && ny >= 0 && ny < self.altura as i32 {
                     let (nx, ny) = (nx, ny);
                     if !self.prohibidos[nx as usize][ny as usize] {
-                        let cost = if dx == 0 || dy == 0 { 1 } else { 1 }; // Coste uniforme
+                        let cost = if dx == 0 || dy == 0 { 1 } else { 1 };
                         vecinos.push(((nx, ny), cost));
                     }
                 }
