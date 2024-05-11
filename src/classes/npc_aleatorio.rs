@@ -102,8 +102,8 @@ impl NPCAleatorio {
             let result = astar(
                 &start,
                 |p| self.mapa.vecinos(*p),
-                |&(x, y)| ((x - dest.x).abs() + (y - dest.y).abs()) as u32,
-                |&p| p == (dest.x, dest.y),
+                |&(x, y)| ((x - dest.x as i32).abs() + (y - dest.y as i32).abs()) as u32,
+                |&p| p == (dest.x as i32, dest.y as i32),
             );
 
             match result {
@@ -214,7 +214,7 @@ impl NPCAleatorio {
 
         while current_y < self.mundo.altura as i32 {
             if self.mapa.prohibidos[x as usize][current_y as usize] == false {
-                return Coordenada { x, y: current_y };
+                return Coordenada { x: x, y: current_y };
             }
             current_y += 1;
         }
@@ -223,10 +223,7 @@ impl NPCAleatorio {
 
         while current_y >= 0 {
             if self.mapa.prohibidos[x as usize][current_y as usize] == false {
-                return Coordenada {
-                    x,
-                    y: current_y as i32,
-                };
+                return Coordenada { x, y: current_y };
             }
             current_y -= 1;
         }
