@@ -113,7 +113,10 @@ impl NPCAleatorio {
                 None => {
                     attempts += 1;
                     if attempts >= 5 {
-                        println!("No se encontró camino después de varios intentos.");
+                        println!(
+                            "No se encontró camino después de varios intentos. {}",
+                            self.npc.etiqueta
+                        );
                         return Vec::new();
                     }
 
@@ -174,10 +177,21 @@ impl NPCAleatorio {
         let mut silla_x = silla_aleatoria.x_adjustado;
         let mut silla_y = silla_aleatoria.y_adjustado;
 
-        if self.mapa.prohibidos[silla_x as usize][silla_y as usize] == true {
-            let nearest = self.find_nearest_walkable(silla_x as i32, silla_y as i32);
-            silla_x = nearest.x as f32;
-            silla_y = nearest.y as f32;
+        let max_x = self.mapa.prohibidos.len();
+        let max_y = if max_x > 0 {
+            self.mapa.prohibidos[0].len()
+        } else {
+            0
+        };
+
+        if silla_x >= 0.0 && silla_x < max_x as f32 && silla_y >= 0.0 && silla_y < max_y as f32 {
+            if self.mapa.prohibidos[silla_x as usize][silla_y as usize] {
+                let nearest = self.find_nearest_walkable(silla_x as i32, silla_y as i32);
+                silla_x = nearest.x as f32;
+                silla_y = nearest.y as f32;
+            }
+        } else {
+            println!("fail {}", self.npc.etiqueta);
         }
 
         self.silla_cerca = Some(Coordenada {
@@ -213,7 +227,7 @@ impl NPCAleatorio {
         let mut current_y: i32 = y;
 
         while current_y < self.mundo.altura as i32 {
-            if self.mapa.prohibidos[x as usize][current_y as usize] == false {
+            if !self.mapa.prohibidos[x as usize][current_y as usize] {
                 return Coordenada { x: x, y: current_y };
             }
             current_y += 1;
@@ -222,7 +236,7 @@ impl NPCAleatorio {
         current_y = y;
 
         while current_y >= 0 {
-            if self.mapa.prohibidos[x as usize][current_y as usize] == false {
+            if !self.mapa.prohibidos[x as usize][current_y as usize] {
                 return Coordenada { x, y: current_y };
             }
             current_y -= 1;

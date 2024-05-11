@@ -83,11 +83,11 @@ async fn manejar_conexion(
             if let Some(key) = key_from_client {
                 if key.trim_end_matches("&EIO") == render_clave.trim() {
                     if let Some(origen) = origen {
-                        if origen == "https://npcstudio.xyz" {
-                            Ok(response)
-                        } else {
-                            Err(ErrorResponse::new(Some("Forbidden".to_string())))
-                        }
+                        // if origen == "https://npcstudio.xyz" {
+                        Ok(response)
+                        // } else {
+                        //     Err(ErrorResponse::new(Some("Forbidden".to_string())))
+                        // }
                     } else {
                         Err(ErrorResponse::new(Some("Forbidden".to_string())))
                     }
@@ -117,15 +117,27 @@ async fn manejar_conexion(
                                     rx.recv().await
                                 };
 
+                                println!("texto lleno {}", text);
+
                                 if let Some(mut escenas) = escenas {
                                     if let Some(scene) = escenas.get_mut(clave) {
+                                      
+                                      
+                                        println!("esta clave `escena {}", scene.clave);
+
                                         if let Some(response) = scene.request_state() {
+                                            
+                                            
+                                            
+                                            
                                             match response {
                                                 RespuestaTrabajadora::StateResponse {
                                                     estados,
                                                     ..
                                                 } => {
                                                     if tipo.trim() == "datosDeEscena" {
+                                                        
+                                                        
                                                         let json_response = json!({
                                                             "nombre": clave,
                                                             "estados": &estados
