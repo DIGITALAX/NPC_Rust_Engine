@@ -28,7 +28,7 @@ use bib::types::*;
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     dotenv().ok();
     let render_clave = std::env::var("RENDER_KEY").expect("Sin Clave");
-    let puerto: String = env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+    let puerto: String = env::var("PORT").unwrap_or_else(|_| "10000".to_string());
     let puerto: u16 = puerto.parse::<u16>().expect("Puerto Inválido");
     let addr: SocketAddr = SocketAddr::from(([127, 0, 0, 1], puerto));
     let oyente = TcpListener::bind(&addr)
@@ -84,7 +84,7 @@ async fn manejar_conexion(
                 if key.trim_end_matches("&EIO") == render_clave.trim() {
                     if let Some(origen) = origen {
                         if origen == "https://npcstudio.xyz" {
-                        Ok(response)
+                            Ok(response)
                         } else {
                             Err(ErrorResponse::new(Some("Forbidden".to_string())))
                         }
@@ -121,23 +121,15 @@ async fn manejar_conexion(
 
                                 if let Some(mut escenas) = escenas {
                                     if let Some(scene) = escenas.get_mut(clave) {
-                                      
-                                      
                                         println!("esta clave `escena {}", scene.clave);
 
                                         if let Some(response) = scene.request_state() {
-                                            
-                                            
-                                            
-                                            
                                             match response {
                                                 RespuestaTrabajadora::StateResponse {
                                                     estados,
                                                     ..
                                                 } => {
                                                     if tipo.trim() == "datosDeEscena" {
-                                                        
-                                                        
                                                         let json_response = json!({
                                                             "nombre": clave,
                                                             "estados": &estados
