@@ -1,7 +1,7 @@
 use crate::{
     bib::{
         types::{Coordenada, Estado, GameTimer, Movimiento, NPCAleatorio, Silla, Sprite, Talla},
-        utils::{between, distance},
+        utils::between,
     },
     Mapa,
 };
@@ -39,7 +39,6 @@ impl NPCAleatorio {
         self.reloj_juego.tick(delta_time);
         self.set_random_direction();
         self.clean_old_paths();
-
     }
 
     fn set_random_direction(&mut self) {
@@ -95,54 +94,61 @@ impl NPCAleatorio {
     }
 
     fn find_path(&self, destination: Coordenada) -> Vec<Coordenada> {
-        let start = (self.npc.x.floor() as i32, self.npc.y.floor() as i32);
+        let start: (i32, i32) = (self.npc.x.floor() as i32, self.npc.y.floor() as i32);
+        let mut dest: Coordenada = destination;
+        let mut attempts: i32 = 0;
 
-        let result = astar(
-            &start,
-            |p| self.mapa.vecinos(*p),
-            |&(x, y)| ((x - destination.x).abs() + (y - destination.y).abs()) as u32,
-            |&p| p == (destination.x, destination.y),
-        );
+        loop {
+            let result = astar(
+                &start,
+                |p| self.mapa.vecinos(*p),
+                |&(x, y)| ((x - dest.x).abs() + (y - dest.y).abs()) as u32,
+                |&p| p == (dest.x, dest.y),
+            );
 
-        match result {
-            Some((path, _cost)) => path.into_iter().map(|(x, y)| Coordenada { x, y }).collect(),
-            None => Vec::new(),
+            match result {
+                Some((path, _cost)) => {
+                    return path.into_iter().map(|(x, y)| Coordenada { x, y }).collect()
+                }
+                None => {
+                    attempts += 1;
+                    if attempts >= 5 {
+                        println!("No se encontró camino después de varios intentos.");
+                        return Vec::new();
+                    }
+
+                    dest = self.get_random_destination();
+                }
+            }
         }
-    }
-
-    fn is_walkable(&self, p: Coordenada) -> bool {
-        p.x >= 0 && p.x < self.mundo.anchura as i32 && p.y >= 0 && p.y < self.mundo.altura as i32
     }
 
     fn get_random_destination(&self) -> Coordenada {
         let mut x: i32;
         let mut y: i32;
-        let mut attempts: f32 = 0.0;
-        let min_distance: f32 = 500.0;
+        let mut attempts: u32 = 0;
+        let max_attempts: u32 = 100;
 
         loop {
             x = rand::random::<i32>() % self.mundo.anchura as i32;
             y = rand::random::<i32>() % self.mundo.altura as i32;
-            attempts += 1.0;
 
-            if attempts > 100.0 {
-                break;
+            if x >= 0 && x < self.mundo.anchura as i32 && y >= 0 && y < self.mundo.altura as i32 {
+                if !self.mapa.prohibidos[x as usize][y as usize] {
+                    return Coordenada { x, y };
+                }
             }
 
-            if self.is_walkable(Coordenada { x, y })
-                && distance(
-                    &Coordenada { x, y },
-                    &Coordenada {
-                        x: self.npc.x as i32,
-                        y: self.npc.y as i32,
-                    },
-                ) >= min_distance
-            {
+            attempts += 1;
+            if attempts >= max_attempts {
                 break;
             }
         }
 
-        Coordenada { x, y }
+        return Coordenada {
+            x: self.npc.x.floor() as i32,
+            y: self.npc.y.floor() as i32,
+        };
     }
 
     fn go_sit(&mut self) {
@@ -168,10 +174,7 @@ impl NPCAleatorio {
         let mut silla_x = silla_aleatoria.x_adjustado;
         let mut silla_y = silla_aleatoria.y_adjustado;
 
-        if !self.is_walkable(Coordenada {
-            x: silla_x as i32,
-            y: silla_y as i32,
-        }) {
+        if self.mapa.prohibidos[silla_x as usize][silla_y as usize] == true {
             let nearest = self.find_nearest_walkable(silla_x as i32, silla_y as i32);
             silla_x = nearest.x as f32;
             silla_y = nearest.y as f32;
@@ -210,7 +213,7 @@ impl NPCAleatorio {
         let mut current_y: i32 = y;
 
         while current_y < self.mundo.altura as i32 {
-            if self.is_walkable(Coordenada { x, y: current_y }) {
+            if self.mapa.prohibidos[x as usize][current_y as usize] == false {
                 return Coordenada { x, y: current_y };
             }
             current_y += 1;
@@ -219,10 +222,7 @@ impl NPCAleatorio {
         current_y = y;
 
         while current_y >= 0 {
-            if self.is_walkable(Coordenada {
-                x,
-                y: current_y as i32,
-            }) {
+            if self.mapa.prohibidos[x as usize][current_y as usize] == false {
                 return Coordenada {
                     x,
                     y: current_y as i32,

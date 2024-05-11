@@ -125,7 +125,7 @@ async fn manejar_conexion(
                                                     estados,
                                                     ..
                                                 } => {
-                                                    if text.trim() == "datosDeEscena" {
+                                                    if tipo.trim() == "datosDeEscena" {
                                                         let json_response = json!({
                                                             "nombre": clave,
                                                             "estados": &estados
@@ -216,7 +216,7 @@ async fn manejar_conexion(
                                 }
                             }
                         } else {
-                            println!("Evento no reconocido: {}", text);
+                            println!("Evento no reconocido: {}", tipo);
                         }
                     }
                 }

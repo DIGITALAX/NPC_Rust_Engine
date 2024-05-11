@@ -48,8 +48,6 @@ impl EscenaEstudio {
             estados.push(npc.get_state());
         }
 
-        println!("estados {:?}", estados);
-
         if estados.is_empty() {
             None
         } else {
@@ -90,19 +88,20 @@ impl Mapa {
 
     pub fn vecinos(&self, (x, y): (i32, i32)) -> Vec<((i32, i32), u32)> {
         let mut vecinos = Vec::new();
-        for dx in [-1, 0, 1].iter().cloned() {
-            for dy in [-1, 0, 1].iter().cloned() {
+        for dx in -1..=1 {
+            for dy in -1..=1 {
                 if dx == 0 && dy == 0 {
                     continue;
                 }
                 let nx = x + dx;
                 let ny = y + dy;
-                if nx >= 0 && nx < self.anchura as i32 && ny >= 0 && ny < self.altura as i32 {
-                    let (nx, ny) = (nx, ny);
-                    if !self.prohibidos[nx as usize][ny as usize] {
-                        let cost = if dx == 0 || dy == 0 { 1 } else { 1 };
-                        vecinos.push(((nx, ny), cost));
-                    }
+                if nx >= 0
+                    && nx < self.anchura as i32
+                    && ny >= 0
+                    && ny < self.altura as i32
+                    && !self.prohibidos[nx as usize][ny as usize]
+                {
+                    vecinos.push(((nx, ny), if dx != 0 && dy != 0 { 14 } else { 10 }));
                 }
             }
         }
