@@ -364,7 +364,6 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
         },
         Escena {
             clave: String::from("ático de intercambio de varianza"),
-
             mundo: Talla {
                 altura: 870.0,
                 anchura: 1700.0,
@@ -399,8 +398,8 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 Sprite {
                     etiqueta: String::from("muchacho-ático"),
                     uri: String::from("QmUHDrL3JTUMwztqyzr8cUdCjYLpjET9pRXrLTRPtfgSBx"),
-                    x: 383.0,
-                    y: 576.0,
+                    x: 1001.0,
+                    y: 336.0,
                     tapa: String::from("QmXME5CUW3PdBVqsGx9JJznB1dWYUBbem1cmQgtEBX2vp7"),
                     altura: 600.0,
                     anchura: 300.0,
@@ -416,10 +415,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     etiqueta: String::from("chica-ático"),
                     uri: String::from("QmSXHXcEe9XWiVLL228NK12s9o68uWVQRVn8oedPE7boYf"),
                     tapa: String::from("QmczmZzdHG7fmYtCUDS58faHs1d1pzENEa3x8WxscyNhRH"),
-                    x: 383.0,
-                    y: 576.0,
-                    altura: 600.0,
-                    anchura: 300.0,
+                    x: 317.0,
+                    y: 213.0,
+                    altura: 1210.0,
+                    anchura: 221.0,
                     anchura_borde: 600.0,
                     altura_borde: 600.0,
                     margen: 0.0,
@@ -576,8 +575,8 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 Sprite {
                     etiqueta: String::from("muchacho-lote"),
                     uri: String::from("QmUHDrL3JTUMwztqyzr8cUdCjYLpjET9pRXrLTRPtfgSBx"),
-                    x: 400.0,
-                    y: 700.0,
+                    x: 236.0,
+                    y: 556.0,
                     tapa: String::from("QmXME5CUW3PdBVqsGx9JJznB1dWYUBbem1cmQgtEBX2vp7"),
                     altura: 600.0,
                     anchura: 300.0,
@@ -1297,8 +1296,8 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 Sprite {
                     etiqueta: String::from("muchacho-micro"),
                     uri: String::from("QmUHDrL3JTUMwztqyzr8cUdCjYLpjET9pRXrLTRPtfgSBx"),
-                    x: 383.0,
-                    y: 576.0,
+                    x: 92.0,
+                    y: 628.0,
                     tapa: String::from("QmXME5CUW3PdBVqsGx9JJznB1dWYUBbem1cmQgtEBX2vp7"),
                     altura: 600.0,
                     anchura: 300.0,
@@ -1314,8 +1313,8 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     etiqueta: String::from("chica-micro"),
                     uri: String::from("QmSXHXcEe9XWiVLL228NK12s9o68uWVQRVn8oedPE7boYf"),
                     tapa: String::from("QmczmZzdHG7fmYtCUDS58faHs1d1pzENEa3x8WxscyNhRH"),
-                    x: 383.0,
-                    y: 576.0,
+                    x: 79.0,
+                    y: 775.0,
                     altura: 600.0,
                     anchura: 300.0,
                     anchura_borde: 600.0,
@@ -1330,9 +1329,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
         },
         Escena {
             clave: String::from("agencia de llms"),
-
             imagen: String::from("QmTs6DvEjiMzJHuXmtJBR13t53wo9TedjkymcFAT88qX78"),
-
             fondo: Fondo {
                 uri: String::from("QmWUHw3f6256Xkw18Rq6J5XjDepS2X3RsCL2uHCEeoaDLv"),
                 etiqueta: String::from("fondo"),
@@ -1645,8 +1642,8 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 Sprite {
                     etiqueta: String::from("muchacho-agencia"),
                     uri: String::from("QmUHDrL3JTUMwztqyzr8cUdCjYLpjET9pRXrLTRPtfgSBx"),
-                    x: 383.0,
-                    y: 576.0,
+                    x: 993.0,
+                    y: 311.0,
                     tapa: String::from("QmXME5CUW3PdBVqsGx9JJznB1dWYUBbem1cmQgtEBX2vp7"),
                     altura: 600.0,
                     anchura: 300.0,
@@ -1662,8 +1659,8 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     etiqueta: String::from("chica-agencia"),
                     uri: String::from("QmSXHXcEe9XWiVLL228NK12s9o68uWVQRVn8oedPE7boYf"),
                     tapa: String::from("QmczmZzdHG7fmYtCUDS58faHs1d1pzENEa3x8WxscyNhRH"),
-                    x: 383.0,
-                    y: 576.0,
+                    x: 165.0,
+                    y: 669.0,
                     altura: 600.0,
                     anchura: 300.0,
                     anchura_borde: 600.0,
@@ -1998,7 +1995,6 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
         },
         Escena {
             clave: String::from("marketing de contenido"),
-
             fondo: Fondo {
                 uri: String::from("QmYZ6w8ebp4LijMwMwURWvBrxhYLgmfzUQUdAhSwJ18JRD"),
                 etiqueta: String::from("fondo"),
@@ -2195,8 +2191,8 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 Sprite {
                     etiqueta: String::from("muchacho-contenido"),
                     uri: String::from("QmUHDrL3JTUMwztqyzr8cUdCjYLpjET9pRXrLTRPtfgSBx"),
-                    x: 383.0,
-                    y: 576.0,
+                    x: 507.0,
+                    y: 421.0,
                     tapa: String::from("QmXME5CUW3PdBVqsGx9JJznB1dWYUBbem1cmQgtEBX2vp7"),
                     altura: 600.0,
                     anchura: 300.0,
@@ -2212,8 +2208,8 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     etiqueta: String::from("chica-contenido"),
                     uri: String::from("QmSXHXcEe9XWiVLL228NK12s9o68uWVQRVn8oedPE7boYf"),
                     tapa: String::from("QmczmZzdHG7fmYtCUDS58faHs1d1pzENEa3x8WxscyNhRH"),
-                    x: 383.0,
-                    y: 576.0,
+                    x: 506.0,
+                    y: 455.0,
                     altura: 600.0,
                     anchura: 300.0,
                     anchura_borde: 600.0,

@@ -2,15 +2,17 @@ use crate::bib::types::{
     Escena, EscenaEstudio, Estado, GameTimer, Mapa, NPCAleatorio, Prohibido, RespuestaTrabajadora,
     Talla,
 };
-use std::sync::{Arc, Mutex};
 use rayon::prelude::*;
+use std::sync::{Arc, Mutex};
 
 impl EscenaEstudio {
     pub async fn new(escena: Escena) -> Self {
         let sprites = escena.sprites.clone();
         let prohibidos = escena.prohibido.clone();
-        let anchura = escena.mundo.anchura - (sprites[0].anchura * sprites[0].escala.x) / 2.0;
-        let altura = escena.mundo.altura - (sprites[0].altura * sprites[0].escala.y) / 2.0;
+        let anchura = escena.mundo.anchura
+            - ((sprites[0].anchura * sprites[0].escala.x) * sprites[0].escala.x);
+        let altura =
+            escena.mundo.altura - ((sprites[0].altura * sprites[0].escala.y) * sprites[0].escala.y);
 
         let mapa = Mapa::new(anchura as usize, altura as usize, prohibidos);
 

@@ -112,7 +112,7 @@ impl NPCAleatorio {
                 }
                 None => {
                     attempts += 1;
-                    if attempts >= 5 {
+                    if attempts >= 10 {
                         println!(
                             "No se encontró camino después de varios intentos. {}",
                             self.npc.etiqueta
@@ -177,21 +177,23 @@ impl NPCAleatorio {
         let mut silla_x = silla_aleatoria.x_adjustado;
         let mut silla_y = silla_aleatoria.y_adjustado;
 
-        let max_x = self.mapa.prohibidos.len();
-        let max_y = if max_x > 0 {
-            self.mapa.prohibidos[0].len()
-        } else {
-            0
-        };
+        let mut nearest = Coordenada { x: 0, y: 0 };
 
-        if silla_x >= 0.0 && silla_x < max_x as f32 && silla_y >= 0.0 && silla_y < max_y as f32 {
-            if self.mapa.prohibidos[silla_x as usize][silla_y as usize] {
-                let nearest = self.find_nearest_walkable(silla_x as i32, silla_y as i32);
-                silla_x = nearest.x as f32;
-                silla_y = nearest.y as f32;
-            }
-        } else {
-            println!("fail {}", self.npc.etiqueta);
+        if silla_x >= self.mundo.anchura {
+            nearest = self.find_nearest_walkable(self.mundo.anchura as i32, silla_y as i32);
+        } else if silla_x < 0.0 {
+            nearest = self.find_nearest_walkable(0, silla_y as i32);
+        } else if silla_y >= self.mundo.altura {
+            nearest = self.find_nearest_walkable(silla_x as i32, self.mundo.altura as i32);
+        } else if silla_y < 0.0 {
+            nearest = self.find_nearest_walkable(silla_x as i32, 0);
+        } else if self.mapa.prohibidos[silla_x as usize][silla_y as usize] {
+            nearest = self.find_nearest_walkable(silla_x as i32, silla_y as i32);
+        }
+
+        if nearest.x > 0 && nearest.y > 0 {
+            silla_x = nearest.x as f32;
+            silla_y = nearest.y as f32;
         }
 
         self.silla_cerca = Some(Coordenada {
@@ -228,7 +230,7 @@ impl NPCAleatorio {
 
         while current_y < self.mundo.altura as i32 {
             if !self.mapa.prohibidos[x as usize][current_y as usize] {
-                return Coordenada { x: x, y: current_y };
+                return Coordenada { x, y: current_y };
             }
             current_y += 1;
         }
