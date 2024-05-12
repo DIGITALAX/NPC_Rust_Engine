@@ -184,11 +184,11 @@ impl NPCAleatorio {
         } else if silla_x < 0.0 {
             nearest = self.find_nearest_walkable(1, silla_y as i32);
         } else if silla_y >= self.mundo.altura {
-            nearest = self.find_nearest_walkable(silla_x as i32, self.mundo.altura as i32);
+            nearest = self.find_nearest_walkable(silla_x as i32, self.mundo.altura as i32 - 1);
         } else if silla_y < 0.0 {
             nearest = self.find_nearest_walkable(silla_x as i32, 1);
         } else if self.mapa.prohibidos[silla_x as usize][silla_y as usize] {
-            nearest = self.find_nearest_walkable(silla_x as i32, silla_y as i32);
+            nearest = self.find_nearest_walkable(silla_x as i32, silla_y as i32 - 1);
         }
 
         if nearest.x > 0 && nearest.y > 0 {
