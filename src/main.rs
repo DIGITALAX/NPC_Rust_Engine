@@ -76,21 +76,25 @@ async fn manejar_conexion(
     rx: Arc<Mutex<Receiver<HashMap<String, EscenaEstudio>>>>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let ws_stream = accept_hdr_async(stream, |req: &Request, response: Response| {
-        let uri = req.uri();
-        let query: Option<&str> = uri.query();
-        let origen: Option<&hyper::header::HeaderValue> = req.headers().get("origin");
-
-        if req.method() != method::Method::GET {
+        if req.method() != method::Method::GET && req.method() != method::Method::HEAD {
             return Ok(response);
         }
 
-        if let Some(query) = query {
-            let key_from_client = query.split('=').nth(1);
-            if let Some(key) = key_from_client {
-                if key.trim_end_matches("&EIO") == render_clave.trim() {
-                    if let Some(origen) = origen {
-                        if origen == "https://www.npcstudio.xyz" {
+        if req.method() == method::Method::GET {
+            let uri = req.uri();
+            let query: Option<&str> = uri.query();
+            let origen: Option<&hyper::header::HeaderValue> = req.headers().get("origin");
+
+            if let Some(query) = query {
+                let key_from_client = query.split('=').nth(1);
+                if let Some(key) = key_from_client {
+                    if key.trim_end_matches("&EIO") == render_clave.trim() {
+                        if let Some(origen) = origen {
+                            if origen == "https://www.npcstudio.xyz" {
                             Ok(response)
+                            } else {
+                                Err(ErrorResponse::new(Some("Forbidden".to_string())))
+                            }
                         } else {
                             Err(ErrorResponse::new(Some("Forbidden".to_string())))
                         }
@@ -98,13 +102,13 @@ async fn manejar_conexion(
                         Err(ErrorResponse::new(Some("Forbidden".to_string())))
                     }
                 } else {
-                    Err(ErrorResponse::new(Some("Forbidden".to_string())))
+                    Err(ErrorResponse::new(Some("Bad Request".to_string())))
                 }
             } else {
                 Err(ErrorResponse::new(Some("Bad Request".to_string())))
             }
         } else {
-            Err(ErrorResponse::new(Some("Bad Request".to_string())))
+            Ok(response)
         }
     })
     .await?;
