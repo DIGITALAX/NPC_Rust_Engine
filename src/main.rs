@@ -86,7 +86,6 @@ async fn manejar_conexion(
 
         if let Some(query) = query {
             let key_from_client = query.split('=').nth(1);
-            println!("query: {:?}", query);
             if let Some(key) = key_from_client {
                 if key.trim_end_matches("&EIO") == render_clave.trim() {
                     if let Some(origen) = origen {
@@ -124,12 +123,8 @@ async fn manejar_conexion(
                                     rx.recv().await
                                 };
 
-                                println!("texto lleno {}", text);
-
                                 if let Some(mut escenas) = escenas {
                                     if let Some(scene) = escenas.get_mut(clave) {
-                                        println!("esta clave `escena {}", scene.clave);
-
                                         if let Some(response) = scene.request_state() {
                                             match response {
                                                 RespuestaTrabajadora::StateResponse {
