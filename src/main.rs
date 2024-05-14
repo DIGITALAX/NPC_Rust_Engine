@@ -62,7 +62,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let rx_clone = rx.clone();
         spawn(async move {
             if let Err(err) = manejar_conexion(stream, render_clone, rx_clone).await {
-                eprintln!("Error al manejar la conexión: {}", err);
+                if !err.to_string().contains("Handshake not finished") {
+                    eprintln!("Error al manejar la conexión: {}", err);
+                } else {
+                    dbg!("Handshake no terminado: {}", err);
+                }
             }
         });
     }
@@ -91,7 +95,7 @@ async fn manejar_conexion(
                     if key.trim_end_matches("&EIO") == render_clave.trim() {
                         if let Some(origen) = origen {
                             if origen == "https://www.npcstudio.xyz" {
-                            Ok(response)
+                                Ok(response)
                             } else {
                                 Err(ErrorResponse::new(Some("Forbidden".to_string())))
                             }
