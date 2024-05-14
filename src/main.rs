@@ -62,10 +62,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let rx_clone = rx.clone();
         spawn(async move {
             if let Err(err) = manejar_conexion(stream, render_clone, rx_clone).await {
-                if !err.to_string().contains("Handshake not finished") {
+                if !err.to_string().contains("Handshake not finished") || !err.to_string().contains("Unsupported HTTP method used") {
                     eprintln!("Error al manejar la conexión: {}", err);
                 } else {
-                    dbg!("Handshake no terminado: {}", err);
+                    dbg!("Debug: {}", err);
                 }
             }
         });
