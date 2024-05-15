@@ -3,6 +3,8 @@ use crate::bib::types::{
 };
 use once_cell::sync::Lazy;
 
+pub static LENS_HUB_PROXY: &'static str = "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d";
+
 pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
     [
         Escena {
@@ -247,6 +249,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
+                    perfile_id: String::from(""),
                 },
                 Sprite {
                     etiqueta: String::from("chica-estudio"),
@@ -263,6 +266,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
+                    perfile_id: String::from(""),
                 },
                 Sprite {
                     etiqueta: String::from("dama-estudio"),
@@ -279,6 +283,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 10.0,
+                    perfile_id: String::from(""),
                 },
             ],
             prohibido: vec![
@@ -410,6 +415,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
+                    perfile_id: String::from(""),
                 },
                 Sprite {
                     etiqueta: String::from("chica-ático"),
@@ -426,6 +432,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
+                    perfile_id: String::from(""),
                 },
             ],
             profundidad: vec![
@@ -587,6 +594,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
+                    perfile_id: String::from(""),
                 },
                 Sprite {
                     etiqueta: String::from("chica-lote"),
@@ -603,6 +611,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
+                    perfile_id: String::from(""),
                 },
             ],
             objetos: vec![
@@ -1054,6 +1063,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
+                    perfile_id: String::from(""),
                 },
                 Sprite {
                     etiqueta: String::from("chica-boutique"),
@@ -1070,6 +1080,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
+                    perfile_id: String::from(""),
                 },
             ],
         },
@@ -1308,6 +1319,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
+                    perfile_id: String::from(""),
                 },
                 Sprite {
                     etiqueta: String::from("chica-micro"),
@@ -1324,6 +1336,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
+                    perfile_id: String::from(""),
                 },
             ],
         },
@@ -1654,6 +1667,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
+                    perfile_id: String::from(""),
                 },
                 Sprite {
                     etiqueta: String::from("chica-agencia"),
@@ -1670,6 +1684,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
+                    perfile_id: String::from(""),
                 },
             ],
         },
@@ -1974,6 +1989,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
+                    perfile_id: String::from(""),
                 },
                 Sprite {
                     etiqueta: String::from("chica-pub"),
@@ -1990,6 +2006,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
+                    perfile_id: String::from(""),
                 },
             ],
         },
@@ -2203,6 +2220,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
+                    perfile_id: String::from(""),
                 },
                 Sprite {
                     etiqueta: String::from("chica-contenido"),
@@ -2219,6 +2237,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
+                    perfile_id: String::from(""),
                 },
             ],
         },

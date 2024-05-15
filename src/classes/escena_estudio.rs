@@ -6,7 +6,9 @@ use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
 
 impl EscenaEstudio {
-    pub async fn new(escena: Escena) -> Self {
+    pub async fn new(
+        escena: Escena
+    ) -> Self {
         let sprites = escena.sprites.clone();
         let prohibidos = escena.prohibido.clone();
         let anchura = escena.mundo.anchura
@@ -38,9 +40,9 @@ impl EscenaEstudio {
         }
     }
 
-    pub fn start_loop(&mut self, delta: u64) {
+    pub fn ejecutar_bucle(&mut self, delta: u64) {
         self.npcs.par_iter_mut().for_each(|npc| {
-            npc.update(delta);
+            npc.actualizar(delta);
         });
     }
 
@@ -48,7 +50,7 @@ impl EscenaEstudio {
         let mut estados: Vec<&Vec<Estado>> = Vec::new();
 
         for npc in &mut self.npcs {
-            estados.push(npc.get_state());
+            estados.push(npc.conseguir_estado());
         }
 
         if estados.is_empty() {

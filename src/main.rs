@@ -33,7 +33,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let puerto: u16 = puerto.parse::<u16>().expect("Puerto Inválido");
     let addr = format!("0.0.0.0:{}", puerto);
     let addr: SocketAddr = addr.parse().expect("Dirección Inválida");
-    // let addr: SocketAddr = SocketAddr::from(([127, 0, 0, 1], puerto));
     let oyente = TcpListener::bind(&addr)
         .await
         .expect("No se pudo vincular a la dirección");
@@ -67,7 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 {
                     eprintln!("Error al manejar la conexión: {}", err);
                 } else {
-                    dbg!("Debug: {}", err);
+                    println!("Debug: {}", err);
                 }
             }
         });
@@ -254,7 +253,7 @@ async fn bucle_juego(
         {
             let mut escenas = escenas.lock().await;
             for (_, escena) in escenas.iter_mut() {
-                escena.start_loop(1000);
+                escena.ejecutar_bucle(1000);
             }
         }
         if let Ok(escenas) = escenas.try_lock() {

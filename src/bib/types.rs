@@ -1,3 +1,10 @@
+use ethers::{
+    contract::ContractInstance,
+    core::k256::ecdsa::SigningKey,
+    middleware::SignerMiddleware,
+    providers::{Http, Provider},
+    signers::Wallet,
+};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
@@ -88,6 +95,7 @@ pub struct Sprite {
     pub uri: String,
     pub x: f32,
     pub y: f32,
+    pub perfile_id: String,
     pub altura: f32,
     pub anchura: f32,
     pub anchura_borde: f32,
@@ -219,6 +227,12 @@ pub struct NPCAleatorio {
     pub reloj_juego: GameTimer,
     pub silla_cerca: Option<Coordenada>,
     pub mapa: Mapa,
+    pub contrato: Arc<
+        ContractInstance<
+            Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
+            SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
+        >,
+    >,
 }
 
 #[derive(Clone)]
@@ -249,4 +263,21 @@ pub struct Mapa {
     pub anchura: usize,
     pub altura: usize,
     pub prohibidos: Vec<Vec<bool>>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Pub {
+    pub profileId: u64,
+    pub contentURI: String,
+    pub actionModules: Vec<String>,
+    pub actionModulesInitDatas: Vec<String>,
+    pub referenceModule: String,
+    pub referenceModuleInitData: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct IpfsRespuesta {
+    Name: String,
+    pub Hash: String,
+    Size: String,
 }

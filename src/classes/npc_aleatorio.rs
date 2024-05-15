@@ -1,11 +1,14 @@
+use crate::bib::{lens, utils::subir_ipfs};
 use crate::{
     bib::{
         types::{Coordenada, Estado, GameTimer, Movimiento, NPCAleatorio, Silla, Sprite, Talla},
         utils::between,
     },
-    Mapa,
+    Mapa, Pub,
 };
+use ethers::prelude::*;
 use pathfinding::prelude::astar;
+use serde_json::to_string;
 use std::sync::{Arc, Mutex};
 
 impl NPCAleatorio {
@@ -17,6 +20,8 @@ impl NPCAleatorio {
         reloj_juego: GameTimer,
         mapa: Mapa,
     ) -> Self {
+        let contrato = lens::inicializar_contrato(&sprite.etiqueta.to_string());
+
         NPCAleatorio {
             reloj_juego,
             sillas_ocupadas,
@@ -28,20 +33,22 @@ impl NPCAleatorio {
             mapa,
             contador: 0.0,
             silla_cerca: None,
+            contrato,
         }
     }
 
-    pub fn get_state(&self) -> &Vec<Estado> {
+    pub fn conseguir_estado(&self) -> &Vec<Estado> {
         &self.caminos
     }
 
-    pub fn update(&mut self, delta_time: u64) {
+    pub fn actualizar(&mut self, delta_time: u64) {
         self.reloj_juego.tick(delta_time);
-        self.set_random_direction();
-        self.clean_old_paths();
+        self.elegir_direccion_aleatoria();
+        self.limpiar_caminos();
+        self.comprobar_conversacion();
     }
 
-    fn set_random_direction(&mut self) {
+    fn elegir_direccion_aleatoria(&mut self) {
         if self.contador >= self.movimientos_max {
             let sillas_taken = self.sillas_ocupadas.lock().unwrap().len();
             let sillas_total = self.sillas.len();
@@ -55,16 +62,16 @@ impl NPCAleatorio {
             let decision: f32 = rand::random();
 
             if decision < probabilidad_final_sit {
-                self.go_sit();
+                self.sentar();
             } else {
-                self.go_idle();
+                self.inactivo();
             }
         } else {
-            self.go_move();
+            self.mover();
         }
     }
 
-    fn go_idle(&mut self) {
+    fn inactivo(&mut self) {
         self.caminos.push(Estado {
             estado: Movimiento::Idle,
             puntos_de_camino: vec![Coordenada {
@@ -78,9 +85,9 @@ impl NPCAleatorio {
         self.contador = 0.0;
     }
 
-    fn go_move(&mut self) {
+    fn mover(&mut self) {
         self.contador += 1.0;
-        let destinacion = self.get_random_destination();
+        let destinacion = self.obtener_destinacion_aleatoria();
         self.caminos.push(Estado {
             estado: Movimiento::Move,
             puntos_de_camino: self.find_path(destinacion),
@@ -120,13 +127,13 @@ impl NPCAleatorio {
                         return Vec::new();
                     }
 
-                    dest = self.get_random_destination();
+                    dest = self.obtener_destinacion_aleatoria();
                 }
             }
         }
     }
 
-    fn get_random_destination(&self) -> Coordenada {
+    fn obtener_destinacion_aleatoria(&self) -> Coordenada {
         let mut x: i32;
         let mut y: i32;
         let mut attempts: u32 = 0;
@@ -154,7 +161,7 @@ impl NPCAleatorio {
         };
     }
 
-    fn go_sit(&mut self) {
+    fn sentar(&mut self) {
         let sillas_disponibles = self.sillas.iter().filter(|silla| {
             !self
                 .sillas_ocupadas
@@ -180,15 +187,15 @@ impl NPCAleatorio {
         let mut nearest = Coordenada { x: 0, y: 0 };
 
         if silla_x >= self.mundo.anchura {
-            nearest = self.find_nearest_walkable(self.mundo.anchura as i32, silla_y as i32);
+            nearest = self.encontrar_camino_cercano(self.mundo.anchura as i32, silla_y as i32);
         } else if silla_x < 0.0 {
-            nearest = self.find_nearest_walkable(1, silla_y as i32);
+            nearest = self.encontrar_camino_cercano(1, silla_y as i32);
         } else if silla_y >= self.mundo.altura {
-            nearest = self.find_nearest_walkable(silla_x as i32, self.mundo.altura as i32 - 1);
+            nearest = self.encontrar_camino_cercano(silla_x as i32, self.mundo.altura as i32 - 1);
         } else if silla_y < 0.0 {
-            nearest = self.find_nearest_walkable(silla_x as i32, 1);
+            nearest = self.encontrar_camino_cercano(silla_x as i32, 1);
         } else if self.mapa.prohibidos[silla_x as usize][silla_y as usize] {
-            nearest = self.find_nearest_walkable(silla_x as i32, silla_y as i32 - 1);
+            nearest = self.encontrar_camino_cercano(silla_x as i32, silla_y as i32 - 1);
         }
 
         if nearest.x > 0 && nearest.y > 0 {
@@ -225,7 +232,7 @@ impl NPCAleatorio {
         );
     }
 
-    fn find_nearest_walkable(&self, x: i32, y: i32) -> Coordenada {
+    fn encontrar_camino_cercano(&self, x: i32, y: i32) -> Coordenada {
         let mut current_y: i32 = y;
 
         while current_y < self.mundo.altura as i32 {
@@ -247,9 +254,56 @@ impl NPCAleatorio {
         Coordenada { x, y }
     }
 
-    fn clean_old_paths(&mut self) {
+    fn limpiar_caminos(&mut self) {
         if self.caminos.len() > 40 {
             self.caminos = self.caminos.split_off(self.caminos.len() - 40);
         }
+    }
+
+    fn comprobar_conversacion(&mut self) {
+        // algoritmo para determinar la conversación actual, si debería responder, crear otra conversación etc.
+        // también el tipo, por ejemplo con o sin una imagen, el tamaño del mensaje etc.
+        // también el idioma + el estilo del caracter
+        // o si debería republicar una de las creaciones de los creadors!
+        // crear open acción para el catalógo donde los npcs pueden promover o no las creaciones
+        // con referencia donde los npcs reciben pago??
+    }
+
+    fn formatear_pub() {
+        
+    }
+
+    async fn enviar_mensaje(
+        &self,
+        contenido: String,
+        modulo_accion: String,
+        modulo_accion_inicio: String,
+        modulo_ref: String,
+        modulo_ref_inicio: String,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut uri = String::new();
+
+        match subir_ipfs(contenido.clone()).await {
+            Ok(response) => uri = response.Hash,
+            Err(e) => eprintln!("Error uploading file: {}", e),
+        }
+
+        let mensaje = Pub {
+            profileId: u64::from_str_radix(&self.npc.perfile_id, 16)?,
+            contentURI: uri,
+            actionModules: vec![modulo_accion],
+            actionModulesInitDatas: vec![modulo_accion_inicio],
+            referenceModule: modulo_ref,
+            referenceModuleInitData: modulo_ref_inicio.to_string(),
+        };
+
+        let mensaje_json = to_string(&mensaje)?;
+
+        let contrato = &self.contrato;
+        let method = contrato.method::<_, H256>("post", mensaje_json.clone())?;
+        let tx = method.send().await?;
+        println!("Transacción enviada: {:?}", tx);
+
+        Ok(())
     }
 }

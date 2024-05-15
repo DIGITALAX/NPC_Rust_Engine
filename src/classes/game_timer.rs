@@ -16,7 +16,7 @@ impl GameTimer {
     pub fn tick(&mut self, delta_time: u64) {
         self.ticks += 1;
         self.time_accumulated += delta_time;
-        self.update_tasks();
+        self.actualizar_tareas();
     }
 
     pub fn set_timeout<F>(&mut self, callback: F, delay_ms: u64)
@@ -35,7 +35,7 @@ impl GameTimer {
         });
     }
 
-    fn update_tasks(&mut self) {
+    fn actualizar_tareas(&mut self) {
         let ready_tasks: Vec<_> = self
             .tasks
             .iter()
