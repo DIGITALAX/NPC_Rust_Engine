@@ -281,3 +281,30 @@ pub struct IpfsRespuesta {
     pub Hash: String,
     Size: String,
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Contenido {
+    pub mainContentFocus: String,
+    pub title: String,
+    pub content: String,
+    pub appId: String,
+    pub id: String,
+    pub hideFromFeed: bool,
+    pub locale: String,
+    pub tags: Vec<String>,
+    pub image: Option<Imagen>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Publicacion {
+    #[serde(rename = "$schema")]
+    pub schema: String,
+    pub lens: Contenido,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Imagen {
+    #[serde(rename = "type")]
+    pub tipo: String,
+    pub item: String,
+}

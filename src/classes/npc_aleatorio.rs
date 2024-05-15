@@ -1,7 +1,11 @@
+use crate::bib::utils::subir_ipfs_imagen;
 use crate::bib::{lens, utils::subir_ipfs};
 use crate::{
     bib::{
-        types::{Coordenada, Estado, GameTimer, Movimiento, NPCAleatorio, Silla, Sprite, Talla},
+        types::{
+            Contenido, Coordenada, Estado, GameTimer, Imagen, Movimiento, NPCAleatorio,
+            Publicacion, Silla, Sprite, Talla,
+        },
         utils::between,
     },
     Mapa, Pub,
@@ -10,6 +14,7 @@ use ethers::prelude::*;
 use pathfinding::prelude::astar;
 use serde_json::to_string;
 use std::sync::{Arc, Mutex};
+use uuid::Uuid;
 
 impl NPCAleatorio {
     pub fn new(
@@ -267,10 +272,73 @@ impl NPCAleatorio {
         // o si debería republicar una de las creaciones de los creadors!
         // crear open acción para el catalógo donde los npcs pueden promover o no las creaciones
         // con referencia donde los npcs reciben pago??
+        // usa guardianas para los npcs y sus perfiles
     }
 
-    fn formatear_pub() {
-        
+    async fn formatear_pub(
+        &self,
+        mensaje: &str,
+        titulo: &str,
+        locale: &str,
+        tags: Vec<String>,
+        imagen: Option<&str>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let mut imagen_url: Option<Imagen> = None;
+        let mut enfoque = "TEXT_ONLY".to_string();
+        let mut schema =
+            "https://json-schemas.lens.dev/publications/text-only/3.0.0.json".to_string();
+
+        if let Some(base64_imagen) = imagen {
+            match subir_ipfs_imagen(base64_imagen).await {
+                Ok(cid) => {
+                    let opcion = Imagen {
+                        tipo: "image/png".to_string(),
+                        item: format!("ipfs://{}", cid.Hash),
+                    };
+                    imagen_url = Some(opcion);
+                    enfoque = String::from("IMAGE");
+                    schema =
+                        "https://json-schemas.lens.dev/publications/image/3.0.0.json".to_string();
+                }
+                Err(e) => {
+                    eprintln!("Error al subir la imagen: {}", e);
+                }
+            }
+        }
+
+        let mut publicacion = Publicacion {
+            schema,
+            lens: Contenido {
+                mainContentFocus: enfoque,
+                title: titulo.to_string(),
+                content: mensaje.to_string(),
+                appId: "npcstudio".to_string(),
+                id: Uuid::new_v4().to_string(),
+                hideFromFeed: false,
+                locale: locale.to_string(),
+                tags,
+                image: imagen_url,
+            },
+        };
+
+        let publicacion_json = to_string(&publicacion)?;
+
+        let contenido = match subir_ipfs(publicacion_json).await {
+            Ok(con) => con.Hash,
+            Err(e) => {
+                eprintln!("Error al subir la publicacion al IPFS: {}", e);
+                return Err(e);
+            }
+        };
+
+        self.enviar_mensaje(
+            contenido,
+            modulo_accion,
+            modulo_accion_inicio,
+            modulo_ref,
+            modulo_ref_inicio,
+        )
+        .await
     }
 
     async fn enviar_mensaje(
