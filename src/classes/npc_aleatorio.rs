@@ -25,7 +25,7 @@ impl NPCAleatorio {
         reloj_juego: GameTimer,
         mapa: Mapa,
     ) -> Self {
-        let contrato = lens::inicializar_contrato(&sprite.etiqueta.to_string());
+        // let contrato = lens::inicializar_contrato(&sprite.etiqueta.to_string());
 
         NPCAleatorio {
             reloj_juego,
@@ -38,7 +38,7 @@ impl NPCAleatorio {
             mapa,
             contador: 0.0,
             silla_cerca: None,
-            contrato,
+            // contrato,
         }
     }
 
@@ -332,45 +332,45 @@ impl NPCAleatorio {
         };
 
         self.enviar_mensaje(
-            contenido,
-            modulo_accion,
-            modulo_accion_inicio,
-            modulo_ref,
-            modulo_ref_inicio,
+            // contenido,
+            // modulo_accion,
+            // modulo_accion_inicio,
+            // modulo_ref,
+            // modulo_ref_inicio,
         )
         .await
     }
 
     async fn enviar_mensaje(
         &self,
-        contenido: String,
-        modulo_accion: String,
-        modulo_accion_inicio: String,
-        modulo_ref: String,
-        modulo_ref_inicio: String,
+        // contenido: String,
+        // modulo_accion: String,
+        // modulo_accion_inicio: String,
+        // modulo_ref: String,
+        // modulo_ref_inicio: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let mut uri = String::new();
 
-        match subir_ipfs(contenido.clone()).await {
-            Ok(response) => uri = response.Hash,
-            Err(e) => eprintln!("Error uploading file: {}", e),
-        }
+        // match subir_ipfs(contenido.clone()).await {
+        //     Ok(response) => uri = response.Hash,
+        //     Err(e) => eprintln!("Error uploading file: {}", e),
+        // }
 
-        let mensaje = Pub {
-            profileId: u64::from_str_radix(&self.npc.perfile_id, 16)?,
-            contentURI: uri,
-            actionModules: vec![modulo_accion],
-            actionModulesInitDatas: vec![modulo_accion_inicio],
-            referenceModule: modulo_ref,
-            referenceModuleInitData: modulo_ref_inicio.to_string(),
-        };
+        // let mensaje = Pub {
+        //     profileId: u64::from_str_radix(&self.npc.perfile_id, 16)?,
+        //     contentURI: uri,
+        //     actionModules: vec![modulo_accion],
+        //     actionModulesInitDatas: vec![modulo_accion_inicio],
+        //     referenceModule: modulo_ref,
+        //     referenceModuleInitData: modulo_ref_inicio.to_string(),
+        // };
 
-        let mensaje_json = to_string(&mensaje)?;
+        // let mensaje_json = to_string(&mensaje)?;
 
-        let contrato = &self.contrato;
-        let method = contrato.method::<_, H256>("post", mensaje_json.clone())?;
-        let tx = method.send().await?;
-        println!("Transacción enviada: {:?}", tx);
+        // let contrato = &self.contrato;
+        // let method = contrato.method::<_, H256>("post", mensaje_json.clone())?;
+        // let tx = method.send().await?;
+        // println!("Transacción enviada: {:?}", tx);
 
         Ok(())
     }

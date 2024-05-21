@@ -227,12 +227,12 @@ pub struct NPCAleatorio {
     pub reloj_juego: GameTimer,
     pub silla_cerca: Option<Coordenada>,
     pub mapa: Mapa,
-    pub contrato: Arc<
-        ContractInstance<
-            Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
-            SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
-        >,
-    >,
+    // pub contrato: Arc<
+    //     ContractInstance<
+    //         Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
+    //         SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
+    //     >,
+    // >,
 }
 
 #[derive(Clone)]

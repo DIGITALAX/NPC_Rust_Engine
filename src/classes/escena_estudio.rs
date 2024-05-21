@@ -6,9 +6,7 @@ use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
 
 impl EscenaEstudio {
-    pub async fn new(
-        escena: Escena
-    ) -> Self {
+    pub async fn new(escena: Escena) -> Self {
         let sprites = escena.sprites.clone();
         let prohibidos = escena.prohibido.clone();
         let anchura = escena.mundo.anchura
