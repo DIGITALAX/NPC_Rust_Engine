@@ -227,6 +227,7 @@ pub struct NPCAleatorio {
     pub reloj_juego: GameTimer,
     pub silla_cerca: Option<Coordenada>,
     pub mapa: Mapa,
+    pub ultimo_tiempo_comprobacion: u64,
     // pub contrato: Arc<
     //     ContractInstance<
     //         Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
