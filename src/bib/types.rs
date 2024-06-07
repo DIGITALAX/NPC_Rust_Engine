@@ -1,9 +1,11 @@
 use ethers::{
+    abi::{Detokenize, InvalidOutputType, Token, Tokenizable},
     contract::ContractInstance,
     core::k256::ecdsa::SigningKey,
     middleware::SignerMiddleware,
     providers::{Http, Provider},
     signers::Wallet,
+    types::Bytes,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -93,9 +95,10 @@ pub struct Silla {
 pub struct Sprite {
     pub etiqueta: String,
     pub uri: String,
+    pub billetera: Bytes,
     pub x: f32,
     pub y: f32,
-    pub perfile_id: String,
+    pub perfil_id: String,
     pub altura: f32,
     pub anchura: f32,
     pub anchura_borde: f32,
@@ -228,12 +231,24 @@ pub struct NPCAleatorio {
     pub silla_cerca: Option<Coordenada>,
     pub mapa: Mapa,
     pub ultimo_tiempo_comprobacion: u64,
-    // pub contrato: Arc<
-    //     ContractInstance<
-    //         Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
-    //         SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
-    //     >,
-    // >,
+    pub lens_hub_contrato: Arc<
+        ContractInstance<
+            Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
+            SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
+        >,
+    >,
+    pub autograph_data_contrato: Arc<
+        ContractInstance<
+            Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
+            SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
+        >,
+    >,
+    pub npc_publication_contrato: Arc<
+        ContractInstance<
+            Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
+            SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
+        >,
+    >,
 }
 
 #[derive(Clone)]
@@ -308,4 +323,78 @@ pub struct Imagen {
     #[serde(rename = "type")]
     pub tipo: String,
     pub item: String,
+}
+
+#[derive(Deserialize)]
+pub struct PromptRespuesta {
+    pub respuesta: String,
+}
+
+#[derive(Clone)]
+pub struct Llama;
+
+#[derive(PartialEq)]
+pub enum LensType {
+    Catalog,
+    Comment,
+    Publication,
+    Autograph,
+}
+
+pub struct RegisterPub {
+    pub artist: Bytes,
+    pub profileId: u64,
+    pub pubId: u64,
+    pub pageNumber: u8,
+    pub lensType: LensType,
+}
+
+impl Tokenizable for LensType {
+    fn from_token(token: Token) -> Result<Self, ethers::abi::InvalidOutputType> {
+        match token {
+            Token::Uint(val) if val == 0u64.into() => Ok(LensType::Catalog),
+            Token::Uint(val) if val == 1u64.into() => Ok(LensType::Comment),
+            Token::Uint(val) if val == 2u64.into() => Ok(LensType::Publication),
+            Token::Uint(val) if val == 3u64.into() => Ok(LensType::Autograph),
+            _ => Err(ethers::abi::InvalidOutputType(
+                "Unexpected token".to_string(),
+            )),
+        }
+    }
+
+    fn into_token(self) -> Token {
+        match self {
+            LensType::Catalog => Token::Uint(0u64.into()),
+            LensType::Comment => Token::Uint(1u64.into()),
+            LensType::Publication => Token::Uint(2u64.into()),
+            LensType::Autograph => Token::Uint(3u64.into()),
+        }
+    }
+}
+
+pub struct PredictData(LensType, Bytes, u8);
+
+impl Tokenizable for PredictData {
+    fn from_token(token: Token) -> Result<Self, InvalidOutputType> {
+        if let Token::Tuple(tokens) = token {
+            if tokens.len() != 3 {
+                return Err(InvalidOutputType("Expected 3 tokens".to_string()));
+            }
+            let lens_type = LensType::from_token(tokens[0].clone())?;
+            let bytes = Bytes::from_token(tokens[1].clone())?;
+            let number = u8::from_token(tokens[2].clone())?;
+            Ok(PredictData(lens_type, bytes, number))
+        } else {
+            Err(InvalidOutputType("Expected a tuple".to_string()))
+        }
+    }
+
+    fn into_token(self) -> Token {
+        let tokens = vec![
+            self.0.into_token(),
+            self.1.into_token(),
+            self.2.into_token(),
+        ];
+        ethers::abi::Token::Tuple(tokens)
+    }
 }

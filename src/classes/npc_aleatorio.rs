@@ -1,10 +1,11 @@
 use crate::bib::utils::subir_ipfs_imagen;
 use crate::bib::{lens, utils::subir_ipfs};
+use crate::Llama;
 use crate::{
     bib::{
         types::{
-            Contenido, Coordenada, Estado, GameTimer, Imagen, Movimiento, NPCAleatorio,
-            Publicacion, Silla, Sprite, Talla,
+            Contenido, Coordenada, Estado, GameTimer, Imagen, LensType, Movimiento, NPCAleatorio,
+            PredictData, Publicacion, RegisterPub, Silla, Sprite, Talla,
         },
         utils::between,
     },
@@ -12,9 +13,11 @@ use crate::{
 };
 use ethers::prelude::*;
 use pathfinding::prelude::astar;
+use rand::thread_rng;
 use serde_json::to_string;
 use std::sync::{Arc, Mutex};
 use uuid::Uuid;
+use Error;
 
 impl NPCAleatorio {
     pub fn new(
@@ -25,7 +28,8 @@ impl NPCAleatorio {
         reloj_juego: GameTimer,
         mapa: Mapa,
     ) -> Self {
-        // let contrato = lens::inicializar_contrato(&sprite.etiqueta.to_string());
+        let (lens_hub_contrato, autograph_data_contrato, npc_publication_contrato) =
+            lens::inicializar_contrato(&sprite.etiqueta.to_string());
 
         NPCAleatorio {
             reloj_juego,
@@ -39,7 +43,9 @@ impl NPCAleatorio {
             contador: 0.0,
             silla_cerca: None,
             ultimo_tiempo_comprobacion: 0,
-            // contrato,
+            lens_hub_contrato,
+            autograph_data_contrato,
+            npc_publication_contrato,
         }
     }
 
@@ -52,7 +58,7 @@ impl NPCAleatorio {
         self.elegir_direccion_aleatoria();
         self.limpiar_caminos();
 
-        if self.reloj_juego.time_accumulated - self.ultimo_tiempo_comprobacion >= 900 {
+        if self.reloj_juego.time_accumulated - self.ultimo_tiempo_comprobacion >= 1000 {
             self.ultimo_tiempo_comprobacion = self.reloj_juego.time_accumulated;
             self.comprobar_conversacion();
         }
@@ -269,49 +275,212 @@ impl NPCAleatorio {
             self.caminos = self.caminos.split_off(self.caminos.len() - 40);
         }
     }
-
     fn comprobar_conversacion(&mut self) {
-        // algoritmo para determinar la conversación actual, si debería responder, crear otra conversación etc.
-        // también el tipo, por ejemplo con o sin una imagen, el tamaño del mensaje etc.
-        // también el idioma + el estilo del caracter
-        // o si debería republicar una de las creaciones de los creadors!
-        // crear open acción para el catalógo donde los npcs pueden promover o no las creaciones
-        // con referencia donde los npcs reciben pago??
-        // usa guardianas para los npcs y sus perfiles
-
+        let llama = Llama;
         let npc_clone = self.clone();
+
         tokio::spawn(async move {
-            npc_clone.formatear_pub().await;
+            let method = npc_clone
+                .npc_publication_contrato
+                .method::<_, (LensType, Bytes, u8)>(
+                    "getPublicationPredictByNPC",
+                    npc_clone.npc.billetera,
+                );
+
+            match method {
+                Ok(call) => {
+                    let result: Result<(PredictData, Box<dyn Error>)> = call.call().await;
+                    match result {
+                        Ok((eleccion, artista, pagina)) => {
+                            let mut prompt = "";
+                            let mut tags: Vec<String> = vec![];
+                            let mut imagen: Option<String> = None;
+                            let mut locale;
+
+                            if eleccion == LensType::Autograph {
+                                let colecciones_result: Result<Vec<u128>, _> = npc_clone
+                                    .autograph_data_contrato
+                                    .method::<_, Vec<u128>>(
+                                        "getArtistCollectionsAvailable",
+                                        artista,
+                                    )
+                                    .call()
+                                    .await;
+
+                                match colecciones_result {
+                                    Ok(colecciones) => {
+                                        let mut rng = thread_rng();
+                                        if let Some(&numero_aleatorio) =
+                                            colecciones.choose(&mut rng)
+                                        {
+                                            let galeria_result: Result<u8, _> = npc_clone
+                                                .autograph_data_contrato
+                                                .method::<_, u8>(
+                                                    "getCollectionGallery",
+                                                    numero_aleatorio,
+                                                )
+                                                .call()
+                                                .await;
+
+                                            match galeria_result {
+                                                Ok(galeria) => {
+                                                    let imagen_result: Result<String, _> =
+                                                        npc_clone
+                                                            .autograph_data_contrato
+                                                            .method::<_, String>(
+                                                                "getCollectionURIByGalleryId",
+                                                                (numero_aleatorio, galeria),
+                                                            )
+                                                            .call()
+                                                            .await;
+
+                                                    match imagen_result {
+                                                        Ok(uri) => {
+                                                            imagen = Some(uri);
+                                                        }
+                                                        Err(e) => {
+                                                            eprintln!(
+                                                                "Error al obtener la URI de la imagen: {}",
+                                                                e
+                                                            );
+                                                        }
+                                                    }
+                                                }
+                                                Err(e) => {
+                                                    eprintln!("Error al obtener la galería: {}", e);
+                                                }
+                                            }
+                                        } else {
+                                            println!("El array está vacío.");
+                                        }
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Error al obtener las colecciones: {}", e);
+                                    }
+                                }
+                            } else if eleccion == LensType::Catalog {
+                                let imagen_result: Result<String, _> = npc_clone
+                                    .autograph_data_contrato
+                                    .method::<_, String>("getAutographPage", pagina)
+                                    .call()
+                                    .await;
+
+                                match imagen_result {
+                                    Ok(uri) => {
+                                        imagen = Some(uri);
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Error al obtener la página del catálogo: {}", e);
+                                    }
+                                }
+                            } else {
+                                if eleccion == LensType::Comment {
+                                    prompt = "";
+                                } else {
+                                    prompt = "";
+                                }
+                            }
+
+                            match llama.llamar_llama(prompt).await {
+                                Ok(mensaje) => {
+                                    match npc_clone
+                                        .formatear_pub(&mensaje, locale, tags, imagen.as_deref())
+                                        .await
+                                    {
+                                        Ok(publicacion_id) => {
+                                            let method = npc_clone
+                                                .npc_publication_contrato
+                                                .method::<_, H256>(
+                                                    "registerPublication",
+                                                    RegisterPub {
+                                                        artist: artista,
+                                                        profileId: npc_clone
+                                                            .npc
+                                                            .perfil_id
+                                                            .parse()
+                                                            .unwrap(),
+                                                        pubId: publicacion_id,
+                                                        pageNumber: pagina,
+                                                        lensType: eleccion,
+                                                    },
+                                                );
+
+                                            match method {
+                                                Ok(call) => {
+                                                    let tx = call.send().await;
+                                                    match tx {
+                                                        Ok(tx_hash) => {
+                                                            println!("Transacción enviada a NPC Publicación: {:?}", tx_hash);
+                                                        }
+                                                        Err(e) => {
+                                                            eprintln!("Error al enviar la transacción: {}", e);
+                                                        }
+                                                    }
+                                                }
+                                                Err(e) => {
+                                                    eprintln!(
+                                                        "Error al crear el método de registro: {}",
+                                                        e
+                                                    );
+                                                }
+                                            }
+                                        }
+                                        Err(e) => {
+                                            eprintln!("Error al formatear la publicación: {}", e);
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    eprintln!("Error con la generación del mensaje: {}", e);
+                                }
+                            }
+                        }
+                        Err(e) => {
+                            eprintln!("Error al obtener la predicción de la publicación: {}", e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Error al crear el método: {}", e);
+                }
+            }
         });
     }
 
     async fn formatear_pub(
         &self,
         mensaje: &str,
-        titulo: &str,
         locale: &str,
         tags: Vec<String>,
         imagen: Option<&str>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<u64, Box<dyn Error>> {
         let mut imagen_url: Option<Imagen> = None;
         let mut enfoque = "TEXT_ONLY".to_string();
         let mut schema =
             "https://json-schemas.lens.dev/publications/text-only/3.0.0.json".to_string();
 
         if let Some(base64_imagen) = imagen {
-            match subir_ipfs_imagen(base64_imagen).await {
-                Ok(cid) => {
-                    let opcion = Imagen {
-                        tipo: "image/png".to_string(),
-                        item: format!("ipfs://{}", cid.Hash),
-                    };
-                    imagen_url = Some(opcion);
-                    enfoque = String::from("IMAGE");
-                    schema =
-                        "https://json-schemas.lens.dev/publications/image/3.0.0.json".to_string();
-                }
-                Err(e) => {
-                    eprintln!("Error al subir la imagen: {}", e);
+            enfoque = String::from("IMAGE");
+            schema = "https://json-schemas.lens.dev/publications/image/3.0.0.json".to_string();
+
+            if base64_imagen.contains("ipfs://") {
+                let opcion = Imagen {
+                    tipo: "image/png".to_string(),
+                    item: String::from(base64_imagen),
+                };
+                imagen_url = Some(opcion);
+            } else {
+                match subir_ipfs_imagen(base64_imagen).await {
+                    Ok(cid) => {
+                        let opcion = Imagen {
+                            tipo: "image/png".to_string(),
+                            item: format!("ipfs://{}", cid.Hash),
+                        };
+                        imagen_url = Some(opcion);
+                    }
+                    Err(e) => {
+                        eprintln!("Error al subir la imagen: {}", e);
+                    }
                 }
             }
         }
@@ -320,7 +489,7 @@ impl NPCAleatorio {
             schema,
             lens: Contenido {
                 mainContentFocus: enfoque,
-                title: titulo.to_string(),
+                title: mensaje.chars().take(20).collect(),
                 content: mensaje.to_string(),
                 appId: "npcstudio".to_string(),
                 id: Uuid::new_v4().to_string(),
@@ -358,7 +527,7 @@ impl NPCAleatorio {
         modulo_accion_inicio: String,
         modulo_ref: String,
         modulo_ref_inicio: String,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<u64, Box<dyn Error>> {
         let mut uri = String::new();
 
         match subir_ipfs(contenido.clone()).await {
@@ -367,7 +536,7 @@ impl NPCAleatorio {
         }
 
         let mensaje = Pub {
-            profileId: u64::from_str_radix(&self.npc.perfile_id, 16)?,
+            profileId: u64::from_str_radix(&self.npc.perfil_id, 16)?,
             contentURI: uri,
             actionModules: vec![modulo_accion],
             actionModulesInitDatas: vec![modulo_accion_inicio],
@@ -377,11 +546,12 @@ impl NPCAleatorio {
 
         let mensaje_json = to_string(&mensaje)?;
 
-        let contrato = &self.contrato;
-        let method = contrato.method::<_, H256>("post", mensaje_json.clone())?;
+        let method = &self
+            .lens_hub_contrato
+            .method::<_, H256>("post", mensaje_json.clone())?;
         let tx = method.send().await?;
-        println!("Transacción enviada: {:?}", tx);
+        println!("Transacción enviada a Lens: {:?}", tx);
 
-        Ok(())
+        Ok(lens::hacer_consulta(&self.npc.perfil_id).await?)
     }
 }
