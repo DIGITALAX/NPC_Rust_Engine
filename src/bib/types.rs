@@ -1,5 +1,5 @@
 use ethers::{
-    abi::{Detokenize, InvalidOutputType, Token, Tokenizable},
+    abi::{Detokenize, InvalidOutputType, Token, Tokenizable, Tokenize},
     contract::ContractInstance,
     core::k256::ecdsa::SigningKey,
     middleware::SignerMiddleware,
@@ -8,9 +8,9 @@ use ethers::{
     types::Bytes,
 };
 use serde::{Deserialize, Serialize};
+use core::fmt;
 use std::{
-    collections::HashMap,
-    sync::{Arc, Mutex},
+    collections::HashMap, error::Error, sync::{Arc, Mutex}
 };
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -341,13 +341,6 @@ pub enum LensType {
     Autograph,
 }
 
-pub struct RegisterPub {
-    pub artist: Bytes,
-    pub profileId: u64,
-    pub pubId: u64,
-    pub pageNumber: u8,
-    pub lensType: LensType,
-}
 
 impl Tokenizable for LensType {
     fn from_token(token: Token) -> Result<Self, ethers::abi::InvalidOutputType> {
@@ -372,29 +365,46 @@ impl Tokenizable for LensType {
     }
 }
 
-pub struct PredictData(LensType, Bytes, u8);
+pub struct RegisterPub {
+    pub artist: Bytes,
+    pub profileId: u64,
+    pub pubId: u64,
+    pub pageNumber: u8,
+    pub lensType: LensType,
+}
 
-impl Tokenizable for PredictData {
-    fn from_token(token: Token) -> Result<Self, InvalidOutputType> {
-        if let Token::Tuple(tokens) = token {
-            if tokens.len() != 3 {
-                return Err(InvalidOutputType("Expected 3 tokens".to_string()));
-            }
-            let lens_type = LensType::from_token(tokens[0].clone())?;
-            let bytes = Bytes::from_token(tokens[1].clone())?;
-            let number = u8::from_token(tokens[2].clone())?;
-            Ok(PredictData(lens_type, bytes, number))
-        } else {
-            Err(InvalidOutputType("Expected a tuple".to_string()))
-        }
-    }
-
-    fn into_token(self) -> Token {
-        let tokens = vec![
-            self.0.into_token(),
-            self.1.into_token(),
-            self.2.into_token(),
-        ];
-        ethers::abi::Token::Tuple(tokens)
+impl Tokenize for RegisterPub {
+    fn into_tokens(self) -> Vec<Token> {
+        vec![
+            self.artist.into_token(),
+            self.profileId.into_token(),
+            self.pubId.into_token(),
+            self.pageNumber.into_token(),
+            self.lensType.into_token(),
+        ]
     }
 }
+
+#[derive(Debug)]
+pub struct CustomError {
+    details: String,
+}
+
+impl CustomError {
+    pub fn new(msg: &str) -> CustomError {
+        CustomError {
+            details: msg.to_string(),
+        }
+    }
+}
+
+impl fmt::Display for CustomError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.details)
+    }
+}
+
+impl Error for CustomError {}
+
+unsafe impl Send for CustomError {}
+unsafe impl Sync for CustomError {}

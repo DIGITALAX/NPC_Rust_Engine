@@ -2,7 +2,7 @@ use crate::bib::types::{Llama, PromptRespuesta};
 use std::{error::Error, process::Command};
 
 impl Llama {
-    pub async fn llamar_llama(&self, prompt: &str) -> Result<String, Box<dyn Error>> {
+    pub async fn llamar_llama(&self, prompt: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
         let output = Command::new("python3")
             .arg("llama3_runner.py")
             .arg(prompt)
