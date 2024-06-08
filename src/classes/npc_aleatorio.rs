@@ -584,14 +584,17 @@ impl NPCAleatorio {
             }
         };
 
-        self.enviar_mensaje(
-            contenido,
-            modulo_accion,
-            modulo_accion_inicio,
-            modulo_ref,
-            modulo_ref_inicio,
-        )
-        .await
+        let resultado = self
+            .enviar_mensaje(
+                contenido,
+                modulo_accion,
+                modulo_accion_inicio,
+                modulo_ref,
+                modulo_ref_inicio,
+            )
+            .await?;
+
+        Ok(resultado)
     }
 
     async fn enviar_mensaje(
@@ -601,12 +604,17 @@ impl NPCAleatorio {
         modulo_accion_inicio: String,
         modulo_ref: String,
         modulo_ref_inicio: String,
-    ) -> Result<u64, Box<dyn Error>> {
+    ) -> Result<u64, Box<dyn Error + Send + Sync>> {
         let mut uri = String::new();
 
         match subir_ipfs(contenido.clone()).await {
             Ok(response) => uri = response.Hash,
-            Err(e) => eprintln!("Error uploading file: {}", e),
+            Err(e) => {
+                eprintln!("Error uploading file: {}", e);
+                return Err(
+                    Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
+                );
+            }
         }
 
         let mensaje = Pub {
@@ -626,6 +634,12 @@ impl NPCAleatorio {
         let tx = method.send().await?;
         println!("Transacción enviada a Lens: {:?}", tx);
 
-        Ok(lens::hacer_consulta(&self.npc.perfil_id).await?)
+        let resultado = lens::hacer_consulta(&self.npc.perfil_id)
+            .await
+            .map_err(|e| {
+                Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
+            })?;
+
+        Ok(resultado)
     }
 }
