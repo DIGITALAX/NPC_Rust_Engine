@@ -14,8 +14,7 @@ use crate::{
 use ethers::prelude::*;
 use pathfinding::prelude::astar;
 use rand::prelude::SliceRandom;
-use rand::rngs::OsRng;
-use rand::{thread_rng, Rng, SeedableRng};
+use rand::SeedableRng;
 use rand_chacha::ChaCha12Rng;
 use serde_json::to_string;
 use std::{
@@ -36,6 +35,7 @@ impl NPCAleatorio {
     ) -> Self {
         let (lens_hub_contrato, autograph_data_contrato, npc_publication_contrato) =
             lens::inicializar_contrato(&sprite.etiqueta.to_string());
+
 
         NPCAleatorio {
             reloj_juego,
@@ -66,6 +66,7 @@ impl NPCAleatorio {
 
         if self.reloj_juego.time_accumulated - self.ultimo_tiempo_comprobacion >= 1000 {
             self.ultimo_tiempo_comprobacion = self.reloj_juego.time_accumulated;
+
             self.comprobar_conversacion();
         }
     }
@@ -286,23 +287,31 @@ impl NPCAleatorio {
         let llama = Llama;
         let npc_clone = Arc::new(self.clone());
 
-        tokio::spawn(async move {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+
+
+     rt.block_on(async move {
+        
             let metodo = npc_clone
                 .npc_publication_contrato
-                .method::<_, (LensType, Bytes, u8)>(
+                .method::<_, (u8, Address, u8)>(
                     "getPublicationPredictByNPC",
-                    npc_clone.npc.billetera.clone(),
+                    npc_clone.npc.billetera.parse::<Address>().unwrap(),
                 );
-
+               
+        
             match metodo {
                 Ok(call) => {
                     let result: Result<
-                        (LensType, Bytes, u8),
+                        (u8, Address, u8),
                         ethers::contract::ContractError<
                             SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
                         >,
                     > = call.call().await;
 
+                    println!("resullttt");
+
+  
                     match result {
                         Ok((eleccion, artista, pagina)) => {
                             let mut prompt = "";
@@ -310,7 +319,7 @@ impl NPCAleatorio {
                             let mut imagen: Option<String> = None;
                             let locale = "";
 
-                            if eleccion == LensType::Autograph {
+                            if LensType::try_from(eleccion).unwrap() == LensType::Autograph {
                                 let metodo =
                                     npc_clone.autograph_data_contrato.method::<_, Vec<u128>>(
                                         "getArtistCollectionsAvailable",
@@ -412,7 +421,7 @@ impl NPCAleatorio {
                                     }
                                     Err(e) => {}
                                 }
-                            } else if eleccion == LensType::Catalog {
+                            } else if LensType::try_from(eleccion).unwrap() == LensType::Catalog {
                                 let metodo = npc_clone
                                     .autograph_data_contrato
                                     .method::<_, String>("getAutographPage", pagina);
@@ -441,7 +450,7 @@ impl NPCAleatorio {
                                     Err(e) => {}
                                 }
                             } else {
-                                if eleccion == LensType::Comment {
+                                if LensType::try_from(eleccion).unwrap() == LensType::Comment {
                                     prompt = "";
                                 } else {
                                     prompt = "";
@@ -473,7 +482,7 @@ impl NPCAleatorio {
                                                             .unwrap(),
                                                         pubId: publicacion_id,
                                                         pageNumber: pagina,
-                                                        lensType: eleccion,
+                                                        lensType: LensType::try_from(eleccion).unwrap(),
                                                     },
                                                 );
 
@@ -513,7 +522,9 @@ impl NPCAleatorio {
                     }
                 }
                 Err(e) => {
+                 
                     eprintln!("Error al crear el método: {}", e);
+                
                 }
             }
         });
@@ -557,7 +568,7 @@ impl NPCAleatorio {
             }
         }
 
-        let mut publicacion = Publicacion {
+        let publicacion = Publicacion {
             schema,
             lens: Contenido {
                 mainContentFocus: enfoque,
@@ -584,28 +595,13 @@ impl NPCAleatorio {
             }
         };
 
-        let resultado = self
-            .enviar_mensaje(
-                contenido,
-                modulo_accion,
-                modulo_accion_inicio,
-                modulo_ref,
-                modulo_ref_inicio,
-            )
-            .await?;
+        let resultado = self.enviar_mensaje(contenido).await?;
 
         Ok(resultado)
     }
 
-    async fn enviar_mensaje(
-        &self,
-        contenido: String,
-        modulo_accion: String,
-        modulo_accion_inicio: String,
-        modulo_ref: String,
-        modulo_ref_inicio: String,
-    ) -> Result<u64, Box<dyn Error + Send + Sync>> {
-        let mut uri = String::new();
+    async fn enviar_mensaje(&self, contenido: String) -> Result<u64, Box<dyn Error + Send + Sync>> {
+        let uri;
 
         match subir_ipfs(contenido.clone()).await {
             Ok(response) => uri = response.Hash,
@@ -619,11 +615,11 @@ impl NPCAleatorio {
 
         let mensaje = Pub {
             profileId: u64::from_str_radix(&self.npc.perfil_id, 16)?,
-            contentURI: uri,
-            actionModules: vec![modulo_accion],
-            actionModulesInitDatas: vec![modulo_accion_inicio],
-            referenceModule: modulo_ref,
-            referenceModuleInitData: modulo_ref_inicio.to_string(),
+            contentURI: String::from("ipfs://") + &uri,
+            actionModules: vec![],
+            actionModulesInitDatas: vec![],
+            referenceModule: String::from(""),
+            referenceModuleInitData: String::from(""),
         };
 
         let mensaje_json = to_string(&mensaje)?;

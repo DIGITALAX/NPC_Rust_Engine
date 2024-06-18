@@ -1,16 +1,18 @@
+use core::fmt;
 use ethers::{
-    abi::{Detokenize, InvalidOutputType, Token, Tokenizable, Tokenize},
+    abi::{Token, Tokenizable, Tokenize},
     contract::ContractInstance,
     core::k256::ecdsa::SigningKey,
     middleware::SignerMiddleware,
     providers::{Http, Provider},
     signers::Wallet,
-    types::Bytes,
+    types::Address,
 };
 use serde::{Deserialize, Serialize};
-use core::fmt;
 use std::{
-    collections::HashMap, error::Error, sync::{Arc, Mutex}
+    collections::HashMap,
+    error::Error,
+    sync::{Arc, Mutex},
 };
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -48,6 +50,27 @@ pub struct Articulo {
     pub escala: Escala,
     pub talla: Coordenada,
     pub profundidad: Option<f32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Interactivo {
+    pub uri: String,
+    pub etiqueta: String,
+    pub disenador: String,
+    pub tipo: AutographType,
+    pub sitio: Coordenada,
+    pub escala: Escala,
+    pub talla: Coordenada,
+    pub profundidad: Option<f32>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum AutographType {
+    NFT,
+    Hoodie,
+    Shirt,
+    Catalog,
+    Mix,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -95,7 +118,7 @@ pub struct Silla {
 pub struct Sprite {
     pub etiqueta: String,
     pub uri: String,
-    pub billetera: Bytes,
+    pub billetera: String,
     pub x: f32,
     pub y: f32,
     pub perfil_id: String,
@@ -146,6 +169,7 @@ pub struct Escena {
     pub fondo: Fondo,
     pub objetos: Vec<Articulo>,
     pub sprites: Vec<Sprite>,
+    pub interactivos: Vec<Interactivo>,
 }
 
 #[derive(Clone)]
@@ -341,6 +365,19 @@ pub enum LensType {
     Autograph,
 }
 
+impl TryFrom<u8> for LensType {
+    type Error = ();
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(LensType::Catalog),
+            1 => Ok(LensType::Comment),
+            2 => Ok(LensType::Publication),
+            3 => Ok(LensType::Autograph),
+            _ => Err(()),
+        }
+    }
+}
 
 impl Tokenizable for LensType {
     fn from_token(token: Token) -> Result<Self, ethers::abi::InvalidOutputType> {
@@ -366,7 +403,7 @@ impl Tokenizable for LensType {
 }
 
 pub struct RegisterPub {
-    pub artist: Bytes,
+    pub artist: Address,
     pub profileId: u64,
     pub pubId: u64,
     pub pageNumber: u8,
@@ -408,3 +445,10 @@ impl Error for CustomError {}
 
 unsafe impl Send for CustomError {}
 unsafe impl Sync for CustomError {}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GenerarDesafioConsulta {
+    #[serde(rename = "for")]
+    pub para: String,
+    pub signedBy: String,
+}

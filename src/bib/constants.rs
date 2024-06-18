@@ -1,14 +1,15 @@
 use crate::bib::types::{
-    Articulo, Coordenada, Direccion, Escala, Escena, Fondo, Prohibido, Silla, Sprite, Talla,
+    Articulo, AutographType, Coordenada, Direccion, Escala, Escena, Fondo, Interactivo, Prohibido,
+    Silla, Sprite, Talla,
 };
 use ethers::types::Bytes;
 use once_cell::sync::Lazy;
 
-pub static LENS_HUB_PROXY: &'static str = "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d";
+pub static LENS_HUB_PROXY: &'static str = "0xA2574D9DdB6A325Ad2Be838Bd854228B80215148";
 
-pub static AUTOGRAPH_DATA: &'static str = "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d";
+pub static AUTOGRAPH_DATA: &'static str = "0xe24e2baA8e53B06820952d82538b495C2A3fA247";
 
-pub static NPC_PUBLICATION: &'static str = "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d";
+pub static NPC_PUBLICATION: &'static str = "0xd4d8068BA86bf2A7E51b1047206416FAd597CF5a";
 
 pub static API_LENS: &'static str = "https://api-v2.lens.dev";
 
@@ -106,6 +107,48 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     escala: Escala { x: 1.0, y: 1.0 },
                     par: Some(String::from("escritorio4")),
                     depth: None,
+                },
+            ],
+            interactivos: vec![
+                Interactivo {
+                    etiqueta: String::from("estudio-interactivo"),
+                    disenador: String::from("0xfa3fea500eeDAa120f7EeC2E4309Fe094F854E61"),
+                    tipo: AutographType::Shirt,
+                    sitio: Coordenada { x: 400, y: 400 },
+                    talla: Coordenada { x: 100, y: 100 },
+                    uri: String::from("QmcR8PpyDhRaUzJJW5UoxhnyzqNk88imgXS2MGuhgfYsYK"),
+                    escala: Escala { x: 1.0, y: 1.0 },
+                    profundidad: None,
+                },
+                Interactivo {
+                    etiqueta: String::from("estudio-interactivo"),
+                    disenador: String::from("0xfa3fea500eeDAa120f7EeC2E4309Fe094F854E61"),
+                    tipo: AutographType::Mix,
+                    sitio: Coordenada { x: 200, y: 400 },
+                    talla: Coordenada { x: 100, y: 100 },
+                    uri: String::from("QmcR8PpyDhRaUzJJW5UoxhnyzqNk88imgXS2MGuhgfYsYK"),
+                    escala: Escala { x: 1.0, y: 1.0 },
+                    profundidad: None,
+                },
+                Interactivo {
+                    etiqueta: String::from("estudio-interactivo"),
+                    disenador: String::from("0xfa3fea500eeDAa120f7EeC2E4309Fe094F854E61"),
+                    tipo: AutographType::NFT,
+                    sitio: Coordenada { x: 800, y: 600 },
+                    talla: Coordenada { x: 100, y: 100 },
+                    uri: String::from("QmcR8PpyDhRaUzJJW5UoxhnyzqNk88imgXS2MGuhgfYsYK"),
+                    escala: Escala { x: 1.0, y: 1.0 },
+                    profundidad: None,
+                },
+                Interactivo {
+                    etiqueta: String::from("estudio-interactivo"),
+                    disenador: String::from("0xfa3fea500eeDAa120f7EeC2E4309Fe094F854E61"),
+                    tipo: AutographType::Catalog,
+                    sitio: Coordenada { x: 1000, y: 600 },
+                    talla: Coordenada { x: 100, y: 100 },
+                    uri: String::from("QmcR8PpyDhRaUzJJW5UoxhnyzqNk88imgXS2MGuhgfYsYK"),
+                    escala: Escala { x: 1.0, y: 1.0 },
+                    profundidad: None,
                 },
             ],
             objetos: vec![
@@ -244,7 +287,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 Sprite {
                     etiqueta: String::from("muchacho-estudio"),
                     uri: String::from("QmUHDrL3JTUMwztqyzr8cUdCjYLpjET9pRXrLTRPtfgSBx"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0x0eFdFDEe179199E49f03013Bf4a03Ce6540468bd"),
                     x: 383.0,
                     y: 576.0,
                     tapa: String::from("QmXME5CUW3PdBVqsGx9JJznB1dWYUBbem1cmQgtEBX2vp7"),
@@ -257,12 +300,12 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("782"),
                 },
                 Sprite {
                     etiqueta: String::from("chica-estudio"),
                     uri: String::from("QmSXHXcEe9XWiVLL228NK12s9o68uWVQRVn8oedPE7boYf"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0xF04AfA536d2ae262970250cA1020a19f83Bcc64E"),
                     x: 383.0,
                     y: 576.0,
                     tapa: String::from("QmczmZzdHG7fmYtCUDS58faHs1d1pzENEa3x8WxscyNhRH"),
@@ -275,12 +318,12 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("780"),
                 },
                 Sprite {
                     etiqueta: String::from("dama-estudio"),
                     uri: String::from("QmcdYHqQQkLd77BsdmaBc7JtK8uoett4SLgPFAYa1GLtyH"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0x6Ca4c8d959c28a2c53e33DE41763626E6070af7b"),
                     x: 383.0,
                     y: 576.0,
                     tapa: String::from("QmZW3DWmPRT65ctLHzpsBkFR8wUkSfD7z6twDtyhHCusg7"),
@@ -293,7 +336,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 10.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("783"),
                 },
             ],
             prohibido: vec![
@@ -391,6 +434,28 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 sitio: Coordenada { x: 0, y: 330 },
             },
             imagen: String::from("Qmab76vqVsvmTeDFH3YTNRBijE7fujSkyqsEqDz4vH7quH"),
+            interactivos: vec![
+                Interactivo {
+                    etiqueta: String::from("ático-interactivo"),
+                    disenador: String::from("0x3D1f8A6D6584a1672d2817368783B9a2a36ae361"),
+                    tipo: AutographType::NFT,
+                    sitio: Coordenada { x: 400, y: 100 },
+                    talla: Coordenada { x: 100, y: 100 },
+                    uri: String::from("QmcR8PpyDhRaUzJJW5UoxhnyzqNk88imgXS2MGuhgfYsYK"),
+                    escala: Escala { x: 1.0, y: 1.0 },
+                    profundidad: None,
+                },
+                Interactivo {
+                    etiqueta: String::from("ático-interactivo"),
+                    disenador: String::from("0x3D1f8A6D6584a1672d2817368783B9a2a36ae361"),
+                    tipo: AutographType::Hoodie,
+                    sitio: Coordenada { x: 600, y: 100 },
+                    talla: Coordenada { x: 100, y: 100 },
+                    uri: String::from("QmcR8PpyDhRaUzJJW5UoxhnyzqNk88imgXS2MGuhgfYsYK"),
+                    escala: Escala { x: 1.0, y: 1.0 },
+                    profundidad: None,
+                },
+            ],
             objetos: vec![
                 Articulo {
                     etiqueta: String::from("ventanas"),
@@ -411,9 +476,9 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
             ],
             sprites: vec![
                 Sprite {
-                    etiqueta: String::from("muchacho-ático"),
+                    etiqueta: String::from("muchacho-atico"),
                     uri: String::from("QmUHDrL3JTUMwztqyzr8cUdCjYLpjET9pRXrLTRPtfgSBx"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0x7AFA88bbe634222793bC032A313F8dE69f308b7f"),
                     x: 1001.0,
                     y: 336.0,
                     tapa: String::from("QmXME5CUW3PdBVqsGx9JJznB1dWYUBbem1cmQgtEBX2vp7"),
@@ -426,12 +491,12 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("781"),
                 },
                 Sprite {
-                    etiqueta: String::from("chica-ático"),
+                    etiqueta: String::from("chica-atico"),
                     uri: String::from("QmSXHXcEe9XWiVLL228NK12s9o68uWVQRVn8oedPE7boYf"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0x8241Ee5A9f23611Ef6535B6c7E71ae24913306EC"),
                     tapa: String::from("QmczmZzdHG7fmYtCUDS58faHs1d1pzENEa3x8WxscyNhRH"),
                     x: 317.0,
                     y: 213.0,
@@ -444,7 +509,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("779"),
                 },
             ],
             profundidad: vec![
@@ -588,13 +653,22 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 anchura: 1512.0,
                 sitio: Coordenada { x: 0, y: 230 },
             },
-
+            interactivos: vec![Interactivo {
+                etiqueta: String::from("lote-interactivo"),
+                disenador: String::from(""),
+                tipo: AutographType::Catalog,
+                sitio: Coordenada { x: 400, y: 400 },
+                talla: Coordenada { x: 100, y: 100 },
+                uri: String::from("QmcR8PpyDhRaUzJJW5UoxhnyzqNk88imgXS2MGuhgfYsYK"),
+                escala: Escala { x: 1.0, y: 1.0 },
+                profundidad: None,
+            }],
             imagen: String::from("QmVA8di3khf9Fbb1a2JLDk21UdQ4zRoBPLEwRwEwtmQYyp"),
             sprites: vec![
                 Sprite {
                     etiqueta: String::from("muchacho-lote"),
                     uri: String::from("QmUHDrL3JTUMwztqyzr8cUdCjYLpjET9pRXrLTRPtfgSBx"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0x0eFdFDEe179199E49f03013Bf4a03Ce6540468bd"),
                     x: 236.0,
                     y: 556.0,
                     tapa: String::from("QmXME5CUW3PdBVqsGx9JJznB1dWYUBbem1cmQgtEBX2vp7"),
@@ -607,12 +681,12 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("782"),
                 },
                 Sprite {
                     etiqueta: String::from("chica-lote"),
                     uri: String::from("QmSXHXcEe9XWiVLL228NK12s9o68uWVQRVn8oedPE7boYf"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0xF04AfA536d2ae262970250cA1020a19f83Bcc64E"),
                     tapa: String::from("QmczmZzdHG7fmYtCUDS58faHs1d1pzENEa3x8WxscyNhRH"),
                     x: 40.0,
                     y: 600.0,
@@ -625,7 +699,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("780"),
                 },
             ],
             objetos: vec![
@@ -821,6 +895,16 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 altura: 1200.0,
                 anchura: 2000.0,
             },
+            interactivos: vec![Interactivo {
+                etiqueta: String::from("boutique-interactivo"),
+                disenador: String::from(""),
+                tipo: AutographType::Shirt,
+                sitio: Coordenada { x: 400, y: 400 },
+                talla: Coordenada { x: 100, y: 100 },
+                uri: String::from("QmcR8PpyDhRaUzJJW5UoxhnyzqNk88imgXS2MGuhgfYsYK"),
+                escala: Escala { x: 1.0, y: 1.0 },
+                profundidad: None,
+            }],
             fondo: Fondo {
                 uri: String::from("QmaihjqdZER8BCZmTnVAfdeKUogNTCiRwrwEv14uLxbfr7"),
                 etiqueta: String::from("fondo"),
@@ -1065,7 +1149,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 Sprite {
                     etiqueta: String::from("muchacho-boutique"),
                     uri: String::from("QmUHDrL3JTUMwztqyzr8cUdCjYLpjET9pRXrLTRPtfgSBx"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0x6Ca4c8d959c28a2c53e33DE41763626E6070af7b"),
                     x: 383.0,
                     y: 576.0,
                     tapa: String::from("QmXME5CUW3PdBVqsGx9JJznB1dWYUBbem1cmQgtEBX2vp7"),
@@ -1078,12 +1162,12 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("783"),
                 },
                 Sprite {
                     etiqueta: String::from("chica-boutique"),
                     uri: String::from("QmSXHXcEe9XWiVLL228NK12s9o68uWVQRVn8oedPE7boYf"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0x7AFA88bbe634222793bC032A313F8dE69f308b7f"),
                     tapa: String::from("QmczmZzdHG7fmYtCUDS58faHs1d1pzENEa3x8WxscyNhRH"),
                     x: 383.0,
                     y: 576.0,
@@ -1096,7 +1180,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("781"),
                 },
             ],
         },
@@ -1109,7 +1193,16 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 altura: 1200.0,
                 anchura: 2300.0,
             },
-
+            interactivos: vec![Interactivo {
+                etiqueta: String::from("microfábrica-interactivo"),
+                disenador: String::from(""),
+                tipo: AutographType::Mix,
+                sitio: Coordenada { x: 400, y: 400 },
+                talla: Coordenada { x: 100, y: 100 },
+                uri: String::from("QmcR8PpyDhRaUzJJW5UoxhnyzqNk88imgXS2MGuhgfYsYK"),
+                escala: Escala { x: 1.0, y: 1.0 },
+                profundidad: None,
+            }],
             fondo: Fondo {
                 uri: String::from("QmZahhsTv8atePN1bWnH7DE9KFbreg93QhEb88dap5A2SA"),
                 etiqueta: String::from("fondo"),
@@ -1323,7 +1416,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 Sprite {
                     etiqueta: String::from("muchacho-micro"),
                     uri: String::from("QmUHDrL3JTUMwztqyzr8cUdCjYLpjET9pRXrLTRPtfgSBx"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0x8241Ee5A9f23611Ef6535B6c7E71ae24913306EC"),
                     x: 92.0,
                     y: 628.0,
                     tapa: String::from("QmXME5CUW3PdBVqsGx9JJznB1dWYUBbem1cmQgtEBX2vp7"),
@@ -1336,12 +1429,12 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("779"),
                 },
                 Sprite {
                     etiqueta: String::from("chica-micro"),
                     uri: String::from("QmSXHXcEe9XWiVLL228NK12s9o68uWVQRVn8oedPE7boYf"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0x0eFdFDEe179199E49f03013Bf4a03Ce6540468bd"),
                     tapa: String::from("QmczmZzdHG7fmYtCUDS58faHs1d1pzENEa3x8WxscyNhRH"),
                     x: 79.0,
                     y: 775.0,
@@ -1354,12 +1447,22 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("782"),
                 },
             ],
         },
         Escena {
             clave: String::from("agencia de llms"),
+            interactivos: vec![Interactivo {
+                etiqueta: String::from("agencia-interactivo"),
+                disenador: String::from(""),
+                tipo: AutographType::Mix,
+                sitio: Coordenada { x: 400, y: 400 },
+                talla: Coordenada { x: 100, y: 100 },
+                uri: String::from("QmcR8PpyDhRaUzJJW5UoxhnyzqNk88imgXS2MGuhgfYsYK"),
+                escala: Escala { x: 1.0, y: 1.0 },
+                profundidad: None,
+            }],
             imagen: String::from("QmTs6DvEjiMzJHuXmtJBR13t53wo9TedjkymcFAT88qX78"),
             fondo: Fondo {
                 uri: String::from("QmWUHw3f6256Xkw18Rq6J5XjDepS2X3RsCL2uHCEeoaDLv"),
@@ -1673,7 +1776,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 Sprite {
                     etiqueta: String::from("muchacho-agencia"),
                     uri: String::from("QmUHDrL3JTUMwztqyzr8cUdCjYLpjET9pRXrLTRPtfgSBx"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0xF04AfA536d2ae262970250cA1020a19f83Bcc64E"),
                     x: 993.0,
                     y: 311.0,
                     tapa: String::from("QmXME5CUW3PdBVqsGx9JJznB1dWYUBbem1cmQgtEBX2vp7"),
@@ -1686,12 +1789,12 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("780"),
                 },
                 Sprite {
                     etiqueta: String::from("chica-agencia"),
                     uri: String::from("QmSXHXcEe9XWiVLL228NK12s9o68uWVQRVn8oedPE7boYf"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0xF04AfA536d2ae262970250cA1020a19f83Bcc64E"),
                     tapa: String::from("QmczmZzdHG7fmYtCUDS58faHs1d1pzENEa3x8WxscyNhRH"),
                     x: 165.0,
                     y: 669.0,
@@ -1704,7 +1807,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("780"),
                 },
             ],
         },
@@ -1714,7 +1817,16 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 altura: 1500.0,
                 anchura: 2000.0,
             },
-
+            interactivos: vec![Interactivo {
+                etiqueta: String::from("pub-interactivo"),
+                disenador: String::from(""),
+                tipo: AutographType::Catalog,
+                sitio: Coordenada { x: 400, y: 400 },
+                talla: Coordenada { x: 100, y: 100 },
+                uri: String::from("QmcR8PpyDhRaUzJJW5UoxhnyzqNk88imgXS2MGuhgfYsYK"),
+                escala: Escala { x: 1.0, y: 1.0 },
+                profundidad: None,
+            }],
             fondo: Fondo {
                 uri: String::from("QmVZ38f7115AUJwsgeoQ84YDGXwNQ8PmjLAuWZPnNNm7uy"),
                 etiqueta: String::from("fondo"),
@@ -1997,7 +2109,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 Sprite {
                     etiqueta: String::from("muchacho-pub"),
                     uri: String::from("QmUHDrL3JTUMwztqyzr8cUdCjYLpjET9pRXrLTRPtfgSBx"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0x6Ca4c8d959c28a2c53e33DE41763626E6070af7b"),
                     x: 383.0,
                     y: 576.0,
                     tapa: String::from("QmXME5CUW3PdBVqsGx9JJznB1dWYUBbem1cmQgtEBX2vp7"),
@@ -2010,12 +2122,12 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("783"),
                 },
                 Sprite {
                     etiqueta: String::from("chica-pub"),
                     uri: String::from("QmSXHXcEe9XWiVLL228NK12s9o68uWVQRVn8oedPE7boYf"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0x7AFA88bbe634222793bC032A313F8dE69f308b7f"),
                     tapa: String::from("QmczmZzdHG7fmYtCUDS58faHs1d1pzENEa3x8WxscyNhRH"),
                     x: 383.0,
                     y: 576.0,
@@ -2028,12 +2140,22 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("781"),
                 },
             ],
         },
         Escena {
             clave: String::from("marketing de contenido"),
+            interactivos: vec![Interactivo {
+                etiqueta: String::from("marketing-interactivo"),
+                disenador: String::from(""),
+                tipo: AutographType::Hoodie,
+                sitio: Coordenada { x: 400, y: 400 },
+                talla: Coordenada { x: 100, y: 100 },
+                uri: String::from("QmcR8PpyDhRaUzJJW5UoxhnyzqNk88imgXS2MGuhgfYsYK"),
+                escala: Escala { x: 1.0, y: 1.0 },
+                profundidad: None,
+            }],
             fondo: Fondo {
                 uri: String::from("QmYZ6w8ebp4LijMwMwURWvBrxhYLgmfzUQUdAhSwJ18JRD"),
                 etiqueta: String::from("fondo"),
@@ -2230,7 +2352,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 Sprite {
                     etiqueta: String::from("muchacho-contenido"),
                     uri: String::from("QmUHDrL3JTUMwztqyzr8cUdCjYLpjET9pRXrLTRPtfgSBx"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0x8241Ee5A9f23611Ef6535B6c7E71ae24913306EC"),
                     x: 507.0,
                     y: 421.0,
                     tapa: String::from("QmXME5CUW3PdBVqsGx9JJznB1dWYUBbem1cmQgtEBX2vp7"),
@@ -2243,12 +2365,12 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("779"),
                 },
                 Sprite {
                     etiqueta: String::from("chica-contenido"),
                     uri: String::from("QmSXHXcEe9XWiVLL228NK12s9o68uWVQRVn8oedPE7boYf"),
-                    billetera: Bytes::from("0x".as_bytes().to_vec()),
+                    billetera: String::from("0x0eFdFDEe179199E49f03013Bf4a03Ce6540468bd"),
                     tapa: String::from("QmczmZzdHG7fmYtCUDS58faHs1d1pzENEa3x8WxscyNhRH"),
                     x: 506.0,
                     y: 455.0,
@@ -2261,7 +2383,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: String::from(""),
+                    perfil_id: String::from("782"),
                 },
             ],
         },
