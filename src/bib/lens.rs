@@ -5,6 +5,7 @@ use ethers::{
     middleware::SignerMiddleware,
     providers::{Http, Provider},
     signers::LocalWallet,
+    types::U256,
 };
 use reqwest::Client;
 use serde_json::{from_str, json};
@@ -14,7 +15,7 @@ use std::{
     sync::{Arc, Once},
 };
 
-use crate::{GenerarDesafioConsulta, API_LENS, AUTOGRAPH_DATA, LENS_HUB_PROXY, NPC_PUBLICATION};
+use crate::{API_LENS, AUTOGRAPH_DATA, LENS_HUB_PROXY, NPC_PUBLICATION};
 
 static INIT_PROVEEDOR: Once = Once::new();
 static INIT_CONTRATOS: Once = Once::new();
@@ -56,71 +57,55 @@ fn inicializar_api() -> Arc<Client> {
     }
 }
 
-// pub async fn conectarse_lens(perfil_id: &str, direccion: &str) {
-//     let cliente = inicializar_api();
-
-//     let request = GenerarDesafioConsulta {
-//         para: perfil_id.to_string(),
-//         signedBy: direccion.to_string(),
-//     };
-//     let response = cliente
-//         .post(API_LENS)
-//         .json(&request)
-//         .send()
-//         .await?
-//         .json::<ChallengeResponse>()
-//         .await?;
-
-//     let request = AuthenticateRequest {
-//         id: challenge_id.to_string(),
-//         signature: signature.to_string(),
-//     };
-//     let response = cliente
-//         .post(API_LENS)
-//         .json(&request)
-//         .send()
-//         .await?
-//         .json::<AuthResponse>()
-//         .await?;
-
-//     Ok(())
-// }
-
-pub async fn hacer_consulta(perfil_id: &str) -> Result<u64, Box<dyn Error>> {
+pub async fn hacer_consulta(perfil_id: &str) -> Result<U256, Box<dyn Error>> {
     let cliente = inicializar_api();
 
-    let consulta = format!(
-        r#"
-        query {{
-          feed(request: {{
-            where: {{
-              for: "{}"
-            }}
-          }}) {{
-            items {{
-              id
-            }}
-            pageInfo {{
-              next
-            }}
-          }}
-        }}
-    "#,
-        perfil_id
-    );
-
-    let cuerpo = json!({
-        "query": consulta,
+    let consulta = json!({
+        "query": r#"
+            query Publications($request: PublicationsRequest!) {
+                publications(request: $request) {
+                    items {
+                        ... on Post {
+                            id
+                        }
+                        ... on Comment {
+                            id
+                        }
+                        ... on Mirror {
+                            id
+                        }
+                        ... on Quote {
+                            id
+                        }
+                    }
+                    pageInfo {
+                        next
+                    }
+                }
+            }
+        "#,
+        "variables": {
+            "request": {
+                "where": {
+                    "from": [perfil_id]
+                }
+            }
+        }
     });
 
-    let respuesta = cliente.post(API_LENS).json(&cuerpo).send().await?;
+    let respuesta = cliente
+        .post(API_LENS)
+        .header("Content-Type", "application/json")
+        .json(&consulta)
+        .send()
+        .await?;
 
     if respuesta.status().is_success() {
         let json: serde_json::Value = respuesta.json().await?;
-        if let Some(items) = json["data"]["feed"]["items"].as_array() {
+        if let Some(items) = json["data"]["publications"]["items"].as_array() {
             if !items.is_empty() {
                 if let Some(id) = items[0]["id"].as_str() {
-                    let id_num: u64 = id.parse()?;
+                    let id_num: U256 = id.parse()?;
                     return Ok(id_num);
                 } else {
                     return Err("ID no encontrado o no es una cadena de texto.".into());

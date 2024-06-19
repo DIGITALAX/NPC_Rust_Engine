@@ -6,7 +6,7 @@ use ethers::{
     middleware::SignerMiddleware,
     providers::{Http, Provider},
     signers::Wallet,
-    types::Address,
+    types::{Address, Bytes, U256},
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -121,7 +121,7 @@ pub struct Sprite {
     pub billetera: String,
     pub x: f32,
     pub y: f32,
-    pub perfil_id: String,
+    pub perfil_id: U256,
     pub altura: f32,
     pub anchura: f32,
     pub anchura_borde: f32,
@@ -254,6 +254,7 @@ pub struct NPCAleatorio {
     pub reloj_juego: GameTimer,
     pub silla_cerca: Option<Coordenada>,
     pub mapa: Mapa,
+    pub escena: String,
     pub ultimo_tiempo_comprobacion: u64,
     pub lens_hub_contrato: Arc<
         ContractInstance<
@@ -305,14 +306,37 @@ pub struct Mapa {
     pub prohibidos: Vec<Vec<bool>>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Pub {
-    pub profileId: u64,
+    pub profileId: U256,
     pub contentURI: String,
-    pub actionModules: Vec<String>,
-    pub actionModulesInitDatas: Vec<String>,
-    pub referenceModule: String,
-    pub referenceModuleInitData: String,
+    pub actionModules: Vec<Address>,
+    pub actionModulesInitDatas: Vec<Bytes>,
+    pub referenceModule: Address,
+    pub referenceModuleInitData: Bytes,
+}
+
+impl Tokenize for Pub {
+    fn into_tokens(self) -> Vec<Token> {
+        vec![
+            Token::Uint(self.profileId),
+            Token::String(self.contentURI),
+            Token::Array(
+                self.actionModules
+                    .into_iter()
+                    .map(|addr| addr.into_token())
+                    .collect(),
+            ),
+            Token::Array(
+                self.actionModulesInitDatas
+                    .into_iter()
+                    .map(|data| Token::Bytes(data.to_vec()))
+                    .collect(),
+            ),
+            self.referenceModule.into_token(),
+            Token::Bytes(self.referenceModuleInitData.to_vec()),
+        ]
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -332,6 +356,7 @@ pub struct Contenido {
     pub hideFromFeed: bool,
     pub locale: String,
     pub tags: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub image: Option<Imagen>,
 }
 
@@ -404,8 +429,8 @@ impl Tokenizable for LensType {
 
 pub struct RegisterPub {
     pub artist: Address,
-    pub profileId: u64,
-    pub pubId: u64,
+    pub profileId: U256,
+    pub pubId: U256,
     pub pageNumber: u8,
     pub lensType: LensType,
 }
@@ -445,10 +470,3 @@ impl Error for CustomError {}
 
 unsafe impl Send for CustomError {}
 unsafe impl Sync for CustomError {}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct GenerarDesafioConsulta {
-    #[serde(rename = "for")]
-    pub para: String,
-    pub signedBy: String,
-}

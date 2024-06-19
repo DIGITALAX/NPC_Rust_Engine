@@ -11,6 +11,7 @@ use crate::{
     },
     Mapa, Pub,
 };
+use abi::{Token, Tokenize};
 use ethers::prelude::*;
 use pathfinding::prelude::astar;
 use rand::prelude::SliceRandom;
@@ -23,6 +24,7 @@ use std::{
 };
 use tokio::sync::Mutex as TokioMutex;
 use uuid::Uuid;
+use ethers::types::{Bytes, U256, Address};
 
 impl NPCAleatorio {
     pub fn new(
@@ -32,6 +34,7 @@ impl NPCAleatorio {
         mundo: Talla,
         reloj_juego: GameTimer,
         mapa: Mapa,
+        escena: String
     ) -> Self {
         let (lens_hub_contrato, autograph_data_contrato, npc_publication_contrato) =
             lens::inicializar_contrato(&sprite.etiqueta.to_string());
@@ -52,6 +55,7 @@ impl NPCAleatorio {
             lens_hub_contrato,
             autograph_data_contrato,
             npc_publication_contrato,
+            escena
         }
     }
 
@@ -64,7 +68,7 @@ impl NPCAleatorio {
         self.elegir_direccion_aleatoria();
         self.limpiar_caminos();
 
-        if self.reloj_juego.time_accumulated - self.ultimo_tiempo_comprobacion >= 1000 {
+        if self.reloj_juego.time_accumulated - self.ultimo_tiempo_comprobacion >= 1000  {
             self.ultimo_tiempo_comprobacion = self.reloj_juego.time_accumulated;
 
             self.comprobar_conversacion();
@@ -294,7 +298,7 @@ impl NPCAleatorio {
         
             let metodo = npc_clone
                 .npc_publication_contrato
-                .method::<_, (u8, Address, u8)>(
+                .method::<_, (LensType, Address, u8)>(
                     "getPublicationPredictByNPC",
                     npc_clone.npc.billetera.parse::<Address>().unwrap(),
                 );
@@ -303,23 +307,19 @@ impl NPCAleatorio {
             match metodo {
                 Ok(call) => {
                     let result: Result<
-                        (u8, Address, u8),
+                        (LensType, Address, u8),
                         ethers::contract::ContractError<
                             SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
                         >,
                     > = call.call().await;
-
-                    println!("resullttt");
-
   
                     match result {
                         Ok((eleccion, artista, pagina)) => {
                             let mut prompt = "";
-                            let mut etiquetas: Vec<String> = vec![];
                             let mut imagen: Option<String> = None;
                             let locale = "";
 
-                            if LensType::try_from(eleccion).unwrap() == LensType::Autograph {
+                            if eleccion == LensType::Autograph {
                                 let metodo =
                                     npc_clone.autograph_data_contrato.method::<_, Vec<u128>>(
                                         "getArtistCollectionsAvailable",
@@ -394,7 +394,9 @@ impl NPCAleatorio {
                                                                                 }
                                                                             }
                                                                         }
-                                                                        Err(e) => {}
+                                                                        Err(e) => {
+                                                                            println!("Un error de ABI {}", e);
+                                                                        }
                                                                     }
                                                                 }
                                                                 Err(e) => {
@@ -405,7 +407,9 @@ impl NPCAleatorio {
                                                                 }
                                                             }
                                                         }
-                                                        Err(e) => {}
+                                                        Err(e) => {
+                                                            println!("Un error de ABI {}", e);
+                                                        }
                                                     }
                                                 } else {
                                                     println!("El array está vacío.");
@@ -419,9 +423,11 @@ impl NPCAleatorio {
                                             }
                                         }
                                     }
-                                    Err(e) => {}
+                                    Err(e) => {
+                                        println!("Un error de ABI {}", e);
+                                    }
                                 }
-                            } else if LensType::try_from(eleccion).unwrap() == LensType::Catalog {
+                            } else if eleccion == LensType::Catalog {
                                 let metodo = npc_clone
                                     .autograph_data_contrato
                                     .method::<_, String>("getAutographPage", pagina);
@@ -447,13 +453,15 @@ impl NPCAleatorio {
                                             }
                                         }
                                     }
-                                    Err(e) => {}
+                                    Err(e) => {
+                                        println!("Un error de ABI {}", e);
+                                    }
                                 }
                             } else {
-                                if LensType::try_from(eleccion).unwrap() == LensType::Comment {
-                                    prompt = "";
+                                if eleccion == LensType::Comment {
+                                    prompt = "make me a comment for twitter";
                                 } else {
-                                    prompt = "";
+                                    prompt = "make me a post for twitter";
                                 }
                             }
 
@@ -463,7 +471,6 @@ impl NPCAleatorio {
                                         .formatear_pub(
                                             &mensaje,
                                             locale,
-                                            etiquetas,
                                             imagen.as_deref(),
                                         )
                                         .await
@@ -478,11 +485,10 @@ impl NPCAleatorio {
                                                         profileId: npc_clone
                                                             .npc
                                                             .perfil_id
-                                                            .parse()
-                                                            .unwrap(),
+                                                            ,
                                                         pubId: publicacion_id,
                                                         pageNumber: pagina,
-                                                        lensType: LensType::try_from(eleccion).unwrap(),
+                                                        lensType: eleccion,
                                                     },
                                                 );
 
@@ -512,7 +518,8 @@ impl NPCAleatorio {
                                     }
                                 }
                                 Err(e) => {
-                                    eprintln!("Error con la generación del mensaje: {}", e);
+                                    eprintln!("Error con la generación del mensaje: {:?}", e);
+
                                 }
                             }
                         }
@@ -534,9 +541,8 @@ impl NPCAleatorio {
         &self,
         mensaje: &str,
         locale: &str,
-        etiquetas: Vec<String>,
         imagen: Option<&str>,
-    ) -> Result<u64, Box<dyn Error + Send + Sync>> {
+    ) -> Result<U256, Box<dyn Error + Send + Sync>> {
         let mut imagen_url: Option<Imagen> = None;
         let mut enfoque = "TEXT_ONLY".to_string();
         let mut schema =
@@ -578,7 +584,7 @@ impl NPCAleatorio {
                 id: Uuid::new_v4().to_string(),
                 hideFromFeed: false,
                 locale: locale.to_string(),
-                tags: etiquetas,
+                tags: vec!["npcStudio".to_string(), self.escena.clone()],
                 image: imagen_url,
             },
         };
@@ -600,42 +606,33 @@ impl NPCAleatorio {
         Ok(resultado)
     }
 
-    async fn enviar_mensaje(&self, contenido: String) -> Result<u64, Box<dyn Error + Send + Sync>> {
-        let uri;
-
-        match subir_ipfs(contenido.clone()).await {
-            Ok(response) => uri = response.Hash,
-            Err(e) => {
-                eprintln!("Error uploading file: {}", e);
-                return Err(
-                    Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
-                );
-            }
-        }
-
+    async fn enviar_mensaje(&self, contenido: String) -> Result<U256, Box<dyn Error + Send + Sync>> {
+    
         let mensaje = Pub {
-            profileId: u64::from_str_radix(&self.npc.perfil_id, 16)?,
-            contentURI: String::from("ipfs://") + &uri,
+            profileId: self.npc.perfil_id,
+            contentURI: String::from("ipfs://") + &contenido,
             actionModules: vec![],
             actionModulesInitDatas: vec![],
-            referenceModule: String::from(""),
-            referenceModuleInitData: String::from(""),
+            referenceModule: "0x0000000000000000000000000000000000000000".parse::<Address>().unwrap(),
+            referenceModuleInitData: Bytes::from(vec![0u8; 1]),
         };
 
-        let mensaje_json = to_string(&mensaje)?;
+        let method =
+        self.lens_hub_contrato.method::<_, U256>("post", (Token::Tuple(mensaje.into_tokens()),));
 
-        let method = &self
-            .lens_hub_contrato
-            .method::<_, H256>("post", mensaje_json.clone())?;
-        let tx = method.send().await?;
+        let tx = method?.call().await?;
+
         println!("Transacción enviada a Lens: {:?}", tx);
 
-        let resultado = lens::hacer_consulta(&self.npc.perfil_id)
-            .await
-            .map_err(|e| {
-                Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
-            })?;
+        let resultado = lens::hacer_consulta(
+            &format!("0x0{:x}",  &self.npc.perfil_id)
+        )
+        .await
+        .map_err(|e| {
+            Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
+        })?;
 
         Ok(resultado)
+
     }
 }

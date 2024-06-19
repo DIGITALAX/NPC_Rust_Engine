@@ -25,7 +25,8 @@ impl EscenaEstudio {
                     escena.sillas.clone(),
                     Talla { anchura, altura },
                     GameTimer::new(),
-                    mapa.clone()
+                    mapa.clone(),
+                    escena.clave.to_string()
                 );
                 npc
             })

@@ -4,14 +4,14 @@ import subprocess
 
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python3 llama_runner.py <prompt>")
+        print("Usage: python3 llama3_runner.py <prompt>")
         sys.exit(1)
-    
+
     prompt = sys.argv[1]
 
     try:
         result = subprocess.run(
-            ['ollama', 'run', "llama3", '--prompt', prompt],
+            ['ollama', 'run', "llama3", prompt],
             capture_output=True,
             text=True,
             check=True
