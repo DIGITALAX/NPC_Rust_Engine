@@ -317,8 +317,8 @@ impl NPCAleatorio {
                             let mut prompt = "";
                             let mut imagen: Option<String> = None;
                             let locale = "en";
-                         let   comentario_perfil = U256::from(0);
-                         let comentario_pub= U256::from(0);
+                         let mut  comentario_perfil = U256::from(0);
+                         let mut comentario_pub= U256::from(0);
 
                             if eleccion == LensType::Autograph {
                                 let metodo =
@@ -461,8 +461,8 @@ impl NPCAleatorio {
                             } else {
                                 if eleccion == LensType::Comment {
                                   
-                                    let (contenido, comentario_perfil,
-                                        comentario_pub) = lens::coger_comentario(&format!("0x0{:x}", npc_clone.npc.perfil_id))
+                                    let (contenido, perfil,
+                                 publicacion) = lens::coger_comentario(&format!("0x0{:x}", npc_clone.npc.perfil_id))
                                     .await
                                     .map_err(|e| println!("Error al encontrar el comentario: {}", e))
                                     .expect("Error al encontrar el comentario");
@@ -472,7 +472,9 @@ impl NPCAleatorio {
                                         temp_prompt.push_str(&contenido);
                                         temp_prompt
                                     };
-                                 
+
+                                    comentario_perfil = perfil;
+                                    comentario_pub = publicacion;
                                     prompt = Box::leak(Box::new(new_prompt)).as_str();
 
                                 } else {
