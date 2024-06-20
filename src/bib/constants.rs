@@ -9,7 +9,7 @@ pub static LENS_HUB_PROXY: &'static str = "0xA2574D9DdB6A325Ad2Be838Bd854228B802
 
 pub static AUTOGRAPH_DATA: &'static str = "0xe24e2baA8e53B06820952d82538b495C2A3fA247";
 
-pub static NPC_PUBLICATION: &'static str = "0xd4d8068BA86bf2A7E51b1047206416FAd597CF5a";
+pub static NPC_PUBLICATION: &'static str = "0x7dAaba4C70d3e3Bd3916DD13A92297d952F15Dfd";
 
 pub static API_LENS: &'static str = "https://api-v2-amoy.lens.dev";
 
