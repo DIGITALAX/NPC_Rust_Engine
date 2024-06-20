@@ -10,7 +10,7 @@ use crate::{
     },
     Mapa, Pub,
 };
-use crate::{Llama, LENS_HUB_PROXY, NPC_PUBLICATION};
+use crate::{Comment, Llama, LENS_HUB_PROXY, NPC_PUBLICATION};
 use abi::{Token, Tokenize};
 use ethers::prelude::*;
 use ethers::types::{Address, Bytes, U256};
@@ -19,6 +19,7 @@ use rand::prelude::SliceRandom;
 use rand::SeedableRng;
 use rand_chacha::ChaCha12Rng;
 use serde_json::to_string;
+use std::str::FromStr;
 use std::{
     error::Error,
     sync::{Arc, Mutex},
@@ -72,7 +73,7 @@ impl NPCAleatorio {
         }
 
         if self.ultimo_tiempo_comprobacion <= 0 {
-            self.ultimo_tiempo_comprobacion = 1000000;
+            self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
             println!("dentro");
             self.comprobar_conversacion();
         }
@@ -316,6 +317,8 @@ impl NPCAleatorio {
                             let mut prompt = "";
                             let mut imagen: Option<String> = None;
                             let locale = "en";
+                         let   comentario_perfil = U256::from(0);
+                         let comentario_pub= U256::from(0);
 
                             if eleccion == LensType::Autograph {
                                 let metodo =
@@ -457,16 +460,30 @@ impl NPCAleatorio {
                                 }
                             } else {
                                 if eleccion == LensType::Comment {
-                                    prompt = "make me a comment for twitter";
+                                  
+                                    let (contenido, comentario_perfil,
+                                        comentario_pub) = lens::coger_comentario(&format!("0x0{:x}", npc_clone.npc.perfil_id))
+                                    .await
+                                    .map_err(|e| println!("Error al encontrar el comentario: {}", e))
+                                    .expect("Error al encontrar el comentario");
+
+                                    let new_prompt = {
+                                        let mut temp_prompt = String::from("respond to this post with a comment, only give me the comment in your reply, nothing more.\n\npost :\n\n");
+                                        temp_prompt.push_str(&contenido);
+                                        temp_prompt
+                                    };
+                                 
+                                    prompt = Box::leak(Box::new(new_prompt)).as_str();
+
                                 } else {
-                                    prompt = "make me a post for twitter";
+                                    prompt = "make me a post for twitter, only give me the post in your reply, nothing more.";
                                 }
                             }
 
                             match llama.llamar_llama(prompt).await {
                                 Ok(mensaje) => {
                                     match npc_clone
-                                        .formatear_pub(&mensaje, locale, imagen.as_deref())
+                                        .formatear_pub(&mensaje, locale, imagen.as_deref(), eleccion.clone(), comentario_perfil, comentario_pub)
                                         .await
                                     {
                                         Ok(publicacion_id) => {
@@ -557,10 +574,10 @@ impl NPCAleatorio {
                                                                 )
                                                             })
                                                             .expect("Error con la transacción");
-                                                        // println!(
-                                                        //     "Transacción enviada con hash: {:?}",
-                                                        //     tx_hash
-                                                        // );
+                                                        println!(
+                                                            "Transacción enviada con hash: {:?}",
+                                                            tx_hash
+                                                        );
                                                     }
                                                 }
                                                 Err(e) => {
@@ -598,6 +615,9 @@ impl NPCAleatorio {
         mensaje: &str,
         locale: &str,
         imagen: Option<&str>,
+        lens_tipo: LensType,
+        comentario_perfil: U256,
+        comentario_pub: U256
     ) -> Result<U256, Box<dyn Error + Send + Sync>> {
         let mut imagen_url: Option<Imagen> = None;
         let mut enfoque = "TEXT_ONLY".to_string();
@@ -657,7 +677,8 @@ impl NPCAleatorio {
             }
         };
 
-        let resultado = self.enviar_mensaje(contenido).await?;
+        let resultado = self.enviar_mensaje(contenido, lens_tipo,comentario_perfil,
+            comentario_pub).await?;
 
         Ok(resultado)
     }
@@ -665,21 +686,64 @@ impl NPCAleatorio {
     async fn enviar_mensaje(
         &self,
         contenido: String,
+        lens_tipo: LensType,
+        comentario_perfil: U256,
+        comentario_pub: U256
     ) -> Result<U256, Box<dyn Error + Send + Sync>> {
-        let mensaje = Pub {
+        let method;
+       
+       if lens_tipo == LensType::Comment {
+
+        let mensaje = Comment {
             profileId: self.npc.perfil_id,
             contentURI: String::from("ipfs://") + &contenido,
-            actionModules: vec![],
-            actionModulesInitDatas: vec![],
+            pointedProfileId: comentario_perfil,
+            pointedPubId: comentario_pub,
+            referrerProfileIds: vec![],
+            referrerPubIds: vec![],
+            referenceModuleData: Bytes::from(vec![0u8; 1]),
+            actionModules: vec!["0x34A437A91415C36712B0D912c171c74595Be437d" .parse::<Address>()
+            .unwrap()],
+            actionModulesInitDatas: vec![
+Bytes::from_str("0x000000000000000000000000185b529b421ff60b0f2388483b757b39103cfcb1000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")?,
+              
+
+            ],
             referenceModule: "0x0000000000000000000000000000000000000000"
                 .parse::<Address>()
                 .unwrap(),
             referenceModuleInitData: Bytes::from(vec![0u8; 1]),
         };
 
-        let method = self
-            .lens_hub_contrato
-            .method::<_, U256>("post", (Token::Tuple(mensaje.into_tokens()),))?;
+         method = self
+        .lens_hub_contrato
+        .method::<_, U256>("comment", (Token::Tuple(mensaje.into_tokens()),))?;
+
+       } else {
+        let mensaje = Pub {
+            profileId: self.npc.perfil_id,
+            contentURI: String::from("ipfs://") + &contenido,
+            actionModules: vec!["0x34A437A91415C36712B0D912c171c74595Be437d" .parse::<Address>()
+            .unwrap()],
+            actionModulesInitDatas: vec![
+Bytes::from_str("0x000000000000000000000000185b529b421ff60b0f2388483b757b39103cfcb1000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")?,
+              
+
+            ],
+            referenceModule: "0x0000000000000000000000000000000000000000"
+                .parse::<Address>()
+                .unwrap(),
+            referenceModuleInitData: Bytes::from(vec![0u8; 1]),
+        };
+
+         method = self
+        .lens_hub_contrato
+        .method::<_, U256>("post", (Token::Tuple(mensaje.into_tokens()),))?;
+       }
+       
+       
+
+ 
 
         let FunctionCall { tx, .. } = method;
 
@@ -721,7 +785,7 @@ impl NPCAleatorio {
             let cliente = self.lens_hub_contrato.client().clone();
             let pending_tx = cliente.send_transaction(req, None).await?;
             let tx_hash = pending_tx.confirmations(1).await?;
-            // println!("Transacción enviada con hash: {:?}", tx_hash);
+            println!("Transacción enviada con hash: {:?}", tx_hash);
 
             let resultado = lens::hacer_consulta(&format!("0x0{:x}", &self.npc.perfil_id))
                 .await

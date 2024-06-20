@@ -9,6 +9,7 @@ use ethers::{
     signers::LocalWallet,
     types::U256,
 };
+use rand::Rng;
 use reqwest::Client;
 use serde_json::{from_str, json};
 use std::{
@@ -59,6 +60,87 @@ fn inicializar_api() -> Arc<Client> {
     }
 }
 
+pub async fn coger_comentario(perfil_id: &str) -> Result<(String, U256, U256), Box<dyn Error>> {
+    let cliente = inicializar_api();
+    let consulta = json!({
+        "query": r#"
+            query Publications($request: PublicationsRequest!) {
+                publications(request: $request) {
+                    items {
+                        ... on Post {
+                            id
+                            metadata {
+                                ... on TextOnlyMetadataV3 {
+                                    content
+                            }
+                        }
+
+                    }
+                }
+            }
+        "#,
+        "variables": {
+            "request": {
+                "where": {
+                    "from": [perfil_id.to_string()]
+                }
+            }
+        }
+    });
+
+    let respuesta = cliente
+        .post(API_LENS)
+        .header("Content-Type", "application/json")
+        .json(&consulta)
+        .send()
+        .await?;
+
+    if respuesta.status().is_success() {
+        let json: serde_json::Value = respuesta.json().await?;
+        if let Some(items) = json["data"]["publications"]["items"].as_array() {
+            if !items.is_empty() {
+                let mut rng = rand::thread_rng();
+                let indice_aleatorio = rng.gen_range(0..items.len());
+
+                if let Some(id) = items[indice_aleatorio]["id"].as_str() {
+                    if let Some(hex_str) = id.split('-').nth(0) {
+                        let comentario_perfil = U256::from_str_radix(&hex_str[2..], 16)?;
+
+                        if let Some(hex_str) = id.split('-').nth(1) {
+                            let comentario_pub = U256::from_str_radix(&hex_str[2..], 16)?;
+
+                            if let Some(contenido) = items[indice_aleatorio]["content"].as_str() {
+                                return Ok((
+                                    contenido.to_string(),
+                                    comentario_perfil,
+                                    comentario_pub,
+                                ));
+                            } else {
+                                return Err(
+                                    "El contenido no se encuentra o no es una cadena de texto."
+                                        .into(),
+                                );
+                            }
+                        } else {
+                            return Err("Error con el Hex".into());
+                        }
+                    } else {
+                        return Err("Error con el Hex".into());
+                    }
+                } else {
+                    return Err("ID no encontrado o no es una cadena de texto.".into());
+                }
+            } else {
+                return Err("No se encontraron elementos.".into());
+            }
+        } else {
+            return Err("Estructura de respuesta inesperada.".into());
+        }
+    } else {
+        return Err(format!("Error: {}", respuesta.status()).into());
+    }
+}
+
 pub async fn hacer_consulta(perfil_id: &str) -> Result<U256, Box<dyn Error>> {
     let cliente = inicializar_api();
     let consulta = json!({
@@ -95,7 +177,7 @@ pub async fn hacer_consulta(perfil_id: &str) -> Result<U256, Box<dyn Error>> {
         if let Some(items) = json["data"]["publications"]["items"].as_array() {
             if !items.is_empty() {
                 if let Some(id) = items[0]["id"].as_str() {
-                    if let Some(hex_str) =  id.split('-').nth(1) {
+                    if let Some(hex_str) = id.split('-').nth(1) {
                         let numero = u32::from_str_radix(&hex_str[2..], 16)?;
                         return Ok(numero.into());
                     } else {

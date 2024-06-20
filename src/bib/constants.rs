@@ -301,6 +301,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 1]> = Lazy::new(|| {
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
                     perfil_id: U256::from(782),
+                    publicacion_reloj: 100000
                 },
                 // Sprite {
                 //     etiqueta: String::from("chica-estudio"),

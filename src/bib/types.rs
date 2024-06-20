@@ -132,6 +132,7 @@ pub struct Sprite {
     pub marco_final: f32,
     pub movimientos_max: f32,
     pub escala: Escala,
+    pub publicacion_reloj: u64,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -340,6 +341,59 @@ impl Tokenize for Pub {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct Comment {
+    pub profileId: U256,
+    pub contentURI: String,
+    pub pointedProfileId: U256,
+    pub pointedPubId: U256,
+    pub referrerProfileIds: Vec<U256>,
+    pub referrerPubIds: Vec<U256>,
+    pub referenceModuleData: Bytes,
+    pub actionModules: Vec<Address>,
+    pub actionModulesInitDatas: Vec<Bytes>,
+    pub referenceModule: Address,
+    pub referenceModuleInitData: Bytes,
+}
+
+impl Tokenize for Comment {
+    fn into_tokens(self) -> Vec<Token> {
+        vec![
+            Token::Uint(self.profileId),
+            Token::String(self.contentURI),
+            Token::Uint(self.pointedProfileId),
+            Token::Uint(self.pointedPubId),
+            Token::Array(
+                self.referrerProfileIds
+                    .into_iter()
+                    .map(|uint| uint.into_token())
+                    .collect(),
+            ),
+            Token::Array(
+                self.referrerPubIds
+                    .into_iter()
+                    .map(|uint| uint.into_token())
+                    .collect(),
+            ),
+            Token::Bytes(self.referenceModuleData.to_vec()),
+            Token::Array(
+                self.actionModules
+                    .into_iter()
+                    .map(|addr| addr.into_token())
+                    .collect(),
+            ),
+            Token::Array(
+                self.actionModulesInitDatas
+                    .into_iter()
+                    .map(|data| Token::Bytes(data.to_vec()))
+                    .collect(),
+            ),
+            self.referenceModule.into_token(),
+            Token::Bytes(self.referenceModuleInitData.to_vec()),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct IpfsRespuesta {
     Name: String,
     pub Hash: String,
@@ -382,7 +436,7 @@ pub struct PromptRespuesta {
 #[derive(Clone)]
 pub struct Llama;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum LensType {
     Catalog,
     Comment,
@@ -441,7 +495,7 @@ impl Tokenize for RegisterPub {
             Token::Address(self._artist).into_token(),
             Token::Uint(self._profileId).into_token(),
             Token::Uint(self._pubId).into_token(),
-            Token::Uint( U256::from(self._pageNumber)).into_token(),
+            Token::Uint(U256::from(self._pageNumber)).into_token(),
             self._lensType.into_token(),
         ]
     }
