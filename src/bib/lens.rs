@@ -1,9 +1,11 @@
 use dotenv::dotenv;
+use ethers::signers::Signer;
 use ethers::{
     abi::{Abi, Address},
+    addressbook::Chain,
     contract::Contract,
     middleware::SignerMiddleware,
-    providers::{Http, Provider},
+    providers::{Http, Provider, ProviderExt},
     signers::LocalWallet,
     types::U256,
 };
@@ -40,9 +42,9 @@ pub fn inicializar_proveedor() -> Arc<Provider<Http>> {
                 "https://polygon-amoy.g.alchemy.com/v2/{}",
                 var("ALCHEMY_AMOY_KEY").expect("ALCHEMY_API_KEY not found")
             );
-            let proveedor =
+            let mut proveedor =
                 Provider::<Http>::try_from(&proveedor_url).expect("Error al crear proveedor");
-            PROVEEDOR = Some(Arc::new(proveedor));
+            PROVEEDOR = Some(Arc::new(proveedor.set_chain(Chain::PolygonAmoy).clone()));
         });
         PROVEEDOR.clone().expect("Proveedor no es inicializado")
     }
@@ -59,7 +61,6 @@ fn inicializar_api() -> Arc<Client> {
 
 pub async fn hacer_consulta(perfil_id: &str) -> Result<U256, Box<dyn Error>> {
     let cliente = inicializar_api();
-
     let consulta = json!({
         "query": r#"
             query Publications($request: PublicationsRequest!) {
@@ -68,18 +69,7 @@ pub async fn hacer_consulta(perfil_id: &str) -> Result<U256, Box<dyn Error>> {
                         ... on Post {
                             id
                         }
-                        ... on Comment {
-                            id
-                        }
-                        ... on Mirror {
-                            id
-                        }
-                        ... on Quote {
-                            id
-                        }
-                    }
-                    pageInfo {
-                        next
+
                     }
                 }
             }
@@ -87,7 +77,7 @@ pub async fn hacer_consulta(perfil_id: &str) -> Result<U256, Box<dyn Error>> {
         "variables": {
             "request": {
                 "where": {
-                    "from": [perfil_id]
+                    "from": [perfil_id.to_string()]
                 }
             }
         }
@@ -105,8 +95,12 @@ pub async fn hacer_consulta(perfil_id: &str) -> Result<U256, Box<dyn Error>> {
         if let Some(items) = json["data"]["publications"]["items"].as_array() {
             if !items.is_empty() {
                 if let Some(id) = items[0]["id"].as_str() {
-                    let id_num: U256 = id.parse()?;
-                    return Ok(id_num);
+                    if let Some(hex_str) =  id.split('-').nth(1) {
+                        let numero = u32::from_str_radix(&hex_str[2..], 16)?;
+                        return Ok(numero.into());
+                    } else {
+                        return Err("Error con el Hex".into());
+                    }
                 } else {
                     return Err("ID no encontrado o no es una cadena de texto.".into());
                 }
@@ -148,13 +142,17 @@ pub fn inicializar_contrato(
 
             let billetera = match var(clave_privada.replace("-", "_")) {
                 Ok(key) => match key.parse::<LocalWallet>() {
-                    Ok(wallet) => wallet,
+                    Ok(mut wallet) => {
+                        wallet = wallet.with_chain_id(Chain::PolygonAmoy);
+                        wallet
+                    }
                     Err(e) => panic!("Error al parsear la clave privada: {:?}", e),
                 },
                 Err(e) => panic!("PRIVATE_KEY not found: {:?}", e),
             };
 
             let cliente = SignerMiddleware::new(proveedor.clone(), billetera);
+
             let contrato = Contract::new(direccion, abi, Arc::new(cliente.clone()));
             LENS_HUB_PROXY_CONTRATO = Some(Arc::new(contrato));
 
@@ -190,6 +188,7 @@ pub fn inicializar_contrato(
             };
 
             let contrato = Contract::new(direccion, abi, Arc::new(cliente));
+
             NPC_PUBLICATION_CONTRATO = Some(Arc::new(contrato));
         });
 

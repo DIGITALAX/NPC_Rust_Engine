@@ -1,6 +1,5 @@
 use crate::bib::utils::subir_ipfs_imagen;
 use crate::bib::{lens, utils::subir_ipfs};
-use crate::Llama;
 use crate::{
     bib::{
         types::{
@@ -11,8 +10,10 @@ use crate::{
     },
     Mapa, Pub,
 };
+use crate::{Llama, LENS_HUB_PROXY, NPC_PUBLICATION};
 use abi::{Token, Tokenize};
 use ethers::prelude::*;
+use ethers::types::{Address, Bytes, U256};
 use pathfinding::prelude::astar;
 use rand::prelude::SliceRandom;
 use rand::SeedableRng;
@@ -24,7 +25,6 @@ use std::{
 };
 use tokio::sync::Mutex as TokioMutex;
 use uuid::Uuid;
-use ethers::types::{Bytes, U256, Address};
 
 impl NPCAleatorio {
     pub fn new(
@@ -34,11 +34,10 @@ impl NPCAleatorio {
         mundo: Talla,
         reloj_juego: GameTimer,
         mapa: Mapa,
-        escena: String
+        escena: String,
     ) -> Self {
         let (lens_hub_contrato, autograph_data_contrato, npc_publication_contrato) =
             lens::inicializar_contrato(&sprite.etiqueta.to_string());
-
 
         NPCAleatorio {
             reloj_juego,
@@ -55,7 +54,7 @@ impl NPCAleatorio {
             lens_hub_contrato,
             autograph_data_contrato,
             npc_publication_contrato,
-            escena
+            escena,
         }
     }
 
@@ -68,9 +67,13 @@ impl NPCAleatorio {
         self.elegir_direccion_aleatoria();
         self.limpiar_caminos();
 
-        if self.reloj_juego.time_accumulated - self.ultimo_tiempo_comprobacion >= 1000  {
-            self.ultimo_tiempo_comprobacion = self.reloj_juego.time_accumulated;
+        if self.ultimo_tiempo_comprobacion > 0 {
+            self.ultimo_tiempo_comprobacion -= delta_time;
+        }
 
+        if self.ultimo_tiempo_comprobacion <= 0 {
+            self.ultimo_tiempo_comprobacion = 1000000;
+            println!("dentro");
             self.comprobar_conversacion();
         }
     }
@@ -291,19 +294,14 @@ impl NPCAleatorio {
         let llama = Llama;
         let npc_clone = Arc::new(self.clone());
 
-        let rt = tokio::runtime::Runtime::new().unwrap();
-
-
-     rt.block_on(async move {
-        
+        tokio::spawn(async move {
             let metodo = npc_clone
                 .npc_publication_contrato
                 .method::<_, (LensType, Address, u8)>(
                     "getPublicationPredictByNPC",
                     npc_clone.npc.billetera.parse::<Address>().unwrap(),
                 );
-               
-        
+
             match metodo {
                 Ok(call) => {
                     let result: Result<
@@ -312,12 +310,12 @@ impl NPCAleatorio {
                             SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
                         >,
                     > = call.call().await;
-  
+
                     match result {
                         Ok((eleccion, artista, pagina)) => {
                             let mut prompt = "";
                             let mut imagen: Option<String> = None;
-                            let locale = "";
+                            let locale = "en";
 
                             if eleccion == LensType::Autograph {
                                 let metodo =
@@ -468,11 +466,7 @@ impl NPCAleatorio {
                             match llama.llamar_llama(prompt).await {
                                 Ok(mensaje) => {
                                     match npc_clone
-                                        .formatear_pub(
-                                            &mensaje,
-                                            locale,
-                                            imagen.as_deref(),
-                                        )
+                                        .formatear_pub(&mensaje, locale, imagen.as_deref())
                                         .await
                                     {
                                         Ok(publicacion_id) => {
@@ -481,32 +475,97 @@ impl NPCAleatorio {
                                                 .method::<_, H256>(
                                                     "registerPublication",
                                                     RegisterPub {
-                                                        artist: artista,
-                                                        profileId: npc_clone
-                                                            .npc
-                                                            .perfil_id
-                                                            ,
-                                                        pubId: publicacion_id,
-                                                        pageNumber: pagina,
-                                                        lensType: eleccion,
+                                                        _artist: artista,
+                                                        _profileId: npc_clone.npc.perfil_id,
+                                                        _pubId: publicacion_id + 1,
+                                                        _pageNumber: pagina,
+                                                        _lensType: eleccion,
                                                     },
                                                 );
 
                                             match method {
                                                 Ok(call) => {
-                                                    let tx = call.send().await;
-                                                    match tx {
-                                                        Ok(tx_hash) => {
-                                                            println!("Transacción enviada a NPC Publicación: {:?}", tx_hash);
-                                                        }
-                                                        Err(e) => {
-                                                            eprintln!("Error al enviar la transacción: {}", e);
-                                                        }
+                                                    let FunctionCall { tx, .. } = call;
+
+                                                    if let Some(tx_request) = tx.as_eip1559_ref() {
+                                                        let gas_price =
+                                                            U256::from(200_000_000_000u64);
+                                                        let max_priority_fee =
+                                                            U256::from(10_000_000_000u64);
+                                                        let gas_limit = U256::from(200_000);
+                                                        let cliente = npc_clone
+                                                            .npc_publication_contrato
+                                                            .client()
+                                                            .clone();
+                                                        let nonce = cliente
+                                                            .clone()
+                                                            .get_transaction_count(
+                                                                npc_clone
+                                                                    .npc
+                                                                    .billetera
+                                                                    .parse::<Address>()
+                                                                    .unwrap(),
+                                                                None,
+                                                            )
+                                                            .await
+                                                            .expect("Error al recuperar el nonce");
+
+                                                        let req = Eip1559TransactionRequest {
+                                                            from: Some(
+                                                                npc_clone
+                                                                    .npc
+                                                                    .billetera
+                                                                    .parse::<Address>()
+                                                                    .unwrap(),
+                                                            ),
+                                                            to: Some(NameOrAddress::Address(
+                                                                NPC_PUBLICATION
+                                                                    .parse::<Address>()
+                                                                    .unwrap(),
+                                                            )),
+                                                            gas: Some(gas_limit),
+                                                            value: tx_request.value,
+                                                            data: tx_request.data.clone(),
+                                                            max_priority_fee_per_gas: Some(
+                                                                max_priority_fee,
+                                                            ),
+                                                            max_fee_per_gas: Some(
+                                                                gas_price + max_priority_fee,
+                                                            ),
+                                                            nonce: Some(nonce),
+                                                            chain_id: Some(
+                                                                Chain::PolygonAmoy.into(),
+                                                            ),
+                                                            ..Default::default()
+                                                        };
+
+                                                        let cliente = npc_clone
+                                                            .npc_publication_contrato
+                                                            .client();
+                                                        let pending_tx = cliente
+                                                            .send_transaction(req, None)
+                                                            .await
+                                                            .map_err(|e| println!("Error al enviar la transacción: {}", e))
+                                                            .expect("Error fatal al enviar la transacción");
+                                                        let tx_hash = pending_tx
+                                                            .confirmations(1)
+                                                            .await
+                                                            .map_err(|e| {
+                                                                println!(
+                                                                    "Error con la transacción: {}",
+                                                                    e
+                                                                )
+                                                            })
+                                                            .expect("Error con la transacción");
+                                                        // println!(
+                                                        //     "Transacción enviada con hash: {:?}",
+                                                        //     tx_hash
+                                                        // );
                                                     }
                                                 }
                                                 Err(e) => {
                                                     eprintln!(
-                                                        "Error al crear el método de registro: {}",
+                                                        "Error al registrar la publicación: {}",
                                                         e
                                                     );
                                                 }
@@ -519,7 +578,6 @@ impl NPCAleatorio {
                                 }
                                 Err(e) => {
                                     eprintln!("Error con la generación del mensaje: {:?}", e);
-
                                 }
                             }
                         }
@@ -529,9 +587,7 @@ impl NPCAleatorio {
                     }
                 }
                 Err(e) => {
-                 
                     eprintln!("Error al crear el método: {}", e);
-                
                 }
             }
         });
@@ -606,33 +662,76 @@ impl NPCAleatorio {
         Ok(resultado)
     }
 
-    async fn enviar_mensaje(&self, contenido: String) -> Result<U256, Box<dyn Error + Send + Sync>> {
-    
+    async fn enviar_mensaje(
+        &self,
+        contenido: String,
+    ) -> Result<U256, Box<dyn Error + Send + Sync>> {
         let mensaje = Pub {
             profileId: self.npc.perfil_id,
             contentURI: String::from("ipfs://") + &contenido,
             actionModules: vec![],
             actionModulesInitDatas: vec![],
-            referenceModule: "0x0000000000000000000000000000000000000000".parse::<Address>().unwrap(),
+            referenceModule: "0x0000000000000000000000000000000000000000"
+                .parse::<Address>()
+                .unwrap(),
             referenceModuleInitData: Bytes::from(vec![0u8; 1]),
         };
 
-        let method =
-        self.lens_hub_contrato.method::<_, U256>("post", (Token::Tuple(mensaje.into_tokens()),));
+        let method = self
+            .lens_hub_contrato
+            .method::<_, U256>("post", (Token::Tuple(mensaje.into_tokens()),))?;
 
-        let tx = method?.call().await?;
+        let FunctionCall { tx, .. } = method;
 
-        println!("Transacción enviada a Lens: {:?}", tx);
+        if let Some(tx_request) = tx.as_eip1559_ref() {
+            let cliente = self.lens_hub_contrato.client().clone();
+            let gas_price = U256::from(500_000_000_000u64);
+            let max_priority_fee = U256::from(20_000_000_000u64);
+            let gas_limit = U256::from(300_000);
+            let tx_cost = gas_limit * gas_price + max_priority_fee;
 
-        let resultado = lens::hacer_consulta(
-            &format!("0x0{:x}",  &self.npc.perfil_id)
-        )
-        .await
-        .map_err(|e| {
-            Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
-        })?;
+            if cliente
+                .clone()
+                .get_balance(self.npc.billetera.parse::<Address>().unwrap(), None)
+                .await?
+                < tx_cost
+            {
+                return Err(Box::new(CustomError::new("Fondos insuficientes para gas")));
+            }
 
-        Ok(resultado)
+            let req = Eip1559TransactionRequest {
+                from: Some(self.npc.billetera.parse::<Address>().unwrap()),
+                to: Some(NameOrAddress::Address(
+                    LENS_HUB_PROXY.parse::<Address>().unwrap(),
+                )),
+                gas: Some(gas_limit),
+                value: tx_request.value,
+                // nonce: Some(
+                //     cliente
+                //         .clone()
+                //         .get_transaction_count(self.npc.billetera.parse::<Address>().unwrap(), None)
+                //         .await?
+                // ),
+                data: tx_request.data.clone(),
+                max_priority_fee_per_gas: Some(max_priority_fee),
+                max_fee_per_gas: Some(gas_price + max_priority_fee),
+                chain_id: Some(Chain::PolygonAmoy.into()),
+                ..Default::default()
+            };
+            let cliente = self.lens_hub_contrato.client().clone();
+            let pending_tx = cliente.send_transaction(req, None).await?;
+            let tx_hash = pending_tx.confirmations(1).await?;
+            // println!("Transacción enviada con hash: {:?}", tx_hash);
 
+            let resultado = lens::hacer_consulta(&format!("0x0{:x}", &self.npc.perfil_id))
+                .await
+                .map_err(|e| {
+                    Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
+                })?;
+
+            Ok(resultado)
+        } else {
+            Err(Box::new(CustomError::new("Error en Transacción")) as Box<dyn Error + Send + Sync>)
+        }
     }
 }

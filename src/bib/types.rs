@@ -428,21 +428,21 @@ impl Tokenizable for LensType {
 }
 
 pub struct RegisterPub {
-    pub artist: Address,
-    pub profileId: U256,
-    pub pubId: U256,
-    pub pageNumber: u8,
-    pub lensType: LensType,
+    pub _artist: Address,
+    pub _profileId: U256,
+    pub _pubId: U256,
+    pub _pageNumber: u8,
+    pub _lensType: LensType,
 }
 
 impl Tokenize for RegisterPub {
     fn into_tokens(self) -> Vec<Token> {
         vec![
-            self.artist.into_token(),
-            self.profileId.into_token(),
-            self.pubId.into_token(),
-            self.pageNumber.into_token(),
-            self.lensType.into_token(),
+            Token::Address(self._artist).into_token(),
+            Token::Uint(self._profileId).into_token(),
+            Token::Uint(self._pubId).into_token(),
+            Token::Uint( U256::from(self._pageNumber)).into_token(),
+            self._lensType.into_token(),
         ]
     }
 }
