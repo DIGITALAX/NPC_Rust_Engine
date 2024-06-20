@@ -1,29 +1,17 @@
-use crate::bib::utils::subir_ipfs_imagen;
-use crate::bib::{lens, utils::subir_ipfs};
-use crate::{
-    bib::{
-        types::{
-            Contenido, Coordenada, CustomError, Estado, GameTimer, Imagen, LensType, Movimiento,
-            NPCAleatorio, Publicacion, RegisterPub, Silla, Sprite, Talla,
-        },
-        utils::between,
-    },
-    Mapa, Pub,
-};
-use crate::{Comment, Llama, LENS_HUB_PROXY, NPC_PUBLICATION};
+use crate::bib::{lens, utils::{subir_ipfs, subir_ipfs_imagen, between},  types::{
+    Contenido, Coordenada, CustomError, Estado, GameTimer, Imagen, LensType, Movimiento,
+    NPCAleatorio, Publicacion, RegisterPub, Silla, Sprite, Talla, Mirror, Comment, Llama, Mapa, Pub
+}};
+
+use crate::{LENS_HUB_PROXY, NPC_PUBLICATION};
 use abi::{Token, Tokenize};
-use ethers::prelude::*;
-use ethers::types::{Address, Bytes, U256};
+use ethers::{prelude::*, types::{Address, Bytes, U256}};
 use pathfinding::prelude::astar;
-use rand::prelude::SliceRandom;
-use rand::SeedableRng;
+use rand::{prelude::SliceRandom, SeedableRng};
 use rand_chacha::ChaCha12Rng;
 use serde_json::to_string;
-use std::str::FromStr;
-use std::{
-    error::Error,
-    sync::{Arc, Mutex},
-};
+use std::{str::FromStr,   error::Error,
+    sync::{Arc, Mutex},};
 use tokio::sync::Mutex as TokioMutex;
 use uuid::Uuid;
 
@@ -298,7 +286,7 @@ impl NPCAleatorio {
         tokio::spawn(async move {
             let metodo = npc_clone
                 .npc_publication_contrato
-                .method::<_, (LensType, Address, u8)>(
+                .method::<_, (LensType, Address, u8, U256)>(
                     "getPublicationPredictByNPC",
                     npc_clone.npc.billetera.parse::<Address>().unwrap(),
                 );
@@ -306,19 +294,20 @@ impl NPCAleatorio {
             match metodo {
                 Ok(call) => {
                     let result: Result<
-                        (LensType, Address, u8),
+                        (LensType, Address, u8, U256),
                         ethers::contract::ContractError<
                             SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
                         >,
                     > = call.call().await;
 
                     match result {
-                        Ok((eleccion, artista, pagina)) => {
+                        Ok((eleccion, artista, pagina, perfil_id)) => {
                             let mut prompt = "";
                             let mut imagen: Option<String> = None;
                             let locale = "en";
                          let mut  comentario_perfil = U256::from(0);
                          let mut comentario_pub= U256::from(0);
+                         let mut metadata_uri: String = String::from("");
 
                             if eleccion == LensType::Autograph {
                                 let metodo =
@@ -428,7 +417,10 @@ impl NPCAleatorio {
                                         println!("Un error de ABI {}", e);
                                     }
                                 }
-                            } else if eleccion == LensType::Catalog {
+                            } 
+                            
+                            
+                            else if eleccion == LensType::Catalog {
                                 let metodo = npc_clone
                                     .autograph_data_contrato
                                     .method::<_, String>("getAutographPage", pagina);
@@ -459,10 +451,10 @@ impl NPCAleatorio {
                                     }
                                 }
                             } else {
-                                if eleccion == LensType::Comment {
+                                if eleccion == LensType::Comment || eleccion == LensType::Mirror || eleccion == LensType::Quote {
                                   
                                     let (contenido, perfil,
-                                 publicacion) = lens::coger_comentario(&format!("0x0{:x}", npc_clone.npc.perfil_id))
+                                 publicacion, metadata) = lens::coger_comentario(&format!("0x0{:x}", perfil_id))
                                     .await
                                     .map_err(|e| println!("Error al encontrar el comentario: {}", e))
                                     .expect("Error al encontrar el comentario");
@@ -472,6 +464,8 @@ impl NPCAleatorio {
                                         temp_prompt.push_str(&contenido);
                                         temp_prompt
                                     };
+
+                                   metadata_uri = metadata;
 
                                     comentario_perfil = perfil;
                                     comentario_pub = publicacion;
@@ -485,7 +479,7 @@ impl NPCAleatorio {
                             match llama.llamar_llama(prompt).await {
                                 Ok(mensaje) => {
                                     match npc_clone
-                                        .formatear_pub(&mensaje, locale, imagen.as_deref(), eleccion.clone(), comentario_perfil, comentario_pub)
+                                        .formatear_pub(metadata_uri,&mensaje, locale, imagen.as_deref(), eleccion.clone(), comentario_perfil, comentario_pub)
                                         .await
                                     {
                                         Ok(publicacion_id) => {
@@ -614,6 +608,7 @@ impl NPCAleatorio {
 
     async fn formatear_pub(
         &self,
+        metadata_uri: String,
         mensaje: &str,
         locale: &str,
         imagen: Option<&str>,
@@ -679,7 +674,7 @@ impl NPCAleatorio {
             }
         };
 
-        let resultado = self.enviar_mensaje(contenido, lens_tipo,comentario_perfil,
+        let resultado = self.enviar_mensaje(contenido, metadata_uri,lens_tipo,comentario_perfil,
             comentario_pub).await?;
 
         Ok(resultado)
@@ -688,13 +683,14 @@ impl NPCAleatorio {
     async fn enviar_mensaje(
         &self,
         contenido: String,
+        metadata_uri: String,
         lens_tipo: LensType,
         comentario_perfil: U256,
         comentario_pub: U256
     ) -> Result<U256, Box<dyn Error + Send + Sync>> {
         let method;
        
-       if lens_tipo == LensType::Comment {
+       if lens_tipo == LensType::Comment || lens_tipo == LensType::Quote {
 
         let mensaje = Comment {
             profileId: self.npc.perfil_id,
@@ -717,11 +713,41 @@ Bytes::from_str("0x000000000000000000000000185b529b421ff60b0f2388483b757b39103cf
             referenceModuleInitData: Bytes::from(vec![0u8; 1]),
         };
 
+        let mut funcion = "comment";
+
+        if lens_tipo == LensType::Quote {
+            funcion = "quote"
+        }
+
          method = self
         .lens_hub_contrato
-        .method::<_, U256>("comment", (Token::Tuple(mensaje.into_tokens()),))?;
+        .method::<_, U256>(funcion, (Token::Tuple(mensaje.into_tokens()),))?;
 
-       } else {
+       }else if lens_tipo == LensType::Mirror {
+
+        let mensaje = Mirror {
+            profileId: self.npc.perfil_id,
+            metadataURI: metadata_uri,
+            pointedProfileId: comentario_perfil,
+            pointedPubId: comentario_pub,
+            referrerProfileIds: vec![],
+            referrerPubIds: vec![],
+            referenceModuleData: Bytes::from(vec![0u8; 1]),
+         
+        };
+
+         method = self
+        .lens_hub_contrato
+        .method::<_, U256>("mirror", (Token::Tuple(mensaje.into_tokens()),))?;
+
+
+
+       }
+       
+       
+       
+       
+       else {
         let mensaje = Pub {
             profileId: self.npc.perfil_id,
             contentURI: String::from("ipfs://") + &contenido,
@@ -741,10 +767,7 @@ Bytes::from_str("0x000000000000000000000000185b529b421ff60b0f2388483b757b39103cf
          method = self
         .lens_hub_contrato
         .method::<_, U256>("post", (Token::Tuple(mensaje.into_tokens()),))?;
-       }
-       
-       
-
+       } 
  
 
         let FunctionCall { tx, .. } = method;

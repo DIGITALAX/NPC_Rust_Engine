@@ -341,6 +341,41 @@ impl Tokenize for Pub {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+pub struct Mirror {
+    pub profileId: U256,
+    pub metadataURI: String,
+    pub pointedProfileId: U256,
+    pub pointedPubId: U256,
+    pub referrerProfileIds: Vec<U256>,
+    pub referrerPubIds: Vec<U256>,
+    pub referenceModuleData: Bytes,
+}
+
+impl Tokenize for Mirror {
+    fn into_tokens(self) -> Vec<Token> {
+        vec![
+            Token::Uint(self.profileId),
+            Token::String(self.metadataURI),
+            Token::Uint(self.pointedProfileId),
+            Token::Uint(self.pointedPubId),
+            Token::Array(
+                self.referrerProfileIds
+                    .into_iter()
+                    .map(|uint| uint.into_token())
+                    .collect(),
+            ),
+            Token::Array(
+                self.referrerPubIds
+                    .into_iter()
+                    .map(|uint| uint.into_token())
+                    .collect(),
+            ),
+            Token::Bytes(self.referenceModuleData.to_vec()),
+        ]
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Comment {
     pub profileId: U256,
     pub contentURI: String,
@@ -442,6 +477,8 @@ pub enum LensType {
     Comment,
     Publication,
     Autograph,
+    Quote,
+    Mirror,
 }
 
 impl TryFrom<u8> for LensType {
@@ -465,6 +502,8 @@ impl Tokenizable for LensType {
             Token::Uint(val) if val == 1u64.into() => Ok(LensType::Comment),
             Token::Uint(val) if val == 2u64.into() => Ok(LensType::Publication),
             Token::Uint(val) if val == 3u64.into() => Ok(LensType::Autograph),
+            Token::Uint(val) if val == 4u64.into() => Ok(LensType::Quote),
+            Token::Uint(val) if val == 5u64.into() => Ok(LensType::Mirror),
             _ => Err(ethers::abi::InvalidOutputType(
                 "Unexpected token".to_string(),
             )),
@@ -477,6 +516,8 @@ impl Tokenizable for LensType {
             LensType::Comment => Token::Uint(1u64.into()),
             LensType::Publication => Token::Uint(2u64.into()),
             LensType::Autograph => Token::Uint(3u64.into()),
+            LensType::Quote => Token::Uint(4u64.into()),
+            LensType::Mirror => Token::Uint(5u64.into()),
         }
     }
 }

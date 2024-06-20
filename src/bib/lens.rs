@@ -60,7 +60,9 @@ fn inicializar_api() -> Arc<Client> {
     }
 }
 
-pub async fn coger_comentario(perfil_id: &str) -> Result<(String, U256, U256), Box<dyn Error>> {
+pub async fn coger_comentario(
+    perfil_id: &str,
+) -> Result<(String, U256, U256, String), Box<dyn Error>> {
     let cliente = inicializar_api();
     let consulta = json!({
         "query": r#"
@@ -72,6 +74,15 @@ pub async fn coger_comentario(perfil_id: &str) -> Result<(String, U256, U256), B
                             metadata {
                                 ... on TextOnlyMetadataV3 {
                                     content
+                                    rawURI
+                                ... on ImageMetadataV3 {
+                                    content
+                                    rawURI
+                                }
+                                ... on VideoMetadataV3 {
+                                    content
+                                    rawURI
+                                }
                             }
                         }
 
@@ -110,11 +121,21 @@ pub async fn coger_comentario(perfil_id: &str) -> Result<(String, U256, U256), B
                             let comentario_pub = U256::from_str_radix(&hex_str[2..], 16)?;
 
                             if let Some(contenido) = items[indice_aleatorio]["content"].as_str() {
-                                return Ok((
-                                    contenido.to_string(),
-                                    comentario_perfil,
-                                    comentario_pub,
-                                ));
+                                if let Some(metadata_uri) =
+                                    items[indice_aleatorio]["rawURI"].as_str()
+                                {
+                                    return Ok((
+                                        contenido.to_string(),
+                                        comentario_perfil,
+                                        comentario_pub,
+                                        metadata_uri.to_string(),
+                                    ));
+                                } else {
+                                    return Err(
+                                        "El metadata no se encuentra o no es una cadena de texto."
+                                            .into(),
+                                    );
+                                }
                             } else {
                                 return Err(
                                     "El contenido no se encuentra o no es una cadena de texto."
