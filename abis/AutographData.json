@@ -33,6 +33,16 @@
         "internalType": "struct AutographLibrary.CollectionInit",
         "components": [
           {
+            "name": "languages",
+            "type": "string[][]",
+            "internalType": "string[][]"
+          },
+          {
+            "name": "npcs",
+            "type": "address[][]",
+            "internalType": "address[][]"
+          },
+          {
             "name": "acceptedTokens",
             "type": "address[][]",
             "internalType": "address[][]"
@@ -141,6 +151,16 @@
         "internalType": "struct AutographLibrary.CollectionInit",
         "components": [
           {
+            "name": "languages",
+            "type": "string[][]",
+            "internalType": "string[][]"
+          },
+          {
+            "name": "npcs",
+            "type": "address[][]",
+            "internalType": "address[][]"
+          },
+          {
             "name": "acceptedTokens",
             "type": "address[][]",
             "internalType": "address[][]"
@@ -225,15 +245,6 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "getAllArtists",
-    "inputs": [],
-    "outputs": [
-      { "name": "", "type": "address[]", "internalType": "address[]" }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -401,6 +412,28 @@
   },
   {
     "type": "function",
+    "name": "getCollectionLanguagesByGalleryId",
+    "inputs": [
+      { "name": "_collectionId", "type": "uint256", "internalType": "uint256" },
+      { "name": "_galleryId", "type": "uint16", "internalType": "uint16" }
+    ],
+    "outputs": [{ "name": "", "type": "string[]", "internalType": "string[]" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCollectionNPCsByGalleryId",
+    "inputs": [
+      { "name": "_collectionId", "type": "uint256", "internalType": "uint256" },
+      { "name": "_galleryId", "type": "uint16", "internalType": "uint16" }
+    ],
+    "outputs": [
+      { "name": "", "type": "address[]", "internalType": "address[]" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getCollectionPriceByGalleryId",
     "inputs": [
       { "name": "_collectionId", "type": "uint256", "internalType": "uint256" },
@@ -430,6 +463,17 @@
     ],
     "outputs": [
       { "name": "", "type": "uint256[]", "internalType": "uint256[]" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCollectionToNPCs",
+    "inputs": [
+      { "name": "_collectionId", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [
+      { "name": "", "type": "address[]", "internalType": "address[]" }
     ],
     "stateMutability": "view"
   },
@@ -466,6 +510,15 @@
       { "name": "_designer", "type": "address", "internalType": "address" }
     ],
     "outputs": [{ "name": "", "type": "uint16[]", "internalType": "uint16[]" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getDesignerProfileId",
+    "inputs": [
+      { "name": "_designer", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
   {
@@ -546,6 +599,17 @@
     "type": "function",
     "name": "getNFTMix",
     "inputs": [],
+    "outputs": [
+      { "name": "", "type": "uint256[]", "internalType": "uint256[]" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getNPCToCollections",
+    "inputs": [
+      { "name": "_npcWallet", "type": "address", "internalType": "address" }
+    ],
     "outputs": [
       { "name": "", "type": "uint256[]", "internalType": "uint256[]" }
     ],

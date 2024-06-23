@@ -243,7 +243,7 @@ pub fn inicializar_contrato(
                 }
             };
 
-            let billetera = match var(clave_privada.replace("-", "_")) {
+            let billetera = match var(clave_privada) {
                 Ok(key) => match key.parse::<LocalWallet>() {
                     Ok(mut wallet) => {
                         wallet = wallet.with_chain_id(Chain::PolygonAmoy);

@@ -15,6 +15,13 @@
   },
   {
     "type": "function",
+    "name": "activatePublications",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "autographAccessControl",
     "inputs": [],
     "outputs": [
@@ -41,12 +48,12 @@
   },
   {
     "type": "function",
-    "name": "getPublicationArtist",
+    "name": "getPublicationCollectionId",
     "inputs": [
       { "name": "_profileId", "type": "uint256", "internalType": "uint256" },
       { "name": "_pubId", "type": "uint256", "internalType": "uint256" }
     ],
-    "outputs": [{ "name": "", "type": "address", "internalType": "address" }],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
   {
@@ -71,7 +78,7 @@
         "type": "uint8",
         "internalType": "enum AutographLibrary.LensType"
       },
-      { "name": "", "type": "address", "internalType": "address" },
+      { "name": "", "type": "uint256", "internalType": "uint256" },
       { "name": "", "type": "uint8", "internalType": "uint8" },
       { "name": "", "type": "uint256", "internalType": "uint256" }
     ],
@@ -104,7 +111,7 @@
     "type": "function",
     "name": "registerPublication",
     "inputs": [
-      { "name": "_artist", "type": "address", "internalType": "address" },
+      { "name": "_collection", "type": "uint256", "internalType": "uint256" },
       { "name": "_profileId", "type": "uint256", "internalType": "uint256" },
       { "name": "_pubId", "type": "uint256", "internalType": "uint256" },
       { "name": "_pageNumber", "type": "uint8", "internalType": "uint8" },

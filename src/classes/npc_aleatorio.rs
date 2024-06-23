@@ -7,12 +7,9 @@ use crate::{LENS_HUB_PROXY, NPC_PUBLICATION};
 use abi::{Token, Tokenize};
 use ethers::{prelude::*, types::{Address, Bytes, U256}};
 use pathfinding::prelude::astar;
-use rand::{prelude::SliceRandom, SeedableRng};
-use rand_chacha::ChaCha12Rng;
 use serde_json::to_string;
 use std::{str::FromStr,   error::Error,
     sync::{Arc, Mutex},};
-use tokio::sync::Mutex as TokioMutex;
 use uuid::Uuid;
 
 impl NPCAleatorio {
@@ -60,11 +57,10 @@ impl NPCAleatorio {
             self.ultimo_tiempo_comprobacion -= delta_time;
         }
 
-        if self.ultimo_tiempo_comprobacion <= 0 {
-            self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
-            println!("dentro");
-            self.comprobar_conversacion();
-        }
+        // if self.ultimo_tiempo_comprobacion <= 0 {
+        //     self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
+        //     self.comprobar_conversacion();
+        // }
     }
 
     fn elegir_direccion_aleatoria(&mut self) {
@@ -286,7 +282,7 @@ impl NPCAleatorio {
         tokio::spawn(async move {
             let metodo = npc_clone
                 .npc_publication_contrato
-                .method::<_, (LensType, Address, u8, U256)>(
+                .method::<_, (LensType, U256, u8, U256)>(
                     "getPublicationPredictByNPC",
                     npc_clone.npc.billetera.parse::<Address>().unwrap(),
                 );
@@ -294,14 +290,14 @@ impl NPCAleatorio {
             match metodo {
                 Ok(call) => {
                     let result: Result<
-                        (LensType, Address, u8, U256),
+                        (LensType, U256, u8, U256),
                         ethers::contract::ContractError<
                             SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
                         >,
                     > = call.call().await;
 
                     match result {
-                        Ok((eleccion, artista, pagina, perfil_id)) => {
+                        Ok((eleccion, coleccion_id, pagina, perfil_id)) => {
                             let mut prompt = "";
                             let mut imagen: Option<String> = None;
                             let locale = "en";
@@ -310,117 +306,93 @@ impl NPCAleatorio {
                          let mut metadata_uri: String = String::from("");
 
                             if eleccion == LensType::Autograph {
-                                let metodo =
-                                    npc_clone.autograph_data_contrato.method::<_, Vec<u128>>(
-                                        "getArtistCollectionsAvailable",
-                                        artista.clone(),
-                                    );
+                              
+                               let metodo = npc_clone.autograph_data_contrato.method::<_, u16>("getCollectionGallery", coleccion_id);
 
                                 match metodo {
-                                    Ok(llama) => {
+                                    Ok (llama) => {
                                         let result: Result<
-                                            Vec<u128>,
+                                        u16,
                                             ethers::contract::ContractError<
                                                 SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
                                             >,
                                         > = llama.call().await;
 
                                         match result {
-                                            Ok(mut colecciones) => {
-                                                let rng = Arc::new(TokioMutex::new(
-                                                    ChaCha12Rng::from_entropy(),
-                                                ));
+                                            Ok (galeria_id) => {
 
-                                                if let Some(&mut numero_aleatorio) = colecciones
-                                                    .choose_mut(&mut *rng.clone().lock().await)
-                                                {
-                                                    let metodo = npc_clone
-                                                        .autograph_data_contrato
-                                                        .method::<_, u8>(
-                                                        "getCollectionGallery",
-                                                        numero_aleatorio,
-                                                    );
+      
+                                                let metodo = npc_clone.autograph_data_contrato.method::<_, String>("getCollectionURIByGalleryId", (coleccion_id, galeria_id));
+                            
 
-                                                    match metodo {
-                                                        Ok(llama) => {
-                                                            let resultado: Result<
-                                                                u8,
-                                                                ethers::contract::ContractError<
-                                                                    SignerMiddleware<
-                                                                        Arc<Provider<Http>>,
-                                                                        LocalWallet,
-                                                                    >,
-                                                                >,
-                                                            > = llama.call().await;
+                                                match metodo {
+                                                    Ok(llama) => {
+                                                        let result: Result<
+                                                        String,
+                                                            ethers::contract::ContractError<
+                                                                SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
+                                                            >,
+                                                        > = llama.call().await;
+                
+                                                        match result { 
+                                                            Ok(uri) => {
+                                                            
+                                                                    if let Some(start_index) = uri.find("\"imagen\": \"ipfs://") {
+                                                                        let ipfs_start = start_index + "\"imagen\": \"".len();
+                                                                        if let Some(end_index) = uri[ipfs_start..].find('"') {
+                                                                            let ipfs_uri = &uri[ipfs_start..ipfs_start + end_index];
+                                                                   
 
-                                                            match resultado {
-                                                                Ok(galeria) => {
-                                                                    let metodo = npc_clone
-                                                                        .autograph_data_contrato
-                                                                        .method::<_, String>(
-                                                                            "getCollectionURIByGalleryId",
-                                                                            (numero_aleatorio, galeria),
-                                                                        );
-
-                                                                    match metodo {
-                                                                        Ok(llama) => {
-                                                                            let resultado: Result<
-                                                                                String,
-                                                                                ethers::contract::ContractError<
-                                                                                    SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
-                                                                                >,
-                                                                            > = llama.call().await;
-
-                                                                            match resultado {
-                                                                                Ok(uri) => {
-                                                                                    imagen =
-                                                                                        Some(uri);
-                                                                                }
-                                                                                Err(e) => {
-                                                                                    eprintln!(
-                                                                                        "Error al obtener la URI de la imagen: {}",
-                                                                                        e
-                                                                                    );
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        Err(e) => {
-                                                                            println!("Un error de ABI {}", e);
+                                                                            imagen =
+                                                                            Some(ipfs_uri.to_string());
+                                                                        }else {
+                                                                            let ipfs_uri = &uri[ipfs_start..];
+                                                                            imagen = Some(ipfs_uri.to_string());
                                                                         }
                                                                     }
-                                                                }
-                                                                Err(e) => {
-                                                                    eprintln!(
-                                                                        "Error al obtener la galeria: {}",
-                                                                        e
-                                                                    );
-                                                                }
                                                             }
+                                                            Err(e) => {
+                                                                eprintln!(
+                                                                    "Error al obtener la URI de la imagen: {}",
+                                                                    e
+                                                                );
+                                                            }
+                
                                                         }
-                                                        Err(e) => {
-                                                            println!("Un error de ABI {}", e);
-                                                        }
+                                                      
                                                     }
-                                                } else {
-                                                    println!("El array está vacío.");
+                                                    Err(e) => {
+                                                        println!("Un error de ABI {}", e);
+                                                    }
                                                 }
-                                            }
-                                            Err(e) => {
+
+
+
+
+                                            },
+
+                                            Err (e) => {
                                                 eprintln!(
-                                                    "Error al obtener las colecciones: {}",
+                                                    "Error al obtener el Id de la galería: {}",
                                                     e
                                                 );
                                             }
                                         }
-                                    }
+                                    },
+
                                     Err(e) => {
-                                        println!("Un error de ABI {}", e);
+                                        eprintln!(
+                                            "Error al obtener el Id de la galería: {}",
+                                            e
+                                        );
                                     }
                                 }
-                            } 
-                            
-                            
-                            else if eleccion == LensType::Catalog {
+
+
+                             
+
+                                
+                            }  else if eleccion == LensType::Catalog {
                                 let metodo = npc_clone
                                     .autograph_data_contrato
                                     .method::<_, String>("getAutographPage", pagina);
@@ -488,8 +460,8 @@ impl NPCAleatorio {
                                                 .method::<_, H256>(
                                                     "registerPublication",
                                                     RegisterPub {
-                                                        _artist: artista,
-                                                        _profileId: npc_clone.npc.perfil_id,
+                                                        _collection: coleccion_id,
+                                                        _profileId: perfil_id,
                                                         _pubId: publicacion_id + 1,
                                                         _pageNumber: pagina,
                                                         _lensType: eleccion,
