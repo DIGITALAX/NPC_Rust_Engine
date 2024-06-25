@@ -126,6 +126,15 @@
   },
   {
     "type": "function",
+    "name": "setAutographData",
+    "inputs": [
+      { "name": "_autographData", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "symbol",
     "inputs": [],
     "outputs": [{ "name": "", "type": "string", "internalType": "string" }],

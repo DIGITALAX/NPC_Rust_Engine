@@ -248,17 +248,6 @@
   },
   {
     "type": "function",
-    "name": "getArtistCollectionsAvailable",
-    "inputs": [
-      { "name": "_designer", "type": "address", "internalType": "address" }
-    ],
-    "outputs": [
-      { "name": "", "type": "uint256[]", "internalType": "uint256[]" }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "getAutographAcceptedTokens",
     "inputs": [],
     "outputs": [
@@ -523,16 +512,6 @@
   },
   {
     "type": "function",
-    "name": "getGalleryByPublication",
-    "inputs": [
-      { "name": "_profileId", "type": "uint256", "internalType": "uint256" },
-      { "name": "_pubId", "type": "uint256", "internalType": "uint256" }
-    ],
-    "outputs": [{ "name": "", "type": "uint16", "internalType": "uint16" }],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "getGalleryCollectionCount",
     "inputs": [
       { "name": "_galleryId", "type": "uint16", "internalType": "uint16" }
@@ -556,15 +535,6 @@
     "name": "getGalleryCounter",
     "inputs": [],
     "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getGalleryEditable",
-    "inputs": [
-      { "name": "_galleryId", "type": "uint16", "internalType": "uint16" }
-    ],
-    "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
     "stateMutability": "view"
   },
   {
@@ -775,8 +745,7 @@
         "type": "uint256[]",
         "internalType": "uint256[]"
       },
-      { "name": "_galleryIds", "type": "uint16[]", "internalType": "uint16[]" },
-      { "name": "_amount", "type": "uint8", "internalType": "uint8" }
+      { "name": "_galleryIds", "type": "uint16[]", "internalType": "uint16[]" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"

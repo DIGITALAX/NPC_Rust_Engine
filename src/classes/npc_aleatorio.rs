@@ -1,13 +1,13 @@
-use crate::bib::{lens, utils::{subir_ipfs, subir_ipfs_imagen, between},  types::{
-    Contenido, Coordenada, CustomError, Estado, GameTimer, Imagen, LensType, Movimiento,
-    NPCAleatorio, Publicacion, RegisterPub, Silla, Sprite, Talla, Mirror, Comment, Llama, Mapa, Pub
-}};
+use crate::{bib::{lens, types::{
+    Comment, Contenido, Coordenada, CustomError, Estado, GameTimer, Imagen, LensType, Llama, Mapa, Mirror, Movimiento, NPCAleatorio, Pub, Publicacion, RegisterPub, Silla, Sprite, Talla
+}, utils::{between, subir_ipfs, subir_ipfs_imagen}}, IDIOMAS, LISTA_ESCENA};
 
 use crate::{LENS_HUB_PROXY, NPC_PUBLICATION};
 use abi::{Token, Tokenize};
 use ethers::{prelude::*, types::{Address, Bytes, U256}};
 use pathfinding::prelude::astar;
 use serde_json::to_string;
+use rand::{prelude::SliceRandom, thread_rng};
 use std::{str::FromStr,   error::Error,
     sync::{Arc, Mutex},};
 use uuid::Uuid;
@@ -289,21 +289,22 @@ impl NPCAleatorio {
 
             match metodo {
                 Ok(call) => {
-                    let result: Result<
+                    let resultado: Result<
                         (LensType, U256, u8, U256),
                         ethers::contract::ContractError<
                             SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
                         >,
                     > = call.call().await;
 
-                    match result {
-                        Ok((eleccion, coleccion_id, pagina, perfil_id)) => {
+                    match resultado {
+                        Ok((eleccion, coleccion_id, pagina, mut perfil_id)) => {
                             let mut prompt = "";
                             let mut imagen: Option<String> = None;
-                            let locale = "en";
-                         let mut  comentario_perfil = U256::from(0);
-                         let mut comentario_pub= U256::from(0);
-                         let mut metadata_uri: String = String::from("");
+                            let mut locale = IDIOMAS[0].to_string();
+                            let mut galeria = 0;
+                            let mut  comentario_perfil = U256::from(0);
+                            let mut comentario_pub= U256::from(0);
+                            let mut metadata_uri: String = String::from("");
 
                             if eleccion == LensType::Autograph {
                               
@@ -311,30 +312,32 @@ impl NPCAleatorio {
 
                                 match metodo {
                                     Ok (llama) => {
-                                        let result: Result<
+                                        let resultado: Result<
                                         u16,
                                             ethers::contract::ContractError<
                                                 SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
                                             >,
                                         > = llama.call().await;
 
-                                        match result {
+                                        match resultado {
                                             Ok (galeria_id) => {
 
+                                                galeria = galeria_id;
+
       
-                                                let metodo = npc_clone.autograph_data_contrato.method::<_, String>("getCollectionURIByGalleryId", (coleccion_id, galeria_id));
+                                                let metodo = npc_clone.autograph_data_contrato.method::<_, String>("getCollectionURIByGalleryId", (coleccion_id, galeria));
                             
 
                                                 match metodo {
                                                     Ok(llama) => {
-                                                        let result: Result<
+                                                        let resultado: Result<
                                                         String,
                                                             ethers::contract::ContractError<
                                                                 SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
                                                             >,
                                                         > = llama.call().await;
                 
-                                                        match result { 
+                                                        match resultado { 
                                                             Ok(uri) => {
                                                             
                                                                     if let Some(start_index) = uri.find("\"imagen\": \"ipfs://") {
@@ -425,33 +428,100 @@ impl NPCAleatorio {
                             } else {
                                 if eleccion == LensType::Comment || eleccion == LensType::Mirror || eleccion == LensType::Quote {
                                   
+                                   if perfil_id == U256::from(0)
+{  
+    
+    let mut rng = thread_rng();
+    let mut perfiles_id = Vec::new();
+    for escena in LISTA_ESCENA.iter() {
+        for sprite in &escena.sprites {
+            perfiles_id.push(sprite.perfil_id);
+        }
+    }
+    if let Some(&npc_id) = perfiles_id.choose(&mut rng) {
+        perfil_id = npc_id;
+    }
+
+}                                   
+                                   
+                                   
                                     let (contenido, perfil,
                                  publicacion, metadata) = lens::coger_comentario(&format!("0x0{:x}", perfil_id))
                                     .await
                                     .map_err(|e| println!("Error al encontrar el comentario: {}", e))
                                     .expect("Error al encontrar el comentario");
 
+                                let mut idiomas_para_prompt = IDIOMAS.to_vec();
+                                if coleccion_id != U256::from(0) && galeria != 0 {
+                                    let metodo = npc_clone
+                                    .autograph_data_contrato
+                                    .method::<_, Vec<String>>("getCollectionLanguagesByGalleryId", (coleccion_id, galeria));
+
+                                    match metodo {
+
+
+                                      
+                                        Ok(llama) => {
+                                      
+                                            let resultado: Result<
+                                            Vec<String>,
+                                                ethers::contract::ContractError<
+                                                    SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
+                                                >,
+                                            > = llama.call().await;
+
+                                            match resultado {
+                                                Ok(idiomas) => idiomas_para_prompt = idiomas,
+                                                Err(e) => {println!("Error al llamar los idiomas {}", e);}
+
+                                        
+                                            }
+                                           
+
+                                        },
+                                        Err(e) => {println!("Error al llamar los idiomas {}", e);}
+                                    }
+
+
+                                }
+
+                                        
+                                let mut rng = thread_rng();
+                                if let Some(idioma_aleatorio) = idiomas_para_prompt.choose(&mut rng) {
+                                    locale = idioma_aleatorio.to_string();
+                                }
+
+
                                     let new_prompt = {
-                                        let mut temp_prompt = String::from("respond to this post with a comment, only give me the comment in your reply, nothing more.\n\npost :\n\n");
+                                        let mut temp_prompt = String::from("respond to this post in the language of ");
+                                        temp_prompt.push_str(&locale);
+                                        temp_prompt.push_str(" with a comment, only give me the comment in your reply, nothing more.\n\npost :\n\n");
                                         temp_prompt.push_str(&contenido);
                                         temp_prompt
                                     };
 
                                    metadata_uri = metadata;
-
                                     comentario_perfil = perfil;
                                     comentario_pub = publicacion;
                                     prompt = Box::leak(Box::new(new_prompt)).as_str();
 
                                 } else {
-                                    prompt = "make me a post for twitter, only give me the post in your reply, nothing more.";
+                          
+                                    let new_prompt = {
+                                        let mut temp_prompt = String::from("make me a post for twitter in the language of ");
+                                        temp_prompt.push_str(&locale);
+                                        temp_prompt.push_str(" and only give me the post in your reply, nothing more.");
+                                        temp_prompt
+                                    };
+
+                                    prompt = Box::leak(Box::new(new_prompt)).as_str();
                                 }
                             }
 
                             match llama.llamar_llama(prompt).await {
                                 Ok(mensaje) => {
                                     match npc_clone
-                                        .formatear_pub(metadata_uri,&mensaje, locale, imagen.as_deref(), eleccion.clone(), comentario_perfil, comentario_pub)
+                                        .formatear_pub(metadata_uri,&mensaje, &locale, imagen.as_deref(), eleccion.clone(), comentario_perfil, comentario_pub)
                                         .await
                                     {
                                         Ok(publicacion_id) => {
