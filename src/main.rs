@@ -33,10 +33,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let oyente = TcpListener::bind(&addr)
         .await
         .expect("No se pudo vincular a la dirección");
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let manija = rt.handle().clone();
 
     let futures: Vec<_> = LISTA_ESCENA
         .iter()
-        .map(|escena: &Escena| async { Ok::<_, Error>(EscenaEstudio::new(escena.clone()).await) })
+        .map(|escena: &Escena| async { Ok::<_, Error>(EscenaEstudio::new(escena.clone(), manija.clone()).await) })
         .collect();
 
     let resultados = try_join_all(futures).await.unwrap();

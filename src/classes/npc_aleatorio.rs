@@ -1,6 +1,6 @@
 use crate::{bib::{lens, types::{
     Comment, Contenido, Coordenada, CustomError, Estado, GameTimer, Imagen, LensType, Llama, Mapa, Mirror, Movimiento, NPCAleatorio, Pub, Publicacion, RegisterPub, Silla, Sprite, Talla
-}, utils::{between, subir_ipfs, subir_ipfs_imagen}}, IDIOMAS, LISTA_ESCENA};
+}, utils::{between, subir_ipfs, subir_ipfs_imagen}}, IDIOMAS, ISO_CODES, LISTA_ESCENA};
 
 use crate::{LENS_HUB_PROXY, NPC_PUBLICATION};
 use abi::{Token, Tokenize};
@@ -8,6 +8,7 @@ use ethers::{prelude::*, types::{Address, Bytes, U256}};
 use pathfinding::prelude::astar;
 use serde_json::to_string;
 use rand::{prelude::SliceRandom, thread_rng};
+use tokio::runtime::{Handle};
 use std::{str::FromStr,   error::Error,
     sync::{Arc, Mutex},};
 use uuid::Uuid;
@@ -21,6 +22,7 @@ impl NPCAleatorio {
         reloj_juego: GameTimer,
         mapa: Mapa,
         escena: String,
+        manija: Handle
     ) -> Self {
         let (lens_hub_contrato, autograph_data_contrato, npc_publication_contrato) =
             lens::inicializar_contrato(&sprite.etiqueta.to_string());
@@ -41,6 +43,7 @@ impl NPCAleatorio {
             autograph_data_contrato,
             npc_publication_contrato,
             escena,
+            manija
         }
     }
 
@@ -57,10 +60,10 @@ impl NPCAleatorio {
             self.ultimo_tiempo_comprobacion -= delta_time;
         }
 
-        // if self.ultimo_tiempo_comprobacion <= 0 {
-        //     self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
-        //     self.comprobar_conversacion();
-        // }
+        if self.ultimo_tiempo_comprobacion <= 0 {
+            self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
+            self.comprobar_conversacion();
+        }
     }
 
     fn elegir_direccion_aleatoria(&mut self) {
@@ -135,7 +138,7 @@ impl NPCAleatorio {
                 None => {
                     attempts += 1;
                     if attempts >= 10 {
-                        println!(
+                        eprintln!(
                             "No se encontró camino después de varios intentos. {}",
                             self.npc.etiqueta
                         );
@@ -270,8 +273,8 @@ impl NPCAleatorio {
     }
 
     fn limpiar_caminos(&mut self) {
-        if self.caminos.len() > 40 {
-            self.caminos = self.caminos.split_off(self.caminos.len() - 40);
+        if self.caminos.len() > 200 {
+            self.caminos = self.caminos.split_off(self.caminos.len() - 200);
         }
     }
 
@@ -279,7 +282,7 @@ impl NPCAleatorio {
         let llama = Llama;
         let npc_clone = Arc::new(self.clone());
 
-        tokio::spawn(async move {
+        self.manija.spawn(async move {
             let metodo = npc_clone
                 .npc_publication_contrato
                 .method::<_, (LensType, U256, u8, U256)>(
@@ -359,13 +362,15 @@ impl NPCAleatorio {
                                                                     "Error al obtener la URI de la imagen: {}",
                                                                     e
                                                                 );
+                                                                return;
                                                             }
                 
                                                         }
                                                       
                                                     }
                                                     Err(e) => {
-                                                        println!("Un error de ABI {}", e);
+                                                        eprintln!("Un error de ABI {}", e);
+                                                        return;
                                                     }
                                                 }
 
@@ -388,6 +393,7 @@ impl NPCAleatorio {
                                             "Error al obtener el Id de la galería: {}",
                                             e
                                         );
+                                        return;
                                     }
                                 }
 
@@ -418,11 +424,13 @@ impl NPCAleatorio {
                                                     "Error al obtener la página del catálogo: {}",
                                                     e
                                                 );
+                                                return;
                                             }
                                         }
                                     }
                                     Err(e) => {
-                                        println!("Un error de ABI {}", e);
+                                        eprintln!("Un error de ABI {}", e);
+                                        return;
                                     }
                                 }
                             } else {
@@ -444,11 +452,10 @@ impl NPCAleatorio {
 
 }                                   
                                    
-                                   
                                     let (contenido, perfil,
                                  publicacion, metadata) = lens::coger_comentario(&format!("0x0{:x}", perfil_id))
                                     .await
-                                    .map_err(|e| println!("Error al encontrar el comentario: {}", e))
+                                    .map_err(|e| eprintln!("Error al encontrar el comentario: {}", e))
                                     .expect("Error al encontrar el comentario");
 
                                 let mut idiomas_para_prompt = IDIOMAS.to_vec();
@@ -495,7 +502,7 @@ impl NPCAleatorio {
                                     let new_prompt = {
                                         let mut temp_prompt = String::from("respond to this post in the language of ");
                                         temp_prompt.push_str(&locale);
-                                        temp_prompt.push_str(" with a comment, only give me the comment in your reply, nothing more.\n\npost :\n\n");
+                                        temp_prompt.push_str(" with a comment, only give me the comment in your reply, nothing more. Remember that when writing in a different language only write in that language, never write a translation or a pronunciation, only I want that language in the comment. \n\npost :\n\n");
                                         temp_prompt.push_str(&contenido);
                                         temp_prompt
                                     };
@@ -510,7 +517,7 @@ impl NPCAleatorio {
                                     let new_prompt = {
                                         let mut temp_prompt = String::from("make me a post for twitter in the language of ");
                                         temp_prompt.push_str(&locale);
-                                        temp_prompt.push_str(" and only give me the post in your reply, nothing more.");
+                                        temp_prompt.push_str(" and only give me the post in your reply, nothing more. Remember that when writing in a different language only write in that language, never write a translation or a pronunciation, only I want that language in the post.");
                                         temp_prompt
                                     };
 
@@ -600,13 +607,13 @@ impl NPCAleatorio {
                                                         let pending_tx = cliente
                                                             .send_transaction(req, None)
                                                             .await
-                                                            .map_err(|e| println!("Error al enviar la transacción: {}", e))
+                                                            .map_err(|e| eprintln!("Error al enviar la transacción: {}", e))
                                                             .expect("Error fatal al enviar la transacción");
                                                         let tx_hash = pending_tx
                                                             .confirmations(1)
                                                             .await
                                                             .map_err(|e| {
-                                                                println!(
+                                                                eprintln!(
                                                                     "Error con la transacción: {}",
                                                                     e
                                                                 )
@@ -623,26 +630,31 @@ impl NPCAleatorio {
                                                         "Error al registrar la publicación: {}",
                                                         e
                                                     );
+                                                    return;
                                                 }
                                             }
                                         }
                                         Err(e) => {
                                             eprintln!("Error al formatear la publicación: {}", e);
+                                            return;
                                         }
                                     }
                                 }
                                 Err(e) => {
                                     eprintln!("Error con la generación del mensaje: {:?}", e);
+                                    return;
                                 }
                             }
                         }
                         Err(e) => {
                             eprintln!("Error al obtener la predicción de la publicación: {}", e);
+                            return;
                         }
                     }
                 }
                 Err(e) => {
                     eprintln!("Error al crear el método: {}", e);
+                    return;
                 }
             }
         });
@@ -698,7 +710,7 @@ impl NPCAleatorio {
                 appId: "npcstudio".to_string(),
                 id: Uuid::new_v4().to_string(),
                 hideFromFeed: false,
-                locale: locale.to_string(),
+                locale: ISO_CODES.get(locale).unwrap().to_string(),
                 tags: vec!["npcStudio".to_string(), self.escena.clone()],
                 image: imagen_url,
             },
@@ -716,10 +728,17 @@ impl NPCAleatorio {
             }
         };
 
-        let resultado = self.enviar_mensaje(contenido, metadata_uri,lens_tipo,comentario_perfil,
-            comentario_pub).await?;
+        match self.enviar_mensaje(contenido, metadata_uri, lens_tipo, comentario_perfil, comentario_pub).await {
+            Ok(resultado) => {
+               return Ok(resultado)
+            }
+            Err(e) => {
+                eprintln!("Error al enviar el mensaje: {:?}", e);
+                return Err(e);
+            }
+        }
 
-        Ok(resultado)
+
     }
 
     async fn enviar_mensaje(
@@ -742,13 +761,8 @@ impl NPCAleatorio {
             referrerProfileIds: vec![],
             referrerPubIds: vec![],
             referenceModuleData: Bytes::from(vec![0u8; 1]),
-            actionModules: vec!["0x34A437A91415C36712B0D912c171c74595Be437d" .parse::<Address>()
-            .unwrap()],
-            actionModulesInitDatas: vec![
-Bytes::from_str("0x000000000000000000000000185b529b421ff60b0f2388483b757b39103cfcb1000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")?,
-              
-
-            ],
+            actionModules: vec![],
+            actionModulesInitDatas: vec![],
             referenceModule: "0x0000000000000000000000000000000000000000"
                 .parse::<Address>()
                 .unwrap(),

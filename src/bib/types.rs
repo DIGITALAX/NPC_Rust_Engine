@@ -14,6 +14,7 @@ use std::{
     error::Error,
     sync::{Arc, Mutex},
 };
+use tokio::runtime::Handle;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Coordenada {
@@ -275,6 +276,7 @@ pub struct NPCAleatorio {
             SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
         >,
     >,
+    pub manija: Handle,
 }
 
 #[derive(Clone)]

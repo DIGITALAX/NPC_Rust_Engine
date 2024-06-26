@@ -63,6 +63,7 @@ fn inicializar_api() -> Arc<Client> {
 pub async fn coger_comentario(
     perfil_id: &str,
 ) -> Result<(String, U256, U256, String), Box<dyn Error>> {
+
     let cliente = inicializar_api();
     let consulta = json!({
         "query": r#"
@@ -75,6 +76,7 @@ pub async fn coger_comentario(
                                 ... on TextOnlyMetadataV3 {
                                     content
                                     rawURI
+                                }
                                 ... on ImageMetadataV3 {
                                     content
                                     rawURI
@@ -85,7 +87,6 @@ pub async fn coger_comentario(
                                 }
                             }
                         }
-
                     }
                 }
             }
@@ -111,18 +112,30 @@ pub async fn coger_comentario(
         if let Some(items) = json["data"]["publications"]["items"].as_array() {
             if !items.is_empty() {
                 let mut rng = rand::thread_rng();
-                let indice_aleatorio = rng.gen_range(0..items.len());
+                let mut encontrado = None;
+                let mut indice_aleatorio: usize = 0;
 
-                if let Some(id) = items[indice_aleatorio]["id"].as_str() {
+                while encontrado.is_none() {
+                    indice_aleatorio = rng.gen_range(0..items.len());
+                    if let Some(id_value) = items[indice_aleatorio].get("id") {
+                        if let Some(id) = id_value.as_str() {
+                            encontrado = Some(id);
+                        }
+                    }
+                }
+
+                if let Some(id) = encontrado {
                     if let Some(hex_str) = id.split('-').nth(0) {
                         let comentario_perfil = U256::from_str_radix(&hex_str[2..], 16)?;
 
                         if let Some(hex_str) = id.split('-').nth(1) {
                             let comentario_pub = U256::from_str_radix(&hex_str[2..], 16)?;
 
-                            if let Some(contenido) = items[indice_aleatorio]["content"].as_str() {
+                            if let Some(contenido) =
+                                items[indice_aleatorio]["metadata"]["content"].as_str()
+                            {
                                 if let Some(metadata_uri) =
-                                    items[indice_aleatorio]["rawURI"].as_str()
+                                    items[indice_aleatorio]["metadata"]["rawURI"].as_str()
                                 {
                                     return Ok((
                                         contenido.to_string(),
@@ -172,7 +185,15 @@ pub async fn hacer_consulta(perfil_id: &str) -> Result<U256, Box<dyn Error>> {
                         ... on Post {
                             id
                         }
-
+                        ... on Comment {
+                            id
+                        }
+                        ... on Quote {
+                            id
+                        }
+                        ... on Mirror {
+                            id
+                        }
                     }
                 }
             }
@@ -185,7 +206,6 @@ pub async fn hacer_consulta(perfil_id: &str) -> Result<U256, Box<dyn Error>> {
             }
         }
     });
-
     let respuesta = cliente
         .post(API_LENS)
         .header("Content-Type", "application/json")

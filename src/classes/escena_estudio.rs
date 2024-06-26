@@ -3,10 +3,11 @@ use crate::bib::types::{
     Talla,
 };
 use rayon::prelude::*;
+use tokio::runtime::Handle;
 use std::sync::{Arc, Mutex};
 
 impl EscenaEstudio {
-    pub async fn new(escena: Escena) -> Self {
+    pub async fn new(escena: Escena, manija: Handle) -> Self {
         let sprites = escena.sprites.clone();
         let prohibidos = escena.prohibido.clone();
         let anchura = escena.mundo.anchura
@@ -26,7 +27,8 @@ impl EscenaEstudio {
                     Talla { anchura, altura },
                     GameTimer::new(),
                     mapa.clone(),
-                    escena.clave.to_string()
+                    escena.clave.to_string(),
+                    manija.clone()
                 );
                 npc
             })

@@ -1,4 +1,4 @@
-use crate::bib::types::{Llama, PromptRespuesta};
+use crate::bib::types::Llama;
 use std::{error::Error, process::Command};
 use tokio::task;
 
