@@ -1,13 +1,11 @@
 use crate::{bib::{lens, types::{
     Comment, Contenido, Coordenada, CustomError, Estado, GameTimer, Imagen, LensType, Llama, Mapa, Mirror, Movimiento, NPCAleatorio, Pub, Publicacion, RegisterPub, Silla, Sprite, Talla
-}, utils::{between, subir_ipfs, subir_ipfs_imagen}}, IDIOMAS, ISO_CODES, LISTA_ESCENA};
-
-use crate::{LENS_HUB_PROXY, NPC_PUBLICATION};
+}, utils::{between, subir_ipfs, subir_ipfs_imagen}},IMAGENES, ISO_CODES, LISTA_ESCENA, LENS_HUB_PROXY, NPC_PUBLICATION};
 use abi::{Token, Tokenize};
 use ethers::{prelude::*, types::{Address, Bytes, U256}};
 use pathfinding::prelude::astar;
 use serde_json::to_string;
-use rand::{prelude::SliceRandom, thread_rng};
+use rand::{prelude::{SliceRandom,IteratorRandom}, thread_rng};
 use tokio::runtime::Handle;
 use std::{str::FromStr,   error::Error,
     sync::{Arc, Mutex},};
@@ -60,10 +58,10 @@ impl NPCAleatorio {
             self.ultimo_tiempo_comprobacion -= delta_time;
         }
 
-        // if self.ultimo_tiempo_comprobacion <= 0 {
-        //     self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
-        //     self.comprobar_conversacion();
-        // }
+        if self.ultimo_tiempo_comprobacion <= 0 {
+            self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
+            self.comprobar_conversacion();
+        }
     }
 
     fn elegir_direccion_aleatoria(&mut self) {
@@ -303,7 +301,7 @@ impl NPCAleatorio {
                         Ok((eleccion, coleccion_id, pagina, mut perfil_id)) => {
                             let mut prompt = "";
                             let mut imagen: Option<String> = None;
-                            let mut locale = IDIOMAS[0].to_string();
+                            let mut locale =npc_clone.npc.prompt.idiomas.first().unwrap().to_string();
                             let mut galeria = 0;
                             let mut  comentario_perfil = U256::from(0);
                             let mut comentario_pub= U256::from(0);
@@ -458,7 +456,7 @@ impl NPCAleatorio {
                                     .map_err(|e| eprintln!("Error al encontrar el comentario: {}", e))
                                     .expect("Error al encontrar el comentario");
 
-                                let mut idiomas_para_prompt = IDIOMAS.to_vec();
+                                let mut idiomas_para_prompt = npc_clone.npc.prompt.idiomas.clone();
                                 if coleccion_id != U256::from(0) && galeria != 0 {
                                     let metodo = npc_clone
                                     .autograph_data_contrato
@@ -498,9 +496,9 @@ impl NPCAleatorio {
                                     locale = idioma_aleatorio.to_string();
                                 }
 
-
                                     let new_prompt = {
-                                        let mut temp_prompt = String::from("respond to this post in the language of ");
+                                        let mut temp_prompt = npc_clone.npc.prompt.personalidad.to_string();
+                                        temp_prompt.push_str("respond to this post in the language of ");
                                         temp_prompt.push_str(&locale);
                                         temp_prompt.push_str(" with a comment, only give me the comment in your reply, nothing more. Remember that when writing in a different language only write in that language, never write a translation or a pronunciation, only I want that language in the comment. \n\npost :\n\n");
                                         temp_prompt.push_str(&contenido);
@@ -515,7 +513,8 @@ impl NPCAleatorio {
                                 } else {
                           
                                     let new_prompt = {
-                                        let mut temp_prompt = String::from("make me a post for twitter in the language of ");
+                                        let mut temp_prompt = npc_clone.npc.prompt.personalidad.to_string();
+                                        temp_prompt.push_str("make me a post for social media in the language of ");
                                         temp_prompt.push_str(&locale);
                                         temp_prompt.push_str(" and only give me the post in your reply, nothing more. Remember that when writing in a different language only write in that language, never write a translation or a pronunciation, only I want that language in the post.");
                                         temp_prompt
@@ -698,6 +697,18 @@ impl NPCAleatorio {
                         eprintln!("Error al subir la imagen: {}", e);
                     }
                 }
+            }
+        }
+
+        if imagen_url.is_none() && matches!(lens_tipo, LensType::Publication) {
+            let mut rng = thread_rng();
+            let mut opciones = IMAGENES.lock().unwrap();
+            if let Some(index) = (0..opciones.len()).choose(&mut rng) {
+                let imagen = opciones.remove(index);
+                imagen_url = Some(Imagen {
+                    tipo: "image/png".to_string(),
+                    item: imagen,
+                });
             }
         }
 

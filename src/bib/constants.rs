@@ -1,17 +1,21 @@
-use std::collections::HashMap;
-
 use crate::bib::types::{
     Articulo, AutographType, Coordenada, Direccion, Escala, Escena, Fondo, Interactivo, Prohibido,
-    Silla, Sprite, Talla,
+    Prompt, Silla, Sprite, Talla,
 };
 use ethers::types::U256;
+use lazy_static::lazy_static;
 use once_cell::sync::Lazy;
+use std::{collections::HashMap, sync::Mutex};
 
 pub static LENS_HUB_PROXY: &'static str = "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d";
 
 pub static AUTOGRAPH_DATA: &'static str = "0xd52dA212D5C7Ec8f7Bb3594372530b19f3e5f37E";
 
 pub static NPC_PUBLICATION: &'static str = "0x4F640C2E9E42B950757579c3FC75a318Dfc9D332";
+
+lazy_static! {
+   pub static ref IMAGENES: Mutex<Vec<String>> = Mutex::new(vec![]);
+}
 
 pub static IDIOMAS: Lazy<[String; 7]> = Lazy::new(|| {
     [
@@ -328,6 +332,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 6.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 15000000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
                 Sprite {
                     etiqueta: String::from("Isabella"),
@@ -347,6 +355,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 4.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 200000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
                 Sprite {
                     etiqueta: String::from("Aidan"),
@@ -366,6 +378,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 10.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 400000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
             ],
             prohibido: vec![
@@ -522,6 +538,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 6.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 350000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
                 Sprite {
                     etiqueta: String::from("Scarlett"),
@@ -541,6 +561,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 4.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 150000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
                 Sprite {
                     etiqueta: String::from("Suri"),
@@ -560,6 +584,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 4.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 100000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
             ],
             profundidad: vec![
@@ -733,6 +761,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 6.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 550000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
                 Sprite {
                     etiqueta: String::from("Kai"),
@@ -752,6 +784,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 4.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 1000000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
                 Sprite {
                     etiqueta: String::from("Yasmine"),
@@ -771,6 +807,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 4.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 2000000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
             ],
             objetos: vec![
@@ -1235,6 +1275,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 6.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 2000000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
                 Sprite {
                     etiqueta: String::from("Amira"),
@@ -1254,6 +1298,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 4.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 400000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
                 Sprite {
                     etiqueta: String::from("Sophia"),
@@ -1273,6 +1321,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 4.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 700000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
             ],
         },
@@ -1523,6 +1575,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 6.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 2000000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
                 Sprite {
                     etiqueta: String::from("Ingrid"),
@@ -1542,6 +1598,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 4.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 250000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
                 Sprite {
                     etiqueta: String::from("Tariq"),
@@ -1561,6 +1621,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 4.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 250000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
             ],
         },
@@ -1904,6 +1968,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 6.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 550000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
                 Sprite {
                     etiqueta: String::from("Anaya"),
@@ -1923,6 +1991,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 4.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 700000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
                 Sprite {
                     etiqueta: String::from("Kostas"),
@@ -1942,6 +2014,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 4.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 650000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
             ],
         },
@@ -2258,6 +2334,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 6.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 80000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
                 Sprite {
                     etiqueta: String::from("Mila"),
@@ -2277,6 +2357,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 4.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 10000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
             ],
         },
@@ -2503,6 +2587,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 6.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 10000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
                 Sprite {
                     etiqueta: String::from("Mia"),
@@ -2522,6 +2610,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     movimientos_max: 4.0,
                     perfil_id: U256::from(782),
                     publicacion_reloj: 80000,
+                    prompt: Prompt {
+                        personalidad: String::from(""),
+                        idiomas: vec![],
+                    },
                 },
             ],
         },

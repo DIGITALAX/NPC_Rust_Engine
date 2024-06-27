@@ -29,6 +29,12 @@ pub struct Escala {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Prompt {
+    pub personalidad: String,
+    pub idiomas: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Talla {
     pub anchura: f32,
     pub altura: f32,
@@ -134,6 +140,7 @@ pub struct Sprite {
     pub movimientos_max: f32,
     pub escala: Escala,
     pub publicacion_reloj: u64,
+    pub prompt: Prompt
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -458,7 +465,7 @@ pub struct Publicacion {
     pub lens: Contenido,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct Imagen {
     #[serde(rename = "type")]
     pub tipo: String,

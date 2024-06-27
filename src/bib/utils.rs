@@ -53,3 +53,4 @@ pub async fn subir_ipfs_imagen(base64_data: &str) -> Result<IpfsRespuesta, Box<d
 
     Ok(ipfs_respuesta)
 }
+
