@@ -40,12 +40,12 @@ pub fn inicializar_proveedor() -> Arc<Provider<Http>> {
         INIT_PROVEEDOR.call_once(|| {
             dotenv().ok();
             let proveedor_url = format!(
-                "https://polygon-amoy.g.alchemy.com/v2/{}",
-                var("ALCHEMY_AMOY_KEY").expect("ALCHEMY_API_KEY not found")
+                "https://polygon-mainnet.g.alchemy.com/v2/{}",
+                var("ALCHEMY_KEY").expect("ALCHEMY_API_KEY not found")
             );
             let mut proveedor =
                 Provider::<Http>::try_from(&proveedor_url).expect("Error al crear proveedor");
-            PROVEEDOR = Some(Arc::new(proveedor.set_chain(Chain::PolygonAmoy).clone()));
+            PROVEEDOR = Some(Arc::new(proveedor.set_chain(Chain::Polygon).clone()));
         });
         PROVEEDOR.clone().expect("Proveedor no es inicializado")
     }
@@ -266,7 +266,7 @@ pub fn inicializar_contrato(
             let billetera = match var(clave_privada) {
                 Ok(key) => match key.parse::<LocalWallet>() {
                     Ok(mut wallet) => {
-                        wallet = wallet.with_chain_id(Chain::PolygonAmoy);
+                        wallet = wallet.with_chain_id(Chain::Polygon);
                         wallet
                     }
                     Err(e) => panic!("Error al parsear la clave privada: {:?}", e),

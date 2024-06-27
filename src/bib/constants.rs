@@ -7,11 +7,11 @@ use crate::bib::types::{
 use ethers::types::U256;
 use once_cell::sync::Lazy;
 
-pub static LENS_HUB_PROXY: &'static str = "0xA2574D9DdB6A325Ad2Be838Bd854228B80215148";
+pub static LENS_HUB_PROXY: &'static str = "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d";
 
-pub static AUTOGRAPH_DATA: &'static str = "0x64d7b1b3388f8F0B0eaF96fCcd30F94797A7Bf95";
+pub static AUTOGRAPH_DATA: &'static str = "0xd52dA212D5C7Ec8f7Bb3594372530b19f3e5f37E";
 
-pub static NPC_PUBLICATION: &'static str = "0xa376FdE1e0033a2624d95E3D4345aAd32d5fE1cD";
+pub static NPC_PUBLICATION: &'static str = "0x4F640C2E9E42B950757579c3FC75a318Dfc9D332";
 
 pub static IDIOMAS: Lazy<[String; 7]> = Lazy::new(|| {
     [
@@ -37,7 +37,7 @@ pub static ISO_CODES: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
     m
 });
 
-pub static API_LENS: &'static str = "https://api-v2-amoy.lens.dev";
+pub static API_LENS: &'static str = "https://api-v2.lens.dev";
 
 pub static LISTA_ESCENA: Lazy<[Escena; 1]> = Lazy::new(|| {
     [

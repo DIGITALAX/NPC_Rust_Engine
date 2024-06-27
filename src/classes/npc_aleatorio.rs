@@ -8,7 +8,7 @@ use ethers::{prelude::*, types::{Address, Bytes, U256}};
 use pathfinding::prelude::astar;
 use serde_json::to_string;
 use rand::{prelude::SliceRandom, thread_rng};
-use tokio::runtime::{Handle};
+use tokio::runtime::Handle;
 use std::{str::FromStr,   error::Error,
     sync::{Arc, Mutex},};
 use uuid::Uuid;
@@ -596,7 +596,7 @@ impl NPCAleatorio {
                                                             ),
                                                             nonce: Some(nonce),
                                                             chain_id: Some(
-                                                                Chain::PolygonAmoy.into(),
+                                                                Chain::Polygon.into(),
                                                             ),
                                                             ..Default::default()
                                                         };
@@ -860,7 +860,7 @@ Bytes::from_str("0x000000000000000000000000185b529b421ff60b0f2388483b757b39103cf
                 data: tx_request.data.clone(),
                 max_priority_fee_per_gas: Some(max_priority_fee),
                 max_fee_per_gas: Some(gas_price + max_priority_fee),
-                chain_id: Some(Chain::PolygonAmoy.into()),
+                chain_id: Some(Chain::Polygon.into()),
                 ..Default::default()
             };
             let cliente = self.lens_hub_contrato.client().clone();
