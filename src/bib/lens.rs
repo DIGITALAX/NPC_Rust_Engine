@@ -41,7 +41,7 @@ pub fn inicializar_proveedor() -> Arc<Provider<Http>> {
             dotenv().ok();
             let proveedor_url = format!(
                 "https://polygon-mainnet.g.alchemy.com/v2/{}",
-                var("ALCHEMY_KEY").expect("ALCHEMY_API_KEY not found")
+                var("ALCHEMY_API_KEY").expect("ALCHEMY_API_KEY not found")
             );
             let mut proveedor =
                 Provider::<Http>::try_from(&proveedor_url).expect("Error al crear proveedor");
