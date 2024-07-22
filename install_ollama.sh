@@ -21,6 +21,8 @@ fi
 
 echo "ollama installed successfully in $OLLAMA_FILE"
 
+ls -l $OLLAMA_DIR
+
 export PATH=$OLLAMA_DIR:$PATH
 echo "export PATH=$OLLAMA_DIR:\$PATH" >> ~/.bashrc
 source ~/.bashrc

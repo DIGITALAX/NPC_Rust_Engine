@@ -11,12 +11,17 @@ def find_ollama():
     if os.path.isfile(OLLAMA_FILE):
         print(f"Found ollama binary at: {OLLAMA_FILE}")
         return OLLAMA_FILE
+    else:
+        print(f"ollama binary not found at: {OLLAMA_FILE}")
     return None
 
 def main():
     if len(sys.argv) != 2:
         print("Usage: python3 llama3_runner.py <prompt>")
         sys.exit(1)
+
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"PATH: {os.environ.get('PATH')}")
 
     prompt = sys.argv[1]
     ollama_path = find_ollama()
@@ -27,10 +32,6 @@ def main():
 
     ollama_dir = os.path.dirname(ollama_path)
     os.environ["PATH"] = ollama_dir + os.pathsep + os.environ.get('PATH', '')
-
-    print(f"Current working directory: {os.getcwd()}")
-    print(f"PATH: {os.environ.get('PATH')}")
-    print(f"Using ollama from: {ollama_path}")
 
     try:
         result = subprocess.run(
