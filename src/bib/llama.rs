@@ -1,23 +1,11 @@
 use crate::bib::types::Llama;
 use ollama_rs::{generation::completion::request::GenerationRequest, Ollama};
-use std::{error::Error, process::Command};
+use std::error::Error;
 
 impl Llama {
     pub async fn llamar_llama(&self, prompt: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
         let ollama = Ollama::new("http://localhost".to_string(), 11434);
         let model = "llama3:70b".to_string();
-
-        let list_models_output = Command::new("./ollama").arg("list").output()?;
-        let models_list = String::from_utf8_lossy(&list_models_output.stdout);
-        println!("Lista de modelos: {}", models_list);
-        if !models_list.contains(&model) {
-            println!("Model {} not found, downloading...", model);
-            ollama.pull_model(model.clone(), true).await?;
-
-            println!("Model downloaded successfully");
-        } else {
-            println!("Model already exists, skipping download");
-        }
 
         let res = ollama
             .generate(GenerationRequest::new(model, prompt.to_string()))

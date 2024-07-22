@@ -35,6 +35,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     dotenv().ok();
 
     let ollama_path = Path::new("ollama");
+    let model_dir = "/usr/share/ollama/.ollama/models";
 
     if let Some(parent) = ollama_path.parent() {
         fs::create_dir_all(parent)?;
@@ -60,10 +61,45 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .arg(ollama_path.to_str().unwrap())
         .output()?;
 
+    println!("Ollama installed successfully at {:?}", ollama_path);
+    env::set_var("OLLAMA_MODELS", model_dir);
+
+    let pull_output = Command::new("./ollama")
+        .arg("pull")
+        .arg("llama3:70b")
+        .output()?;
+
+    if !pull_output.status.success() {
+        return Err(format!(
+            "Failed to pull model llama3:70b: {}",
+            String::from_utf8_lossy(&pull_output.stderr)
+        )
+        .into());
+    }
+
+    println!("Model llama3:70b installed successfully");
+
+    let list_models_output = Command::new("./ollama").arg("list").output()?;
+
+    if !list_models_output.status.success() {
+        return Err(format!(
+            "Failed to list models: {}",
+            String::from_utf8_lossy(&list_models_output.stderr)
+        )
+        .into());
+    }
+
+    let models_list = String::from_utf8_lossy(&list_models_output.stdout);
+    println!(
+        "Lista de modelos antes de iniciar el servidor: {}",
+        models_list
+    );
+
     Command::new("./ollama")
         .arg("serve")
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
+        .env("OLLAMA_MODELS", model_dir)
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
         .spawn()
         .expect("Failed to start ollama server");
 
