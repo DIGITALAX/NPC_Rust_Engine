@@ -1,7 +1,7 @@
 #!/bin/bash
 
-PROJECT_DIR="$HOME/project"
-OLLAMA_DIR="$PROJECT_DIR/bin"
+PROJECT_DIR="$HOME/project/src"
+OLLAMA_DIR="$PROJECT_DIR"
 OLLAMA_FILE="$OLLAMA_DIR/ollama"
 mkdir -p $OLLAMA_DIR
 
