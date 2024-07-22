@@ -2,6 +2,7 @@ import sys
 import json
 import subprocess
 import os
+import time
 
 def main():
     if len(sys.argv) != 2:
@@ -24,6 +25,9 @@ def main():
         print(f"Error: ollama binary is not executable at {ollama_path}")
         sys.exit(1)
 
+    ollama_process = subprocess.Popen([ollama_path, 'serve'])
+    time.sleep(5)  
+
     try:
         result = subprocess.run(
             [ollama_path, 'run', "llama3", prompt],
@@ -42,6 +46,8 @@ def main():
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         sys.exit(1)
+    finally:
+        ollama_process.terminate()
 
 if __name__ == "__main__":
     main()
