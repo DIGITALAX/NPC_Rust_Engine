@@ -3,25 +3,29 @@ import json
 import subprocess
 import os
 
-OLLAMA_DIR = "/opt/render/ollama_bin"
-OLLAMA_FILE = os.path.join(OLLAMA_DIR, "ollama")
-
 def find_ollama():
-    print(f"Checking path: {OLLAMA_FILE}")
-    if os.path.isfile(OLLAMA_FILE):
-        print(f"Found ollama binary at: {OLLAMA_FILE}")
-        return OLLAMA_FILE
-    else:
-        print(f"ollama binary not found at: {OLLAMA_FILE}")
-    return None
+    try:
+        result = subprocess.run(
+            ["find", "/", "-name", "ollama", "-type", "f", "-executable"],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        ollama_path = result.stdout.strip()
+        if ollama_path:
+            print(f"Found ollama binary at: {ollama_path}")
+            return ollama_path
+        else:
+            print("ollama binary not found in the system")
+            return None
+    except subprocess.CalledProcessError as e:
+        print(f"Error finding ollama binary: {e.stderr}")
+        return None
 
 def main():
     if len(sys.argv) != 2:
         print("Usage: python3 llama3_runner.py <prompt>")
         sys.exit(1)
-
-    print(f"Current working directory: {os.getcwd()}")
-    print(f"PATH: {os.environ.get('PATH')}")
 
     prompt = sys.argv[1]
     ollama_path = find_ollama()
@@ -30,8 +34,14 @@ def main():
         print("Error: ollama binary not found")
         sys.exit(1)
 
+    # Ensure the PATH includes the directory where ollama is located
     ollama_dir = os.path.dirname(ollama_path)
     os.environ["PATH"] = ollama_dir + os.pathsep + os.environ.get('PATH', '')
+
+    # Debugging prints
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"Updated PATH: {os.environ.get('PATH')}")
+    print(f"Using ollama from: {ollama_path}")
 
     try:
         result = subprocess.run(
