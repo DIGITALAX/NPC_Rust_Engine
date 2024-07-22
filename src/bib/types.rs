@@ -514,11 +514,6 @@ pub struct Imagen {
     pub item: String,
 }
 
-#[derive(Deserialize)]
-pub struct PromptRespuesta {
-    pub respuesta: String,
-}
-
 #[derive(Clone)]
 pub struct Llama;
 
@@ -629,4 +624,14 @@ pub struct LensTokens {
 pub struct TokensAlmacenados {
     pub tokens: LensTokens,
     pub expira_en: i64,
+}
+
+#[derive(Serialize)]
+pub  struct PromptRequisito {
+   pub text: String,
+}
+
+#[derive(Deserialize)]
+pub struct PromptRespuesta {
+    pub response: String
 }
