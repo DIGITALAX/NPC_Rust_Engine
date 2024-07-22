@@ -2,7 +2,13 @@ use dotenv::dotenv;
 use futures_util::{future::try_join_all, SinkExt, StreamExt};
 use serde_json::{from_str, json, to_string, Value};
 use std::{
-    collections::HashMap, env, fs, net::SocketAddr, path::Path, process::{Command, Stdio}, sync::{Arc, Mutex}, thread, time::Duration
+    collections::HashMap,
+    env, fs,
+    net::SocketAddr,
+    path::Path,
+    process::{Command, Stdio},
+    sync::Arc,
+    time::Duration,
 };
 use tokio::{
     net::{TcpListener, TcpStream},
@@ -56,25 +62,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     println!("Ollama installed successfully at {:?}", ollama_path);
 
-    let ollama_process = Command::new("./ollama")
+    Command::new("./ollama")
         .arg("serve")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()
         .expect("Failed to start ollama server");
-    
-    let ollama_process = Arc::new(Mutex::new(Some(ollama_process)));
 
-    let ollama_process_clone = Arc::clone(&ollama_process);
-
-    thread::spawn(move || {
-        let _ = std::io::stdin().read_line(&mut String::new());
-        if let Some(mut process) = ollama_process_clone.lock().unwrap().take() {
-            process.kill().expect("Failed to kill ollama server");
-        }
-        std::process::exit(0);
-    });
-
+    std::thread::sleep(std::time::Duration::from_secs(5));
 
     let render_clave = std::env::var("RENDER_KEY").expect("Sin Clave");
     let puerto: String = env::var("PORT").unwrap_or_else(|_| "10000".to_string());
