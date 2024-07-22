@@ -10,7 +10,6 @@ def main():
 
     prompt = sys.argv[1]
     
-    # Buscar Ollama en el PATH o en la variable de entorno OLLAMA_PATH
     ollama_path = os.environ.get('OLLAMA_PATH') or 'ollama'
 
     print(f"Usando Ollama desde: {ollama_path}")
