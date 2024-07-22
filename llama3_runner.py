@@ -3,7 +3,10 @@ import json
 import subprocess
 import os
 import time
-import requests
+
+def is_service_up(port):
+    result = subprocess.run(['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}', f'http://localhost:{port}'], capture_output=True, text=True)
+    return result.stdout.strip() == "200"
 
 def main():
     if len(sys.argv) != 2:
@@ -12,9 +15,13 @@ def main():
 
     prompt = sys.argv[1]
     ollama_path = os.path.join(os.path.expanduser("~"), "project", "src", "ollama")
+    port = 11411
 
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"Using ollama from: {ollama_path}")
 
     os.environ["PATH"] = os.path.dirname(ollama_path) + os.pathsep + os.environ.get("PATH", "")
+    print(f"Updated PATH: {os.environ.get('PATH')}")
 
     if not os.path.isfile(ollama_path):
         print(f"Error: ollama binary not found at {ollama_path}")
@@ -23,25 +30,23 @@ def main():
         print(f"Error: ollama binary is not executable at {ollama_path}")
         sys.exit(1)
 
-    service_up = False
-    for _ in range(10):
-        try:
-            response = requests.get('http://localhost:11411')
-            if response.status_code == 200:
-                service_up = True
-                break
-        except requests.ConnectionError:
-            time.sleep(1)
-
-    if not service_up:
-        ollama_process = subprocess.Popen([ollama_path, 'serve'])
-        time.sleep(5) 
-    else:
+    if is_service_up(port):
+        service_up = True
         ollama_process = None
+    else:
+        service_up = False
+        ollama_process = subprocess.Popen([ollama_path, 'serve'])
+        time.sleep(5)  
+
+    if not is_service_up(port):
+        print("Error: could not connect to ollama app, is it running?")
+        if ollama_process:
+            ollama_process.terminate()
+        sys.exit(1)
 
     try:
         result = subprocess.run(
-            [ollama_path, 'run', "llama3", prompt],
+            [ollama_path, 'run', '--port', str(port), "llama3", prompt],
             capture_output=True,
             text=True,
             check=True
