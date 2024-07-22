@@ -3175,7 +3175,7 @@ String::from("ipfs://QmfG2FhhNhHiHNAAyao5Z6G2rXQKqN7ZkQDTiBsWi2aL6P"),
             sprites: vec![
                 Sprite {
                     etiqueta: String::from("Dimitra"),
-                    uri: String::from("Qme7HEujape6HqVkwRRCs8LyP8EaFxZZhn6QQLmLwu7nbH"),
+                    uri: String::from("QmXGQQUSkhYKakgC6sAkWrjda91fBwQsSuzABgZHhMtb2L"),
                     billetera: String::from("0xb0A406B18EA1D1292cb1b2d116D8C605272c65c1"), tapa_dos: String::from("QmcYxyFJDbBCd5spuTJS2sjDH8QMXLfArZsCP11PXWpZUi"),
                     x: 1150.0,
                     y: 600.0,

@@ -534,7 +534,7 @@ perfil_id
                 temp_prompt.push_str(&etiquetas);
                 temp_prompt.push_str("with a comment and in the style of a person with this personality and backstory: ");
                 temp_prompt.push_str(&npc_clone.npc.prompt.personalidad.to_string());
-                temp_prompt.push_str(". Remember two very very important rules: 1. Only give me the comment in your reply, nothing more. Do not tell me that the comment is there, only give the comment as it will go directly to post. For example NEVER write 'Here's the social media post:' only give me the comment. 2. REMEMBER NEVER EVER NEVER EVER write a translation or a pronunciation, only I want the language specified above in the comment NOTHING ELSE. \n\npost :\n\n");
+                temp_prompt.push_str(". Remember three very very important rules: 1. Only give me the comment in your reply, nothing more. Do not tell me that the comment is there, only give the comment as it will go directly to post. For example NEVER write 'Here's the social media post:' only give me the comment. 2. REMEMBER NEVER EVER NEVER EVER write a translation or a pronunciation, only I want the language specified above in the comment NOTHING ELSE. 3. If the language chosen above is not english DO NOT rewrite the comment in english, I only want that language. \n\npost :\n\n");
                 temp_prompt.push_str(&contenido);
                 temp_prompt
             };
@@ -569,7 +569,7 @@ perfil_id
                                     temp_prompt.push_str(&etiquetas);
                                     temp_prompt.push_str("and in the style of a person with this personality and backstory: ");
                                     temp_prompt.push_str(&npc_clone.npc.prompt.personalidad.to_string());
-                                    temp_prompt.push_str(". Remember two very very important rules: 1. Only give me the post in your reply, nothing more. Do not tell me that the post is there, only give the post as it will go directly to post.  For example NEVER write 'Here's the social media post:' only give me the post. 2. REMEMBER NEVER EVER NEVER EVER write a translation or a pronunciation, only I want the language specified above in the post NOTHING ELSE.");
+                                    temp_prompt.push_str(". Remember three very very important rules: 1. Only give me the post in your reply, nothing more. Do not tell me that the post is there, only give the post as it will go directly to post.  For example NEVER write 'Here's the social media post:' only give me the post. 2. REMEMBER NEVER EVER NEVER EVER write a translation or a pronunciation, only I want the language specified above in the post NOTHING ELSE. 3. If the language chosen above is not english DO NOT rewrite the post in english, I only want that language.");
                                     temp_prompt
                                 };
 

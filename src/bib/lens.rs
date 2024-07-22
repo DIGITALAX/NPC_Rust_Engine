@@ -295,7 +295,7 @@ pub async fn hacer_consulta(perfil_id: &str) -> Result<U256, Box<dyn Error>> {
                 return Err("No se encontraron elementos.".into());
             }
         } else {
-            return Err("Estructura de respuesta inesperada.".into());
+            return Err("Estructura de respuesta inesperada Consulta.".into());
         }
     } else {
         return Err(format!("Error: {}", respuesta.status()).into());
@@ -487,7 +487,7 @@ pub async fn hacer_comentario(
             )
             .await?);
         } else {
-            return Err("Estructura de respuesta inesperada.".into());
+            return Err("Estructura de respuesta inesperada Comentario.".into());
         }
     } else {
         return Err(format!("Error: {}", respuesta.status()).into());
@@ -595,7 +595,7 @@ pub async fn hacer_cita(
             )
             .await?);
         } else {
-            return Err("Estructura de respuesta inesperada.".into());
+            return Err("Estructura de respuesta inesperada Cita.".into());
         }
     } else {
         return Err(format!("Error: {}", respuesta.status()).into());
@@ -691,7 +691,7 @@ pub async fn hacer_mirror(
             )
             .await?);
         } else {
-            return Err("Estructura de respuesta inesperada.".into());
+            return Err("Estructura de respuesta inesperada Mirror.".into());
         }
     } else {
         return Err(format!("Error: {}", respuesta.status()).into());
@@ -763,6 +763,7 @@ pub async fn hacer_publicacion(
 
     if respuesta.status().is_success() {
         let json: serde_json::Value = respuesta.json().await?;
+
         if let Some(datos) = json["data"]["createOnchainPostTypedData"].as_object() {
             let datos_escritos = datos.get("typedData").and_then(|v| v.as_object()).unwrap();
 
@@ -792,7 +793,7 @@ pub async fn hacer_publicacion(
             )
             .await?);
         } else {
-            return Err("Estructura de respuesta inesperada.".into());
+            return Err("Estructura de respuesta inesperada Publicacion.".into());
         }
     } else {
         return Err(format!("Error: {}", respuesta.status()).into());
