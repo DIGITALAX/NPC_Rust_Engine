@@ -1,16 +1,56 @@
 use crate::bib::types::Llama;
-use std::{error::Error, process::Command};
+use std::{fs,error::Error, process::Command, path::Path};
 use tokio::task;
 use shell_escape::escape;
 
+fn install_ollama() -> Result<(), Box<dyn std::error::Error>> {
+    let ollama_path = Path::new("/opt/render/project/src/ollama");
+
+    if ollama_path.exists() {
+        println!("Ollama is already installed at {:?}", ollama_path);
+        return Ok(());
+    }
+
+    if let Some(parent) = ollama_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let output = Command::new("curl")
+        .arg("-L")
+        .arg("https://ollama.com/download/ollama-linux-amd64")
+        .arg("-o")
+        .arg(ollama_path.to_str().unwrap())
+        .output()?;
+
+    if !output.status.success() {
+        return Err(format!(
+            "Failed to download ollama: {}",
+            String::from_utf8_lossy(&output.stderr)
+        ).into());
+    }
+
+    Command::new("chmod")
+        .arg("+x")
+        .arg(ollama_path.to_str().unwrap())
+        .output()?;
+
+    println!("Ollama installed successfully at {:?}", ollama_path);
+
+    Ok(())
+}
+
+
+
 impl Llama {
     pub async fn llamar_llama(&self, prompt: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+        install_ollama().expect("Failed to install Ollama");
+
         let prompt = escape(prompt.into()).to_string();
         
         let output = task::spawn_blocking(move || {
             Command::new("bash")
                 .arg("-c")
-                .arg(format!("python3 ~/project/src/llama3_runner.py {}", prompt))
+                .arg(format!("python3 /opt/render/project/src/llama3_runner.py {}", prompt))
                 .output()
         })
         .await??;
