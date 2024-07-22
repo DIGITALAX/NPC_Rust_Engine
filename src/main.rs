@@ -64,6 +64,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("Ollama installed successfully at {:?}", ollama_path);
     env::set_var("OLLAMA_MODELS", model_dir);
 
+    Command::new("./ollama")
+        .arg("serve")
+        .env("OLLAMA_MODELS", model_dir)
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .spawn()
+        .expect("Failed to start ollama server");
+
+    std::thread::sleep(std::time::Duration::from_secs(5));
+
     let pull_output = Command::new("./ollama")
         .arg("pull")
         .arg("llama3:70b")
@@ -94,16 +104,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         "Lista de modelos antes de iniciar el servidor: {}",
         models_list
     );
-
-    Command::new("./ollama")
-        .arg("serve")
-        .env("OLLAMA_MODELS", model_dir)
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .spawn()
-        .expect("Failed to start ollama server");
-
-    std::thread::sleep(std::time::Duration::from_secs(5));
 
     let render_clave = std::env::var("RENDER_KEY").expect("Sin Clave");
     let puerto: String = env::var("PORT").unwrap_or_else(|_| "10000".to_string());
