@@ -16,7 +16,6 @@ def main():
     print(f"Using ollama from: {ollama_path}")
 
     os.environ["PATH"] = ollama_dir + os.pathsep + os.environ.get("PATH", "")
-
     print(f"Updated PATH: {os.environ.get('PATH')}")
 
     if not os.path.isfile(ollama_path):
