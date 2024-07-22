@@ -1,6 +1,7 @@
 #!/bin/bash
 
-OLLAMA_DIR="/tmp/ollama"
+PROJECT_DIR="$HOME/project"
+OLLAMA_DIR="$PROJECT_DIR/bin"
 OLLAMA_FILE="$OLLAMA_DIR/ollama"
 mkdir -p $OLLAMA_DIR
 

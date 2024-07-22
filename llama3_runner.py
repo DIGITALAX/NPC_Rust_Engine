@@ -9,7 +9,7 @@ def main():
         sys.exit(1)
 
     prompt = sys.argv[1]
-    ollama_path = "/tmp/ollama/ollama"
+    ollama_path = os.path.join(os.path.expanduser("~"), "project", "bin", "ollama")
 
     print(f"Current working directory: {os.getcwd()}")
     print(f"Using ollama from: {ollama_path}")
@@ -21,7 +21,6 @@ def main():
     if not os.access(ollama_path, os.X_OK):
         print(f"Error: ollama binary is not executable at {ollama_path}")
         sys.exit(1)
-
 
     try:
         result = subprocess.run(

@@ -7,12 +7,9 @@ impl Llama {
         let prompt = prompt.to_string();
 
         let output = task::spawn_blocking(move || {
-            Command::new("bash")
+           Command::new("bash")
                 .arg("-c")
-                .arg(format!(
-                    "source ~/.bashrc && python3 llama3_runner.py '{}'",
-                    prompt
-                ))
+                .arg(format!("source ~/.bashrc && python3 llama3_runner.py '{}'", prompt))
                 .output()
         })
         .await??;
