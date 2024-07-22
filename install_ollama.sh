@@ -21,6 +21,6 @@ fi
 
 echo "ollama installed successfully in $OLLAMA_FILE"
 
-# Update PATH
-echo 'export PATH=$OLLAMA_DIR:$PATH' >> /etc/profile
-source /etc/profile
+export PATH=$OLLAMA_DIR:$PATH
+echo 'export PATH=$OLLAMA_DIR:$PATH' >> ~/.bashrc
+source ~/.bashrc

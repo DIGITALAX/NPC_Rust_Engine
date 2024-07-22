@@ -34,6 +34,12 @@ def main():
         sys.exit(1)
 
     print(f"Using ollama from: {ollama_path}")
+    ollama_dir = os.path.dirname(ollama_path)
+    os.environ["PATH"] += os.pathsep + ollama_dir
+
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"PATH: {os.environ.get('PATH')}")
+    print(f"Using ollama from: {ollama_path}")
 
     try:
         result = subprocess.run(
