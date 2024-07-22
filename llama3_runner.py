@@ -58,7 +58,7 @@ def main():
 
     try:
         result = subprocess.run(
-            [ollama_path, 'run', "llama3", '--host', f'http://127.0.0.1:{port}', prompt],
+            [ollama_path, 'run', "llama3", prompt],
             capture_output=True,
             text=True,
             check=True
