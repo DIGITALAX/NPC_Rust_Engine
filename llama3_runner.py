@@ -5,15 +5,19 @@ import os
 
 def main():
     if len(sys.argv) != 2:
-        print("Uso: python3 llama3_runner.py <prompt>")
+        print("Usage: python3 llama3_runner.py <prompt>")
         sys.exit(1)
 
     prompt = sys.argv[1]
-    
-    ollama_path = os.environ.get('OLLAMA_PATH') or 'ollama'
+    ollama_path = "/tmp/ollama/ollama"
 
-    print(f"Usando Ollama desde: {ollama_path}")
-    
+    if not os.path.isfile(ollama_path) or not os.access(ollama_path, os.X_OK):
+        print(f"Error: ollama binary not found or not executable at {ollama_path}")
+        sys.exit(1)
+
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"Using ollama from: {ollama_path}")
+
     try:
         result = subprocess.run(
             [ollama_path, 'run', "llama3", prompt],
@@ -27,10 +31,10 @@ def main():
         print(f"Error ejecutando el modelo: {e.stderr}")
         sys.exit(1)
     except FileNotFoundError as e:
-        print(f"Error: No se encontró Ollama. Asegúrate de que esté instalado y en el PATH.")
+        print(f"Error: {e}")
         sys.exit(1)
     except Exception as e:
-        print(f"Ocurrió un error inesperado: {e}")
+        print(f"An unexpected error occurred: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
