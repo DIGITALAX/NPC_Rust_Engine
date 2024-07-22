@@ -1,7 +1,9 @@
 use dotenv::dotenv;
 use futures_util::{future::try_join_all, SinkExt, StreamExt};
 use serde_json::{from_str, json, to_string, Value};
-use std::{collections::HashMap, env, net::SocketAddr, sync::Arc, time::Duration};
+use std::{
+    collections::HashMap, env, fs, net::SocketAddr, path::Path, process::{Command, Stdio}, sync::{Arc, Mutex}, thread, time::Duration
+};
 use tokio::{
     net::{TcpListener, TcpStream},
     spawn,
@@ -25,6 +27,55 @@ use bib::types::*;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     dotenv().ok();
+
+    let ollama_path = Path::new("ollama");
+
+    if let Some(parent) = ollama_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    let output = Command::new("curl")
+        .arg("-L")
+        .arg("https://ollama.com/download/ollama-linux-amd64")
+        .arg("-o")
+        .arg(ollama_path.to_str().unwrap())
+        .output()?;
+
+    if !output.status.success() {
+        return Err(format!(
+            "Failed to download ollama: {}",
+            String::from_utf8_lossy(&output.stderr)
+        )
+        .into());
+    }
+
+    Command::new("chmod")
+        .arg("+x")
+        .arg(ollama_path.to_str().unwrap())
+        .output()?;
+
+    println!("Ollama installed successfully at {:?}", ollama_path);
+
+    let ollama_process = Command::new("./ollama")
+        .arg("serve")
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .spawn()
+        .expect("Failed to start ollama server");
+    
+    let ollama_process = Arc::new(Mutex::new(Some(ollama_process)));
+
+    let ollama_process_clone = Arc::clone(&ollama_process);
+
+    thread::spawn(move || {
+        let _ = std::io::stdin().read_line(&mut String::new());
+        if let Some(mut process) = ollama_process_clone.lock().unwrap().take() {
+            process.kill().expect("Failed to kill ollama server");
+        }
+        std::process::exit(0);
+    });
+
+
     let render_clave = std::env::var("RENDER_KEY").expect("Sin Clave");
     let puerto: String = env::var("PORT").unwrap_or_else(|_| "10000".to_string());
     let puerto: u16 = puerto.parse::<u16>().expect("Puerto Inválido");
