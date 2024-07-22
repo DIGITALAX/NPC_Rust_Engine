@@ -5,7 +5,7 @@ use std::error::Error;
 impl Llama {
     pub async fn llamar_llama(&self, prompt: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
         let ollama = Ollama::default();
-        let model = "llama3:70b".to_string();
+        let model = "llama3:8b".to_string();
 
         let res = ollama
             .generate(GenerationRequest::new(model, prompt.to_string()))

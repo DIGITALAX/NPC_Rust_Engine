@@ -79,18 +79,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let pull_output = Command::new("./ollama")
         .arg("pull")
-        .arg("llama3:70b")
+        .arg("llama3:8b")
         .output()?;
 
     if !pull_output.status.success() {
         return Err(format!(
-            "Failed to pull model llama3:70b: {}",
+            "Failed to pull model llama3:8b: {}",
             String::from_utf8_lossy(&pull_output.stderr)
         )
         .into());
     }
 
-    println!("Model llama3:70b installed successfully");
+    println!("Model llama3:8b installed successfully");
 
     let list_models_output = Command::new("./ollama").arg("list").output()?;
 
