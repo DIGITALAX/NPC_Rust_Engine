@@ -11,12 +11,17 @@ def main():
     prompt = sys.argv[1]
     ollama_path = "/tmp/ollama/ollama"
 
-    if not os.path.isfile(ollama_path) or not os.access(ollama_path, os.X_OK):
-        print(f"Error: ollama binary not found or not executable at {ollama_path}")
-        sys.exit(1)
-
     print(f"Current working directory: {os.getcwd()}")
     print(f"Using ollama from: {ollama_path}")
+    print(f"PATH: {os.environ.get('PATH')}")
+
+    if not os.path.isfile(ollama_path):
+        print(f"Error: ollama binary not found at {ollama_path}")
+        sys.exit(1)
+    if not os.access(ollama_path, os.X_OK):
+        print(f"Error: ollama binary is not executable at {ollama_path}")
+        sys.exit(1)
+
 
     try:
         result = subprocess.run(
