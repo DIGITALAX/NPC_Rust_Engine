@@ -874,7 +874,7 @@ perfil_id
 
         if lens_tipo == LensType::Quote {
             funcion = "quote";
-            res = lens::hacer_cita(&self.npc.etiqueta, &format!("0x0{:x}-0x{:x}", comentario_perfil, comentario_pub)
+            res = lens::hacer_cita(&self.npc.etiqueta, &format!("0x0{:x}-0x{:02x}", comentario_perfil, comentario_pub)
                 
                 
              
@@ -883,7 +883,7 @@ perfil_id
             });
         } else {
 
-         res = lens::hacer_comentario(&self.npc.etiqueta, &format!("0x0{:x}-0x{:x}", comentario_perfil, comentario_pub), String::from("ipfs://") + &contenido, &self.tokens.as_ref().unwrap().tokens.access_token).await.map_err(|e| {
+         res = lens::hacer_comentario(&self.npc.etiqueta, &format!("0x0{:x}-0x{:02x}", comentario_perfil, comentario_pub), String::from("ipfs://") + &contenido, &self.tokens.as_ref().unwrap().tokens.access_token).await.map_err(|e| {
             Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
         });
 
@@ -914,7 +914,7 @@ perfil_id
         .lens_hub_contrato
         .method::<_, U256>("mirror", (Token::Tuple(mensaje.into_tokens()),))?;
 
-        res = lens::hacer_mirror(&self.npc.etiqueta, &format!("0x0{:x}-0x{:x}", comentario_perfil, comentario_pub), &self.tokens.as_ref().unwrap().tokens.access_token).await.map_err(|e| {
+        res = lens::hacer_mirror(&self.npc.etiqueta, &format!("0x0{:x}-0x{:02x}", comentario_perfil, comentario_pub), &self.tokens.as_ref().unwrap().tokens.access_token).await.map_err(|e| {
             Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
         });
 

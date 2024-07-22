@@ -625,13 +625,3 @@ pub struct TokensAlmacenados {
     pub tokens: LensTokens,
     pub expira_en: i64,
 }
-
-#[derive(Serialize)]
-pub  struct PromptRequisito {
-   pub text: String,
-}
-
-#[derive(Deserialize)]
-pub struct PromptRespuesta {
-    pub response: String
-}
