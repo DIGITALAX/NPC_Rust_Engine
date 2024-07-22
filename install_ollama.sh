@@ -1,6 +1,7 @@
 #!/bin/bash
 
-OLLAMA_DIR="/opt/render/ollama_bin"
+PROJECT_DIR="$(pwd)"
+OLLAMA_DIR="$PROJECT_DIR/bin"
 OLLAMA_FILE="$OLLAMA_DIR/ollama"
 mkdir -p $OLLAMA_DIR
 

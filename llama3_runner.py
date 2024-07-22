@@ -4,7 +4,7 @@ import subprocess
 import os
 
 COMMON_PATHS = [
-    "/opt/render/ollama_bin",
+    os.path.join(os.getcwd(), "bin"),
     "/usr/local/bin",
     "/usr/bin",
     "/bin",
@@ -22,32 +22,6 @@ def find_ollama():
             print(f"Found ollama binary at: {full_path}")
             return full_path
     
-    print("ollama binary not found in known paths")
-    
-    try:
-        print("Running system-wide search for 'ollama'")
-        result = subprocess.run(
-            ["ls", "-lR", "/"], 
-            capture_output=True, 
-            text=True, 
-            check=True
-        )
-        grep_result = subprocess.run(
-            ["grep", "/ollama"], 
-            input=result.stdout, 
-            capture_output=True, 
-            text=True, 
-            check=True
-        )
-        possible_paths = grep_result.stdout.split("\n")
-        for path in possible_paths:
-            if "ollama" in path and "ollama_bin" in path:
-                print(f"Found ollama binary at: {path}")
-                return path.strip()
-    except subprocess.CalledProcessError as e:
-        print(f"Error finding ollama binary: {e.stderr}")
-        return None
-
     print("ollama binary not found in the system")
     return None
 
