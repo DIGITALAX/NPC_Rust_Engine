@@ -68,6 +68,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .output()?;
 
     println!("Llama 70b installed successfully");
+    let list_models_output = Command::new("./ollama").arg("list").output()?;
+    let models_list = String::from_utf8_lossy(&list_models_output.stdout);
+    println!("Lista de modelos: {}", models_list);
 
     Command::new("./ollama")
         .arg("serve")
