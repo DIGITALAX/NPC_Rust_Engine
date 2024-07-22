@@ -1,29 +1,36 @@
 #!/bin/bash
 
-PROJECT_DIR="$(pwd)"
-OLLAMA_DIR="$PROJECT_DIR/bin"
-OLLAMA_FILE="$OLLAMA_DIR/ollama"
-mkdir -p $OLLAMA_DIR
+# Definir directorio de instalación
+INSTALL_DIR="/tmp/ollama"
+OLLAMA_FILE="$INSTALL_DIR/ollama"
 
-echo "Downloading ollama..."
+# Crear directorio de instalación
+mkdir -p $INSTALL_DIR
+
+# Descargar Ollama
+echo "Descargando Ollama..."
 curl -L https://ollama.com/download/ollama-linux-amd64 -o $OLLAMA_FILE
 chmod +x $OLLAMA_FILE
 
+# Verificar la instalación
 if [ ! -f $OLLAMA_FILE ]; then
-    echo "ollama could not be downloaded"
+    echo "Error: No se pudo descargar Ollama"
     exit 1
 fi
 
-echo "Verifying ollama installation..."
+echo "Verificando la instalación de Ollama..."
 if ! $OLLAMA_FILE --version &> /dev/null; then
-    echo "ollama could not be executed"
+    echo "Error: No se puede ejecutar Ollama"
     exit 1
 fi
 
-echo "ollama installed successfully in $OLLAMA_FILE"
+echo "Ollama se instaló correctamente en $OLLAMA_FILE"
+echo "Contenido de $INSTALL_DIR:"
+ls -l $INSTALL_DIR
 
-ls -l $OLLAMA_DIR
-
-export PATH=$OLLAMA_DIR:$PATH
-echo "export PATH=$OLLAMA_DIR:\$PATH" >> ~/.bashrc
+# Agregar al PATH
+echo "export PATH=$INSTALL_DIR:\$PATH" >> ~/.bashrc
+echo "export OLLAMA_PATH=$OLLAMA_FILE" >> ~/.bashrc
 source ~/.bashrc
+
+echo "Instalación completada. Reinicia tu sesión o ejecuta 'source ~/.bashrc' para actualizar el PATH."
