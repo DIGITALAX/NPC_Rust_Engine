@@ -1,15 +1,16 @@
 use crate::bib::types::Llama;
 use std::{error::Error, process::Command};
 use tokio::task;
+use shell_escape::escape;
 
 impl Llama {
     pub async fn llamar_llama(&self, prompt: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let prompt = prompt.to_string();
-
+        let prompt = escape(prompt.into()).to_string();
+        
         let output = task::spawn_blocking(move || {
             Command::new("bash")
                 .arg("-c")
-                .arg(format!("python3 llama3_runner.py '{}'", prompt))
+                .arg(format!("python3 llama3_runner.py {}", prompt))
                 .output()
         })
         .await??;

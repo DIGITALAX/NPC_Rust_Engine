@@ -15,8 +15,8 @@ def main():
     print(f"Current working directory: {os.getcwd()}")
     print(f"Using ollama from: {ollama_path}")
 
-    # Configurar el PATH directamente en el entorno
     os.environ["PATH"] = ollama_dir + os.pathsep + os.environ.get("PATH", "")
+
     print(f"Updated PATH: {os.environ.get('PATH')}")
 
     if not os.path.isfile(ollama_path):
