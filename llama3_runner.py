@@ -5,8 +5,9 @@ import os
 
 def find_ollama():
     possible_paths = [
+        '/opt/render/ollama_bin/ollama',
         os.path.join(os.path.expanduser('~'), 'ollama_bin', 'ollama'),
-        os.path.join(os.path.dirname(__file__), 'ollama_bin', 'ollama'),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ollama_bin', 'ollama'),
         os.path.join(os.getcwd(), 'ollama_bin', 'ollama')
     ]
     for path in possible_paths:
@@ -25,21 +26,15 @@ def main():
 
     print(f"Current working directory: {os.getcwd()}")
     print(f"PATH: {os.environ.get('PATH')}")
-    print(f"__file__: {__file__}")
-    print(f"os.path.dirname(__file__): {os.path.dirname(__file__)}")
-    print(f"os.path.abspath(__file__): {os.path.abspath(__file__)}")
+    print(f"Using ollama from: {ollama_path}")
 
     if not ollama_path:
         print("Error: ollama binary not found")
         sys.exit(1)
 
-    print(f"Using ollama from: {ollama_path}")
     ollama_dir = os.path.dirname(ollama_path)
-    os.environ["PATH"] += os.pathsep + ollama_dir
+    os.environ["PATH"] = ollama_dir + os.pathsep + os.environ.get('PATH', '')
 
-    print(f"Current working directory: {os.getcwd()}")
-    print(f"PATH: {os.environ.get('PATH')}")
-    print(f"Using ollama from: {ollama_path}")
 
     try:
         result = subprocess.run(
