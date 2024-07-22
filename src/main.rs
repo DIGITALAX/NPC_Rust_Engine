@@ -1,5 +1,6 @@
 use dotenv::dotenv;
 use futures_util::{future::try_join_all, SinkExt, StreamExt};
+use reqwest::Client;
 use serde_json::{from_str, json, to_string, Value};
 use std::{
     collections::HashMap,
@@ -60,18 +61,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .arg(ollama_path.to_str().unwrap())
         .output()?;
 
-    println!("Ollama installed successfully at {:?}", ollama_path);
-
-    Command::new("./ollama")
-        .arg("pull")
-        .arg("llama3:70b")
-        .output()?;
-
-    println!("Llama 70b installed successfully");
-    let list_models_output = Command::new("./ollama").arg("list").output()?;
-    let models_list = String::from_utf8_lossy(&list_models_output.stdout);
-    println!("Lista de modelos: {}", models_list);
-
     Command::new("./ollama")
         .arg("serve")
         .stdout(Stdio::null())
@@ -80,6 +69,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .expect("Failed to start ollama server");
 
     std::thread::sleep(std::time::Duration::from_secs(5));
+
+    let client = Client::new();
+    let response = client
+        .post("http://localhost:11434/api/pull")
+        .json(&serde_json::json!({"model": "llama3:70b"}))
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        return Err(format!(
+            "Failed to pull model llama3:70b via API: {}",
+            response.text().await?
+        )
+        .into());
+    }
+
+    println!("Model llama3:70b installed successfully via API");
 
     let render_clave = std::env::var("RENDER_KEY").expect("Sin Clave");
     let puerto: String = env::var("PORT").unwrap_or_else(|_| "10000".to_string());
