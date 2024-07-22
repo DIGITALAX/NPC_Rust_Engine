@@ -9,11 +9,15 @@ def main():
         sys.exit(1)
 
     prompt = sys.argv[1]
-    ollama_path = os.path.join(os.path.expanduser("~"), "project", "bin", "ollama")
+    ollama_dir = os.path.join(os.path.expanduser("~"), "project", "bin")
+    ollama_path = os.path.join(ollama_dir, "ollama")
 
     print(f"Current working directory: {os.getcwd()}")
     print(f"Using ollama from: {ollama_path}")
-    print(f"PATH: {os.environ.get('PATH')}")
+
+    # Configurar el PATH directamente en el entorno
+    os.environ["PATH"] = ollama_dir + os.pathsep + os.environ.get("PATH", "")
+    print(f"Updated PATH: {os.environ.get('PATH')}")
 
     if not os.path.isfile(ollama_path):
         print(f"Error: ollama binary not found at {ollama_path}")
