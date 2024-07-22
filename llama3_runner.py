@@ -3,10 +3,11 @@ import json
 import subprocess
 import os
 
-OLLAMA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'ollama_bin')
-OLLAMA_FILE = os.path.join(OLLAMA_DIR, 'ollama')
+OLLAMA_DIR = "/opt/render/ollama_bin"
+OLLAMA_FILE = os.path.join(OLLAMA_DIR, "ollama")
 
 def find_ollama():
+    print(f"Checking path: {OLLAMA_FILE}")
     if os.path.isfile(OLLAMA_FILE):
         print(f"Found ollama binary at: {OLLAMA_FILE}")
         return OLLAMA_FILE
@@ -20,10 +21,6 @@ def main():
     prompt = sys.argv[1]
     ollama_path = find_ollama()
 
-    print(f"Current working directory: {os.getcwd()}")
-    print(f"PATH: {os.environ.get('PATH')}")
-    print(f"Using ollama from: {ollama_path}")
-
     if not ollama_path:
         print("Error: ollama binary not found")
         sys.exit(1)
@@ -31,6 +28,9 @@ def main():
     ollama_dir = os.path.dirname(ollama_path)
     os.environ["PATH"] = ollama_dir + os.pathsep + os.environ.get('PATH', '')
 
+    print(f"Current working directory: {os.getcwd()}")
+    print(f"PATH: {os.environ.get('PATH')}")
+    print(f"Using ollama from: {ollama_path}")
 
     try:
         result = subprocess.run(
