@@ -50,7 +50,7 @@ impl Llama {
         let output = task::spawn_blocking(move || {
             Command::new("bash")
                 .arg("-c")
-                .arg(format!("python3 /opt/render/project/src/llama3_runner.py {}", prompt))
+                .arg(format!("python3 llama3_runner.py {}", prompt))
                 .output()
         })
         .await??;
