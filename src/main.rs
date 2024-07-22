@@ -73,7 +73,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     Command::new("./ollama")
         .arg("pull")
-        .arg("llama:70b")
+        .arg("llama3:70b")
         .output()?;
 
     println!("Llama 70b installed successfully");
