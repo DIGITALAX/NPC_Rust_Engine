@@ -11,7 +11,7 @@ COMMON_PATHS = [
     "/usr/sbin",
     "/sbin",
     os.path.expanduser("~/bin"),
-    "/opt/render/project/src",
+    "/opt/render/project/src/bin",
 ]
 
 def find_ollama():
