@@ -5,9 +5,8 @@ import os
 
 def find_ollama():
     possible_paths = [
+        os.path.join(os.path.expanduser('~'), 'ollama_bin', 'ollama'),
         os.path.join(os.path.dirname(__file__), 'ollama_bin', 'ollama'),
-        '/opt/render/project/src/ollama_bin/ollama',
-        '/opt/render/ollama_bin/ollama',
         os.path.join(os.getcwd(), 'ollama_bin', 'ollama')
     ]
     for path in possible_paths:
