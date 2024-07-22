@@ -4,9 +4,16 @@ import subprocess
 import os
 import time
 
-def is_service_up():
-    result = subprocess.run(['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}', 'http://localhost:11411'], capture_output=True, text=True)
+def is_service_up(port):
+    result = subprocess.run(['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}', f'http://localhost:{port}'], capture_output=True, text=True)
     return result.stdout.strip() == "200"
+
+def find_available_port(start_port=11411, max_attempts=100):
+    for i in range(max_attempts):
+        port = start_port + i
+        if not is_service_up(port):
+            return port
+    return None
 
 def main():
     if len(sys.argv) != 2:
@@ -29,21 +36,26 @@ def main():
         print(f"Error: ollama binary is not executable at {ollama_path}")
         sys.exit(1)
 
-    if is_service_up():
-        ollama_process = None
-    else:
-        ollama_process = subprocess.Popen([ollama_path, 'serve'])
-        time.sleep(5) 
+    port = find_available_port()
+    if port is None:
+        print("Error: no available ports found")
+        sys.exit(1)
 
-    if not is_service_up():
-        print("Error: could not connect to ollama app, is it running?")
+    if not is_service_up(port):
+        ollama_process = subprocess.Popen([ollama_path, 'serve', '--port', str(port)])
+        time.sleep(5)  
+    else:
+        ollama_process = None
+
+    if not is_service_up(port):
+        print(f"Error: could not connect to ollama app on port {port}, is it running?")
         if ollama_process:
             ollama_process.terminate()
         sys.exit(1)
 
     try:
         result = subprocess.run(
-            [ollama_path, 'run', "llama3", prompt],
+            [ollama_path, 'run', '--port', str(port), "llama3", prompt],
             capture_output=True,
             text=True,
             check=True
