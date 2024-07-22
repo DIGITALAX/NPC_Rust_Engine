@@ -22,7 +22,10 @@ def find_ollama():
             print(f"Found ollama binary at: {full_path}")
             return full_path
     
+    print("ollama binary not found in known paths")
+    
     try:
+        print("Running system-wide search for 'ollama'")
         result = subprocess.run(
             ["ls", "-lR", "/"], 
             capture_output=True, 
@@ -38,7 +41,7 @@ def find_ollama():
         )
         possible_paths = grep_result.stdout.split("\n")
         for path in possible_paths:
-            if "ollama" in path:
+            if "ollama" in path and "ollama_bin" in path:
                 print(f"Found ollama binary at: {path}")
                 return path.strip()
     except subprocess.CalledProcessError as e:
