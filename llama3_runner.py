@@ -20,9 +20,8 @@ def start_service(ollama_path, port):
         time.sleep(5)  # Esperar unos segundos para asegurarse de que el servicio esté activo
         stderr = ollama_process.stderr.read().decode('utf-8')
         if 'address already in use' in stderr:
-            print(f"Error: Port {port} already in use.")
-            ollama_process.terminate()
-            return None
+            print(f"Port {port} already in use. Trying to connect to the existing service.")
+            return None  # Indica que ya hay un servicio en ejecución
         return ollama_process
     except Exception as e:
         print(f"Error starting ollama service: {e}")
@@ -36,11 +35,7 @@ def main():
     prompt = sys.argv[1]
     ollama_path = os.path.join(os.path.expanduser("~"), "project", "src", "ollama")
 
-    print(f"Current working directory: {os.getcwd()}")
-    print(f"Using ollama from: {ollama_path}")
-
     os.environ["PATH"] = os.path.dirname(ollama_path) + os.pathsep + os.environ.get("PATH", "")
-    print(f"Updated PATH: {os.environ.get('PATH')}")
 
     if not os.path.isfile(ollama_path):
         print(f"Error: ollama binary not found at {ollama_path}")
