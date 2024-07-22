@@ -14,14 +14,24 @@ impl Llama {
             "prompt": prompt.trim()
         });
 
-
         let res = cliente.post(url).json(&payload).send().await?;
 
         if res.status().is_success() {
             let response_body: Value = res.json().await?;
             if let Some(response) = response_body.get("response").and_then(|v| v.as_str()) {
-                info!("{}", response);
-                Ok(response.to_string())
+                let filtered_response: String = response
+                    .lines()
+                    .filter(|line| {
+                        !line.contains(
+                            "failed to get console mode for stdout: The handle is invalid.",
+                        ) && !line.contains(
+                            "failed to get console mode for stderr: The handle is invalid.",
+                        )
+                    })
+                    .collect::<Vec<&str>>()
+                    .join("\n");
+                info!("{}", filtered_response);
+                Ok(filtered_response)
             } else {
                 Err(Box::new(std::io::Error::new(
                     std::io::ErrorKind::Other,
