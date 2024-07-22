@@ -71,6 +71,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     std::thread::sleep(std::time::Duration::from_secs(5));
 
+    Command::new("./ollama")
+        .arg("pull")
+        .arg("llama:70b")
+        .output()?;
+
+    println!("Llama 70b installed successfully");
+
     let render_clave = std::env::var("RENDER_KEY").expect("Sin Clave");
     let puerto: String = env::var("PORT").unwrap_or_else(|_| "10000".to_string());
     let puerto: u16 = puerto.parse::<u16>().expect("Puerto Inválido");
