@@ -8,8 +8,10 @@ use std::{
     path::Path,
     process::{Command, Stdio},
     sync::Arc,
+    thread,
     time::Duration,
 };
+use dirs;
 use tokio::{
     net::{TcpListener, TcpStream},
     spawn,
@@ -35,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     dotenv().ok();
 
     let ollama_path = Path::new("ollama");
-    let model_dir = "/usr/share/ollama/.ollama/models";
+    let model_dir = dirs::home_dir().unwrap().join(".ollama/models");
 
     if let Some(parent) = ollama_path.parent() {
         fs::create_dir_all(parent)?;
@@ -62,17 +64,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .output()?;
 
     println!("Ollama installed successfully at {:?}", ollama_path);
-    env::set_var("OLLAMA_MODELS", model_dir);
+    fs::create_dir_all(&model_dir)?;
+    env::set_var("OLLAMA_MODELS", model_dir.to_str().unwrap());
 
     Command::new("./ollama")
         .arg("serve")
-        .env("OLLAMA_MODELS", model_dir)
+        .env("OLLAMA_MODELS", model_dir.to_str().unwrap())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
         .spawn()
         .expect("Failed to start ollama server");
 
-    std::thread::sleep(std::time::Duration::from_secs(5));
+    thread::sleep(Duration::from_secs(10));
 
     let pull_output = Command::new("./ollama")
         .arg("pull")
