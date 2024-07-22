@@ -17,7 +17,7 @@ impl Llama {
             println!("Model {} not found, downloading...", model);
             let download_model_output = Command::new("./ollama")
                 .arg("pull")
-                .arg(&model)
+                .arg("llama3")
                 .output()?;
     
             if !download_model_output.status.success() {
