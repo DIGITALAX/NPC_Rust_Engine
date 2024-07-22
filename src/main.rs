@@ -63,6 +63,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     println!("Ollama installed successfully at {:?}", ollama_path);
 
     Command::new("./ollama")
+        .arg("pull")
+        .arg("llama3:70b")
+        .output()?;
+
+    println!("Llama 70b installed successfully");
+
+    Command::new("./ollama")
         .arg("serve")
         .stdout(Stdio::null())
         .stderr(Stdio::null())
@@ -70,13 +77,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .expect("Failed to start ollama server");
 
     std::thread::sleep(std::time::Duration::from_secs(5));
-
-    Command::new("./ollama")
-        .arg("pull")
-        .arg("llama3:70b")
-        .output()?;
-
-    println!("Llama 70b installed successfully");
 
     let render_clave = std::env::var("RENDER_KEY").expect("Sin Clave");
     let puerto: String = env::var("PORT").unwrap_or_else(|_| "10000".to_string());
