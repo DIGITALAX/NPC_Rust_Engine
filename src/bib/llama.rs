@@ -10,6 +10,30 @@ impl Llama {
         let list_models_output = Command::new("./ollama").arg("list").output()?;
         println!("lista de los modelos {:?}", list_models_output);
 
+        let models_list = String::from_utf8_lossy(&list_models_output.stdout);
+        println!("Lista de modelos: {}", models_list);
+    
+        if !models_list.contains(&model) {
+            println!("Model {} not found, downloading...", model);
+            let download_model_output = Command::new("./ollama")
+                .arg("pull")
+                .arg(&model)
+                .output()?;
+    
+            if !download_model_output.status.success() {
+                return Err(format!(
+                    "Failed to download model {}: {}",
+                    model,
+                    String::from_utf8_lossy(&download_model_output.stderr)
+                )
+                .into());
+            }
+    
+            println!("Model {} downloaded successfully", model);
+        } else {
+            println!("Model {} already exists, skipping download", model);
+        }
+
         let res = ollama
             .generate(GenerationRequest::new(model, prompt.to_string()))
             .await;
