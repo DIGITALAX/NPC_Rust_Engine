@@ -3,6 +3,7 @@ import json
 import subprocess
 import os
 import time
+import requests
 
 def main():
     if len(sys.argv) != 2:
@@ -25,8 +26,21 @@ def main():
         print(f"Error: ollama binary is not executable at {ollama_path}")
         sys.exit(1)
 
-    ollama_process = subprocess.Popen([ollama_path, 'serve'])
-    time.sleep(5)  
+    service_up = False
+    for _ in range(10):
+        try:
+            response = requests.get('http://localhost:11411')
+            if response.status_code == 200:
+                service_up = True
+                break
+        except requests.ConnectionError:
+            time.sleep(1)
+
+    if not service_up:
+        ollama_process = subprocess.Popen([ollama_path, 'serve'])
+        time.sleep(5) 
+    else:
+        ollama_process = None
 
     try:
         result = subprocess.run(
@@ -47,7 +61,8 @@ def main():
         print(f"An unexpected error occurred: {e}")
         sys.exit(1)
     finally:
-        ollama_process.terminate()
+        if ollama_process:
+            ollama_process.terminate()
 
 if __name__ == "__main__":
     main()
