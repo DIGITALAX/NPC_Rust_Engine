@@ -3,22 +3,49 @@ import json
 import subprocess
 import os
 
-KNOWN_PATHS = [
+COMMON_PATHS = [
     "/opt/render/ollama_bin",
     "/usr/local/bin",
     "/usr/bin",
     "/bin",
-    os.path.expanduser("~/bin")
+    "/usr/sbin",
+    "/sbin",
+    os.path.expanduser("~/bin"),
+    "/opt/render/project/src",
 ]
 
 def find_ollama():
-    for path in KNOWN_PATHS:
+    for path in COMMON_PATHS:
         full_path = os.path.join(path, "ollama")
         print(f"Checking path: {full_path}")
         if os.path.isfile(full_path) and os.access(full_path, os.X_OK):
             print(f"Found ollama binary at: {full_path}")
             return full_path
-    print("ollama binary not found in known paths")
+    
+    try:
+        result = subprocess.run(
+            ["ls", "-lR", "/"], 
+            capture_output=True, 
+            text=True, 
+            check=True
+        )
+        grep_result = subprocess.run(
+            ["grep", "/ollama"], 
+            input=result.stdout, 
+            capture_output=True, 
+            text=True, 
+            check=True
+        )
+        possible_paths = grep_result.stdout.split("\n")
+        for path in possible_paths:
+            if "ollama" in path:
+                print(f"Found ollama binary at: {path}")
+                return path.strip()
+    except subprocess.CalledProcessError as e:
+        print(f"Error finding ollama binary: {e.stderr}")
+        return None
+
+    print("ollama binary not found in the system")
     return None
 
 def main():
