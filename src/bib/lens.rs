@@ -280,6 +280,7 @@ pub async fn hacer_consulta(perfil_id: &str) -> Result<U256, Box<dyn Error>> {
     if respuesta.status().is_success() {
         let json: serde_json::Value = respuesta.json().await?;
         if let Some(items) = json["data"]["publications"]["items"].as_array() {
+            println!("{:?}", json);
             if !items.is_empty() {
                 if let Some(id) = items[0]["id"].as_str() {
                     if let Some(hex_str) = id.split('-').nth(1) {

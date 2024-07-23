@@ -15,7 +15,6 @@ impl Llama {
         });
 
         let res = cliente.post(url).json(&payload).send().await?;
-
         if res.status().is_success() {
             let response_body: Value = res.json().await?;
             if let Some(response) = response_body.get("response").and_then(|v| v.as_str()) {
