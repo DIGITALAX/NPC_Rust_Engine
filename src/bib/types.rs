@@ -11,8 +11,8 @@ use ethers::{
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
+    error::Error,
     sync::{Arc, Mutex},
-    error::Error
 };
 use tokio::runtime::Handle;
 
@@ -32,6 +32,8 @@ pub struct Escala {
 pub struct Prompt {
     pub personalidad: String,
     pub idiomas: Vec<String>,
+    pub temas: Vec<String>,
+    pub tono: Vec<String>,
     pub imagenes: Arc<Mutex<Vec<String>>>,
     pub amigos: Vec<U256>,
 }
@@ -42,6 +44,8 @@ struct PromptHelper {
     idiomas: Vec<String>,
     imagenes: Vec<String>,
     amigos: Vec<U256>,
+    temas: Vec<String>,
+    tono: Vec<String>,
 }
 
 impl Serialize for Prompt {
@@ -54,6 +58,8 @@ impl Serialize for Prompt {
             idiomas: self.idiomas.clone(),
             imagenes: self.imagenes.lock().unwrap().clone(),
             amigos: self.amigos.clone(),
+            tono: self.tono.clone(),
+            temas: self.temas.clone(),
         };
         helper.serialize(serializer)
     }
@@ -70,6 +76,8 @@ impl<'de> Deserialize<'de> for Prompt {
             idiomas: helper.idiomas,
             imagenes: Arc::new(Mutex::new(helper.imagenes)),
             amigos: helper.amigos,
+            temas: helper.temas,
+            tono: helper.tono,
         })
     }
 }
@@ -325,7 +333,7 @@ pub struct NPCAleatorio {
         >,
     >,
     pub manija: Handle,
-    pub tokens: Option<TokensAlmacenados>
+    pub tokens: Option<TokensAlmacenados>,
 }
 
 #[derive(Clone)]
@@ -588,14 +596,13 @@ impl Tokenize for RegisterPub {
     }
 }
 
-
 #[derive(Debug)]
 pub struct CustomError {
     details: String,
 }
 
 impl CustomError {
-   pub fn new(msg: &str) -> CustomError {
+    pub fn new(msg: &str) -> CustomError {
         CustomError {
             details: msg.to_string(),
         }
@@ -611,7 +618,6 @@ impl fmt::Display for CustomError {
 impl Error for CustomError {}
 unsafe impl Send for CustomError {}
 unsafe impl Sync for CustomError {}
-
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LensTokens {
