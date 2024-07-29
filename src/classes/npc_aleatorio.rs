@@ -608,10 +608,11 @@ perfil_id
 
                                                 if let Some(tx_request) = tx.as_eip1559_ref() {
                                                     let gas_price =
-                                                        U256::from(200_000_000_000u64);
+                                                        U256::from(250_000_000_000u64);
                                                     let max_priority_fee =
-                                                        U256::from(10_000_000_000u64);
-                                                    let gas_limit = U256::from(200_000);
+                                                        U256::from(50_000_000_000u64);
+                                              
+                                                    let gas_limit = U256::from(500_000);
                                                     let cliente = npc_clone
                                                         .npc_publication_contrato
                                                         .client()
