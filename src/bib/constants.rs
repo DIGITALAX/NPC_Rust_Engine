@@ -33,6 +33,21 @@ pub static ISO_CODES: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
     m
 });
 
+
+pub static ISO_CODES_PROMPT: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
+    let mut m = HashMap::new();
+    m.insert("א", "Hebrew");
+    m.insert("ع", "Arabic");
+    m.insert("ук", "Ukrainian");
+    m.insert("es", "Spanish");
+    m.insert("د", "Farsi");
+    m.insert("en", "English");
+    m.insert("br", "Portuguese");
+    m.insert("pt", "Portuguese");
+    m.insert("us", "English");
+    m
+});
+
 pub static API_LENS: &'static str = "https://api-v2.lens.dev";
 
 pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {

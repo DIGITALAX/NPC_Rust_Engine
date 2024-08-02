@@ -1,6 +1,6 @@
 use crate::{bib::{lens, types::{
     Comment, Contenido, Coordenada, CustomError, Estado, GameTimer, Imagen, LensType, Llama, Mapa, Mirror, Movimiento, NPCAleatorio, Pub, Publicacion, RegisterPub, Silla, Sprite, Talla
-}, utils::{between, subir_ipfs, subir_ipfs_imagen}}, TokensAlmacenados, ISO_CODES, LENS_HUB_PROXY, NPC_PUBLICATION};
+}, utils::{between, subir_ipfs, subir_ipfs_imagen}}, TokensAlmacenados, ISO_CODES, ISO_CODES_PROMPT, LENS_HUB_PROXY, NPC_PUBLICATION};
 use abi::{Token, Tokenize};
 use ethers::{prelude::*, types::{Address, Bytes, U256}};
 use pathfinding::prelude::astar;
@@ -527,14 +527,19 @@ perfil_id
 
             let new_prompt = {
                 let mut temp_prompt = "Respond to this post in the language of ".to_string();
-                temp_prompt.push_str(&locale);
+                temp_prompt.push_str(
+                    ISO_CODES_PROMPT
+                        .get(locale.as_str())
+                        .map(|s| s.as_ref())
+                        .unwrap_or("english")
+                ); 
                 temp_prompt.push_str("and with a word limit of ");
                 temp_prompt.push_str(&limite_palabra.to_string());
                 temp_prompt.push_str("and");
                 temp_prompt.push_str(&etiquetas);
                 temp_prompt.push_str("with a comment and in the style of a someone with this tone of writing and expressing themselves: ");
                 temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
-                temp_prompt.push_str(". Remember three very very important rules: 1. Only give me the comment in your reply, nothing more. Do not tell me that the comment is there, only give the comment as it will go directly to post. For example NEVER write 'Here's the social media post:' only give me the comment. 2. REMEMBER NEVER EVER NEVER EVER write a translation or a pronunciation, only I want the language specified above in the comment NOTHING ELSE. 3. If the language chosen above is not english DO NOT rewrite the comment in english, I only want that language. \n\npost :\n\n");
+                temp_prompt.push_str(". Remember three very very important rules: 1. Only give me the comment in your reply, nothing more. Do not tell me that the comment is there, only give the comment as it will go directly to post. For example NEVER write 'Here's the social media post:' or 'post:' or 'comment:', only give me the comment. 2. REMEMBER NEVER EVER NEVER EVER write a translation or a pronunciation, only I want the language specified above in the comment NOTHING ELSE. 3. If the language chosen above is not english DO NOT rewrite the comment in english, I only want that language. \n\npost :\n\n");
                 temp_prompt.push_str(&contenido);
                 temp_prompt
             };
@@ -563,7 +568,12 @@ perfil_id
 
                                 let new_prompt = {
                                     let mut temp_prompt = "Make me a post for social media in the language of ".to_string();
-                                    temp_prompt.push_str(&locale);
+                                    temp_prompt.push_str(
+                                        ISO_CODES_PROMPT
+                                            .get(locale.as_str())
+                                            .map(|s| s.as_ref())
+                                            .unwrap_or("english")
+                                    );                           
                                     temp_prompt.push_str("about the subject matter of");
                                     let mut rng = rand::thread_rng();
                                     if let Some(tema) = npc_clone.npc.prompt.temas.choose(&mut rng) {
@@ -574,7 +584,7 @@ perfil_id
                                     temp_prompt.push_str(&etiquetas);
                                     temp_prompt.push_str("and in the style of a someone with this tone of writing and expressing themselves: ");
                                     temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
-                                    temp_prompt.push_str(". Remember three very very important rules: 1. Only give me the post in your reply, nothing more. Do not tell me that the post is there, only give the post as it will go directly to post.  For example NEVER write 'Here's the social media post:' only give me the post. 2. REMEMBER NEVER EVER NEVER EVER write a translation or a pronunciation, only I want the language specified above in the post NOTHING ELSE. 3. If the language chosen above is not english DO NOT rewrite the post in english, I only want that language.");
+                                    temp_prompt.push_str(". Remember three very very important rules: 1. Only give me the post in your reply, nothing more. Do not tell me that the post is there, only give the post as it will go directly to post.  For example NEVER write 'Here's the social media post:' or 'post:', only give me the post. 2. REMEMBER NEVER EVER NEVER EVER write a translation or a pronunciation, only I want the language specified above in the post NOTHING ELSE. 3. If the language chosen above is not english DO NOT rewrite the post in english, I only want that language.");
                                     temp_prompt
                                 };
 
