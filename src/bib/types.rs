@@ -111,7 +111,7 @@ pub struct Articulo {
 pub struct Interactivo {
     pub uri: String,
     pub etiqueta: String,
-    pub disenador: String,
+    pub disenadores: Vec<String>,
     pub tipo: AutographType,
     pub sitio: Coordenada,
     pub escala: Escala,
@@ -126,6 +126,7 @@ pub enum AutographType {
     Shirt,
     Catalog,
     Mix,
+    All
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
