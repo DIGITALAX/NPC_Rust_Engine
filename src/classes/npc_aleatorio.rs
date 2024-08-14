@@ -59,10 +59,10 @@ impl NPCAleatorio {
             self.ultimo_tiempo_comprobacion -= delta_time;
         }
 
-        // if self.ultimo_tiempo_comprobacion <= 0 {
-        //     self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
-        //     self.comprobar_conversacion();
-        // }
+        if self.ultimo_tiempo_comprobacion <= 0 {
+            self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
+            self.comprobar_conversacion();
+        }
     }
 
     fn elegir_direccion_aleatoria(&mut self) {
