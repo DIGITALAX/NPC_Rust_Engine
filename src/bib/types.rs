@@ -126,7 +126,7 @@ pub enum AutographType {
     Shirt,
     Catalog,
     Mix,
-    All
+    All,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -297,7 +297,7 @@ pub enum RespuestaTrabajadora<'a> {
 #[derive(Clone, Debug)]
 pub struct EscenaEstudio {
     pub clave: String,
-    pub sillas_ocupadas: Vec<Silla>,
+    pub sillas_ocupadas: Arc<Mutex<Vec<Silla>>>,
     pub npcs: Vec<NPCAleatorio>,
 }
 

@@ -96,13 +96,13 @@ async fn manejar_conexion(
                 if let Some(key) = key_from_client {
                     if key.trim_end_matches("&EIO") == render_clave.trim() {
                         if let Some(origen) = origen {
-                            if origen == "https://www.npcstudio.xyz"
-                                || origen == "https://npc.digitalax.xyz"
-                            {
+                            // if origen == "https://www.npcstudio.xyz"
+                            //     || origen == "https://npc.digitalax.xyz"
+                            // {
                                 Ok(respuesta)
-                            } else {
-                                Err(ErrorResponse::new(Some("Forbidden".to_string())))
-                            }
+                            // } else {
+                            //     Err(ErrorResponse::new(Some("Forbidden".to_string())))
+                            // }
                         } else {
                             Err(ErrorResponse::new(Some("Forbidden".to_string())))
                         }

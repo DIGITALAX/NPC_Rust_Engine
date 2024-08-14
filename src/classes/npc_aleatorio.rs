@@ -59,10 +59,10 @@ impl NPCAleatorio {
             self.ultimo_tiempo_comprobacion -= delta_time;
         }
 
-        if self.ultimo_tiempo_comprobacion <= 0 {
-            self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
-            self.comprobar_conversacion();
-        }
+        // if self.ultimo_tiempo_comprobacion <= 0 {
+        //     self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
+        //     self.comprobar_conversacion();
+        // }
     }
 
     fn elegir_direccion_aleatoria(&mut self) {
@@ -179,21 +179,17 @@ impl NPCAleatorio {
     }
 
     fn sentar(&mut self) {
-        let sillas_disponibles = self.sillas.iter().filter(|silla| {
+        let sillas_disponibles: Vec<&Silla> = self.sillas.iter().filter(|silla| {
             !self
                 .sillas_ocupadas
                 .lock()
                 .unwrap()
                 .iter()
-                .any(|silla_tomada: &Silla| silla_tomada.etiqueta == silla.etiqueta)
-        });
+                .any(|silla_ocupada| silla_ocupada.etiqueta == silla.etiqueta)
+        }).collect();
 
-        if sillas_disponibles.clone().count() >0 {
-
-            let silla_aleatoria = sillas_disponibles
-            .clone()
-            .nth(between(0.0, sillas_disponibles.count() as f32 - 1.0) as usize)
-            .unwrap();
+        if !sillas_disponibles.is_empty() {
+            let silla_aleatoria = sillas_disponibles[thread_rng().gen_range(0..sillas_disponibles.len())];
 
 
             self.sillas_ocupadas
