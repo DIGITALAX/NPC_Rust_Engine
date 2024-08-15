@@ -368,7 +368,6 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                         amigos: vec![
                             U256::from(464533),
                             U256::from(464537),
-                            U256::from(464542),
                             U256::from(464543),
                             U256::from(464544),
                             U256::from(464545),
@@ -472,7 +471,7 @@ String::from("QmPZLNFpTEgEL1eT5veSE23oc9uXxUucZeFCkM99pkvyy5"),
                     publicacion_reloj: 35_000_000,
                     prompt: Prompt {
                         amigos: vec![U256::from(464532),
-                        U256::from(464536),
+                        
                         U256::from(464541),
                         U256::from(464546),
                         U256::from(464547),
@@ -620,7 +619,7 @@ String::from("QmZ6X4gtcaDffLJRmUboYRk21tCgpu37PZgjRUbayMa7Db"),
                     publicacion_reloj: 32_000_000,
                     prompt: Prompt {
                         amigos: vec![U256::from(464530),
-                        U256::from(464534),
+                        
                         U256::from(464539),
                         U256::from(464544),
                         U256::from(464545),
@@ -982,7 +981,7 @@ String::from("QmZfAtHcR7iMNbxy45zLEZTsfqQKZr8Y9RArW5s2mDsYYW"),
                         amigos: vec![U256::from(464528),
                         U256::from(464532),
                         U256::from(464537),
-                        U256::from(464542),
+                        
                         U256::from(464543),
                         U256::from(464544),
                         U256::from(464545),
@@ -1047,7 +1046,7 @@ String::from("QmZfAtHcR7iMNbxy45zLEZTsfqQKZr8Y9RArW5s2mDsYYW"),
                     prompt: Prompt {
                         amigos: vec![U256::from(464527),
                         U256::from(464531),
-                        U256::from(464536),
+                        
                         U256::from(464541),
                         U256::from(464546),
                         U256::from(464547),
@@ -1186,7 +1185,7 @@ String::from("QmXDbttxKcTPAK3mxF35zPW3wEaDXDxYJbhTtSPuS8b3ZK"),
                     prompt: Prompt {
                         amigos: vec![U256::from(464525),
                         U256::from(464529),
-                        U256::from(464534),
+                        
                         U256::from(464538),
                         U256::from(464544),
                         U256::from(464546),
@@ -1571,7 +1570,7 @@ String::from("QmXDbttxKcTPAK3mxF35zPW3wEaDXDxYJbhTtSPuS8b3ZK"),
                         U256::from(464527),
                         U256::from(464532),
                         U256::from(464537),
-                        U256::from(464542),
+                        
                         U256::from(464548),
                         U256::from(464544),],
                         imagenes:  Arc::new(Mutex::new(vec![
@@ -1646,7 +1645,7 @@ String::from("QmfLj4KrSBJyEdyc5zUETrBRpRbtuML3TRVxtZxkmVkRZG"),
                             U256::from(464522),
                             U256::from(464526),
                             U256::from(464531),
-                            U256::from(464536),
+                            
                             U256::from(464541),
                             U256::from(464547),
                             U256::from(464548), 
@@ -1785,7 +1784,7 @@ String::from("QmWqoRA2z4kjZYzXXHcgU2QVvpmk95WsGnVoLZMQVzhtRf"),
                         amigos: vec![U256::from(464520),
                         U256::from(464524),
                         U256::from(464529),
-                        U256::from(464534),
+                        
                         U256::from(464539),
                         U256::from(464544),
                         U256::from(464545),],
@@ -2481,12 +2480,12 @@ String::from("QmPHvaiMJgssTtQg2tmvs6TQxRULpqxVAJaUX7Dncci738"),
                     perfil_id: U256::from(464522),
                     publicacion_reloj: 40_500_000,
                     prompt: Prompt {
-                        amigos: vec![U256::from(464518),
+                        amigos: vec![
                         U256::from(464515),
                         U256::from(464527),
                         U256::from(464532),
                         U256::from(464537),
-                        U256::from(464542),
+                        
                         U256::from(464547),],
                         imagenes:  Arc::new(Mutex::new(vec![String::from("QmapLDjbGRZ4LfnPke69VJu89atS3cv92z89vyC6zkqGqG"),
                             String::from("Qmc69Qf3D4CHeugKM4DBcHRD5qoJuUXubKL7UTyMg5oQ1K"),
@@ -2569,7 +2568,7 @@ String::from("QmPHvaiMJgssTtQg2tmvs6TQxRULpqxVAJaUX7Dncci738"),
                         U256::from(464521),
                         U256::from(464526),
                         U256::from(464531),
-                        U256::from(464536),
+                        
                         U256::from(464541),
                         U256::from(464546),],
                         imagenes:  Arc::new(Mutex::new(vec![String::from("Qmbzinroe6vY3hJwjcRAwQTE8enpsAYFkSafgaUiQEmUTY"),
@@ -3041,7 +3040,7 @@ String::from("QmPHvaiMJgssTtQg2tmvs6TQxRULpqxVAJaUX7Dncci738"),
                         U256::from(464519),
                         U256::from(464524),
                         U256::from(464529),
-                        U256::from(464534),
+                        
                         U256::from(464539),
                         U256::from(464544),
                         ],
@@ -3111,7 +3110,7 @@ String::from("QmPHvaiMJgssTtQg2tmvs6TQxRULpqxVAJaUX7Dncci738"),
                     publicacion_reloj: 39_600_000,
                     prompt: Prompt {
                         amigos: vec![U256::from(464514),
-                        U256::from(464518),
+                        
                         U256::from(464545),
                         U256::from(464528),
                         U256::from(464533),
@@ -3177,13 +3176,13 @@ String::from("QmcNucGprWNrV9nozwuN822TT6mC49BjDNYCibaVJx3gjG"),
                     perfil_id: U256::from(464531),
                     publicacion_reloj: 39_900_000,
                     prompt: Prompt {
-                        amigos: vec![U256::from(464513),
+                        amigos: vec![
                         U256::from(464517),
                         U256::from(464522),
                         U256::from(464527),
                         U256::from(464532),
                         U256::from(464537),
-                        U256::from(464542),],
+                        ],
                         imagenes:  Arc::new(Mutex::new(vec![
                             String::from("Qmawc4K3XKLrAUyjcDSh7HxEaBNGUMW7FoDkTQJ4LLi3qM"),
 String::from("QmXXzZgVYeeT9c5DpUHjZn1Ux7X3somCWGW6GSMPGEDRdv"),
@@ -3250,7 +3249,7 @@ String::from("QmZQZ8jLBvmWLoFYEGPzVpTzL2n7WQB3J2vBdu9cZEHWsB"),
                         U256::from(464521),
                         U256::from(464526),
                         U256::from(464531),
-                        U256::from(464536),
+                        
                         U256::from(464541),],
                         imagenes:  Arc::new(Mutex::new(vec![
                             String::from("QmQSF8j47z7SNta4eXAV7wwXtEfnmVq3G2miD9Nu1uZ4E1"),
@@ -3733,7 +3732,7 @@ String::from("QmeuPJaABZA2Rjrcy1h9NeKqyVHsSHBQK2Gjp7wvYsqkej"),
                     perfil_id: U256::from(464515),
                     publicacion_reloj: 30_900_000,
                     prompt: Prompt {
-                        amigos: vec![U256::from(464511),
+                        amigos: vec![
                         U256::from(464547),
                         U256::from(464520),
                         U256::from(464525),
@@ -3809,7 +3808,7 @@ String::from("QmeuPJaABZA2Rjrcy1h9NeKqyVHsSHBQK2Gjp7wvYsqkej"),
                         U256::from(464519),
                         U256::from(464543),
                         U256::from(464529),
-                        U256::from(464534),
+                        
                         U256::from(464539),],
                         imagenes:  Arc::new(Mutex::new(vec![
                             String::from("QmSQChefpFwZ93H4Cn2Ss3ncuKrF1XrFXXrEhBjgUoym5Y"),
@@ -3883,9 +3882,9 @@ String::from("QmNV2WPEy98Nf37ZYXF4XbgNfBvC9xFut8j5Az3ztngUV3"),
                     perfil_id: U256::from(464532),
                     publicacion_reloj: 31_700_000,
                     prompt: Prompt {
-                        amigos: vec![U256::from(464509),
-                        U256::from(464513),
-                        U256::from(464518),
+                        amigos: vec![
+                        
+                        
                         U256::from(464523),
                         U256::from(464528),
                         U256::from(464533),
@@ -4420,13 +4419,13 @@ String::from("QmfG2FhhNhHiHNAAyao5Z6G2rXQKqN7ZkQDTiBsWi2aL6P"),
                     perfil_id: U256::from(464516),
                     publicacion_reloj: 40_250_000,
                     prompt: Prompt {
-                        amigos: vec![U256::from(464507),
-                        U256::from(464511),
+                        amigos: vec![
+                        
                         U256::from(464529),
                         U256::from(464521),
                         U256::from(464526),
                         U256::from(464531),
-                        U256::from(464536),
+                        
                         ],
                         imagenes:  Arc::new(Mutex::new(vec![
                             String::from("QmQ8rdWv65BVCnTE6MToPGwNcfZN46cPeXTBtEL3UpnEjG"),
@@ -4500,11 +4499,10 @@ String::from("QmY5Dt9fgitWUcS4yoSU1LQs1y6dQBc1FhQmy7WRaAU69W"),
                     perfil_id: U256::from(464525),
                     publicacion_reloj: 44_220_000,
                     prompt: Prompt {
-                        amigos: vec![U256::from(464506),
+                        amigos: vec![
                         U256::from(464510),
                         U256::from(464515),
                         U256::from(464520),
-                        U256::from(464534),
                         U256::from(464530),
                         U256::from(464535),],
                         imagenes:  Arc::new(Mutex::new(vec![
@@ -4571,7 +4569,7 @@ String::from("QmY5Dt9fgitWUcS4yoSU1LQs1y6dQBc1FhQmy7WRaAU69W"),
                         U256::from(464519),
                         U256::from(464524),
                         U256::from(464529),
-                        U256::from(464534),],
+                        ],
                         imagenes:  Arc::new(Mutex::new(vec![
                             String::from("QmQANXRvBbfFZpyVCPai9bGnm6HaKwEEHuvnbAavDeaJ57"),
 String::from("QmYjo4raN8dG5NPnmTGBWeRuLXiQD84Rqv1sR9VSoE1Psw"),
@@ -5331,7 +5329,7 @@ String::from("QmZNTB5WL4Tg4jeZgCpmLk1GFpkjwG1NThxV93aUmsWecr"),
                     perfil_id: U256::from(464548),
                     publicacion_reloj: 45_500_000,
                     prompt: Prompt {
-                        amigos: vec![U256::from(464534),
+                        amigos: vec![
                         U256::from(464538),
                         U256::from(464543),
                         U256::from(464544),

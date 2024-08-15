@@ -9,6 +9,7 @@ use ethers::{
     types::{Address, Bytes, U256},
 };
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::{
     collections::HashMap,
     error::Error,
@@ -507,6 +508,7 @@ pub struct Contenido {
     pub tags: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub image: Option<Imagen>,
+    pub attributes: Option<Vec<MetadataAttribute>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -631,4 +633,50 @@ pub struct LensTokens {
 pub struct TokensAlmacenados {
     pub tokens: LensTokens,
     pub expira_en: i64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct LlamaOpciones {
+    pub num_keep: i32,
+    pub seed: i32,
+    pub num_predict: i32,
+    pub top_k: i32,
+    pub top_p: f32,
+    pub min_p: f32,
+    pub tfs_z: f32,
+    pub typical_p: f32,
+    pub repeat_last_n: i32,
+    pub temperature: f32,
+    pub repeat_penalty: f32,
+    pub presence_penalty: f32,
+    pub frequency_penalty: f32,
+    pub mirostat: i32,
+    pub mirostat_tau: f32,
+    pub mirostat_eta: f32,
+    pub penalize_newline: bool,
+    pub numa: bool,
+    pub num_ctx: i32,
+    pub num_batch: i32,
+    pub num_gpu: i32,
+    pub main_gpu: i32,
+    pub low_vram: bool,
+    pub f16_kv: bool,
+    pub vocab_only: bool,
+    pub use_mmap: bool,
+    pub use_mlock: bool,
+    pub num_thread: i32,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct LlamaRespuesta {
+    pub prompt: String,
+    pub json: Value,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MetadataAttribute {
+   pub key: String,
+    #[serde(rename = "type")]
+    pub tipo: String,
+    pub value: String,
 }

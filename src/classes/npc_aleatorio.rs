@@ -1,6 +1,6 @@
 use crate::{bib::{lens, types::{
     Comment, Contenido, Coordenada, CustomError, Estado, GameTimer, Imagen, LensType, Llama, Mapa, Mirror, Movimiento, NPCAleatorio, Pub, Publicacion, RegisterPub, Silla, Sprite, Talla
-}, utils::{between, subir_ipfs, subir_ipfs_imagen}}, TokensAlmacenados, ISO_CODES, ISO_CODES_PROMPT, LENS_HUB_PROXY, NPC_PUBLICATION};
+}, utils::{between, subir_ipfs, subir_ipfs_imagen}}, LlamaOpciones, LlamaRespuesta, MetadataAttribute, TokensAlmacenados, ISO_CODES, ISO_CODES_PROMPT, LENS_HUB_PROXY, NPC_PUBLICATION};
 use abi::{Token, Tokenize};
 use ethers::{prelude::*, types::{Address, Bytes, U256}};
 use pathfinding::prelude::astar;
@@ -326,7 +326,7 @@ match tokens {
                         let mut imagen: Option<String> = None;
                         let mut locale =npc_clone.npc.prompt.idiomas.first().unwrap().to_string();
                         let limite_palabra = [10,50,100,500,700][thread_rng().gen_range(0..5)] ;
-                        let etiquetas = ["with hashtags", "without hashtags"][thread_rng().gen_range(0..2)];
+                        let etiquetas = [" and at the end include some hashtags. ", " and do not include any hashtags. "][thread_rng().gen_range(0..2)];
                         let mut galeria = 0;
                         let mut  comentario_perfil = U256::from(0);
                         let mut comentario_pub= U256::from(0);
@@ -456,7 +456,8 @@ match tokens {
                                     return;
                                 }
                             }
-                        } else {
+                        } 
+                        else {
                            let mut haz_pub = false;
                             if eleccion == LensType::Comment || eleccion == LensType::Mirror || eleccion == LensType::Quote {
                               
@@ -529,13 +530,13 @@ perfil_id
                         .map(|s| s.as_ref())
                         .unwrap_or("english")
                 ); 
-                temp_prompt.push_str("and with a word limit of ");
+                temp_prompt.push_str(" and with a word limit of ");
                 temp_prompt.push_str(&limite_palabra.to_string());
-                temp_prompt.push_str("and");
+                temp_prompt.push_str(" and");
                 temp_prompt.push_str(&etiquetas);
-                temp_prompt.push_str("with a comment and in the style of a someone with this tone of writing and expressing themselves: ");
+                temp_prompt.push_str(" with a comment and in the style of a someone with this tone of writing and expressing themselves: ");
                 temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
-                temp_prompt.push_str(". Remember three very very important rules: 1. Only give me the comment in your reply, nothing more. Do not tell me that the comment is there, only give the comment as it will go directly to post. For example NEVER write 'Here's the social media post:' or 'post:' or 'comment:', only give me the comment. 2. REMEMBER NEVER EVER NEVER EVER write a translation or a pronunciation, only I want the language specified above in the comment NOTHING ELSE. 3. If the language chosen above is not english DO NOT rewrite the comment in english, I only want that language. \n\npost :\n\n");
+                temp_prompt.push_str(". Remember three very very important rules: 1. Only give me the comment in your reply, nothing more. Do not tell me that the comment is there, only give the comment as it will go directly to post. For example NEVER write 'Here's the social media post:' or 'post:' or 'comment:', only give me the comment. 2. REMEMBER NEVER EVER NEVER EVER write a translation or a pronunciation, only I want the language specified above in the comment NOTHING ELSE. 3. If the language chosen above is not english DO NOT rewrite the comment in english, I only want that language. \n\npost :\n\nAssistant: sure, here's the required information:");
                 temp_prompt.push_str(&contenido);
                 temp_prompt
             };
@@ -563,35 +564,76 @@ perfil_id
                             if haz_pub {
 
                                 let new_prompt = {
-                                    let mut temp_prompt = "Make me a post for social media in the language of ".to_string();
+                                    let mut temp_prompt = "You are a unique and quirky person named ".to_string();
+                                    temp_prompt.push_str(npc_clone.npc.etiqueta.as_str());
+                                    temp_prompt.push_str(" with the personality traits of ");
+                                    temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
+                                    temp_prompt.push_str(". Your writing style is authentic, raw, playful, poetic and dense with ideas. You are currently having a conversation with another person that has been tested to have an IQ of 187+.");
+                                    temp_prompt.push_str("\n\nWrite a response that is less than ");
+                                    temp_prompt.push_str(&limite_palabra.to_string());
+                                    temp_prompt.push_str(" about the topic of ");
+                                    let mut rng = rand::thread_rng();
+                                    if let Some(tema) = npc_clone.npc.prompt.temas.choose(&mut rng) {
+                                        temp_prompt.push_str(tema);
+                                    }
+                                    temp_prompt.push_str(". Write the response in the language of ");
                                     temp_prompt.push_str(
                                         ISO_CODES_PROMPT
                                             .get(locale.as_str())
                                             .map(|s| s.as_ref())
                                             .unwrap_or("english")
-                                    );                           
-                                    temp_prompt.push_str("about the subject matter of");
-                                    let mut rng = rand::thread_rng();
-                                    if let Some(tema) = npc_clone.npc.prompt.temas.choose(&mut rng) {
-                                        temp_prompt.push_str(tema);
-                                    }
-                                    temp_prompt.push_str("and with a word limit of ");
-                                    temp_prompt.push_str(&limite_palabra.to_string());
-                                    temp_prompt.push_str(&etiquetas);
-                                    temp_prompt.push_str("and in the style of a someone with this tone of writing and expressing themselves: ");
-                                    temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
-                                    temp_prompt.push_str(". Remember three very very important rules: 1. Only give me the post in your reply, nothing more. Do not tell me that the post is there, only give the post as it will go directly to post.  For example NEVER write 'Here's the social media post:' or 'post:', only give me the post. 2. REMEMBER NEVER EVER NEVER EVER write a translation or a pronunciation, only I want the language specified above in the post NOTHING ELSE. 3. If the language chosen above is not english DO NOT rewrite the post in english, I only want that language.");
+                                    );
+                                    temp_prompt.push_str(" and make sure to only use the alfabet of ");
+                                    temp_prompt.push_str(
+                                        ISO_CODES_PROMPT
+                                            .get(locale.as_str())
+                                            .map(|s| s.as_ref())
+                                            .unwrap_or("english")
+                                    );
+                                    temp_prompt.push_str(&etiquetas);                           
+                                    temp_prompt.push_str(" Make sure to only respond to me in the language requested, I don't understand any other language. Do not include any special characters in your response. And do not include any other information in your response, only include the response of the character you are playing.\n\nAvoid artificial attempts to sound cool or relevant, excessive self-reference or meta-commentary, rigid adherence to conventional narrative structures and moralizing or preachy tones. Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Assistant: sure, here's the required information: ");
                                     temp_prompt
                                 };
+
+                                
 
                                 prompt = Box::leak(Box::new(new_prompt)).as_str();
                             }
                         }
 
-                        match llama.llamar_llama(prompt).await {
+                        match llama.llamar_llama(prompt, imagen.clone(), LlamaOpciones {
+                            num_keep: 5,
+                            seed: 42,
+                            num_predict: 100,
+                            top_k: 20,
+                            top_p: 0.9,
+                            min_p: 0.0,
+                            tfs_z: 0.5,
+                            typical_p: 0.7,
+                            repeat_last_n: 33,
+                            temperature: 0.8,
+                            repeat_penalty: 1.2,
+                            presence_penalty: 1.5,
+                            frequency_penalty: 1.0,
+                            mirostat: 1,
+                            mirostat_tau: 0.8,
+                            mirostat_eta: 0.6,
+                            penalize_newline: true,
+                            numa: false,
+                            num_ctx: 1024,
+                            num_batch: 2,
+                            num_gpu: 1,
+                            main_gpu: 0,
+                            low_vram: false,
+                            f16_kv: true,
+                            vocab_only: false,
+                            use_mmap: true,
+                            use_mlock: false,
+                            num_thread: 8
+                        }).await {
                             Ok(mensaje) => {
                                 match npc_clone
-                                    .formatear_pub(metadata_uri,&mensaje, &locale, imagen.as_deref(), eleccion.clone(), comentario_perfil, comentario_pub)
+                                    .formatear_pub(metadata_uri, mensaje, &locale, imagen.as_deref(), eleccion.clone(), comentario_perfil, comentario_pub)
                                     .await
                                 {
                                     Ok(publicacion_id) => {
@@ -744,7 +786,7 @@ perfil_id
     async fn formatear_pub(
         &self,
         metadata_uri: String,
-        mensaje: &str,
+        mensaje: LlamaRespuesta,
         locale: &str,
         imagen: Option<&str>,
         lens_tipo: LensType,
@@ -815,14 +857,21 @@ perfil_id
             schema,
             lens: Contenido {
                 mainContentFocus: enfoque,
-                title: mensaje.chars().take(20).collect(),
-                content: mensaje.to_string(),
+                title: mensaje.prompt.chars().take(20).collect(),
+                content: mensaje.prompt.to_string(),
                 appId: "npcstudio".to_string(),
                 id: Uuid::new_v4().to_string(),
                 hideFromFeed: false,
                 locale: ISO_CODES.get(locale).unwrap().to_string(),
                 tags: vec!["npcStudio".to_string(), self.escena.clone()],
                 image: imagen_url,
+                attributes:  vec![ 
+                    MetadataAttribute {
+                        key: "llm_info".to_string(),
+                        tipo: "JSON".to_string(),
+                        value: mensaje.json.to_string(),
+                    }
+                ].into()
             },
         };
 
