@@ -523,21 +523,31 @@ perfil_id
         }
 
             let new_prompt = {
-                let mut temp_prompt = "Respond to this post in the language of ".to_string();
+                let mut temp_prompt = "You are a unique and quirky person named ".to_string();
+                temp_prompt.push_str(npc_clone.npc.etiqueta.as_str());
+                temp_prompt.push_str(" with the personality traits of ");
+                temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
+                temp_prompt.push_str(". Your writing style is authentic, raw, playful, poetic and dense with ideas. You are currently having a conversation with another person that has been tested to have an IQ of 187+.");
+                temp_prompt.push_str("\n\nWrite a response that is less than ");
+                temp_prompt.push_str(&limite_palabra.to_string());
+                temp_prompt.push_str(" that replies to this last comment ");
+                temp_prompt.push_str(&contenido);
+                temp_prompt.push_str(". Write the response in the language of ");
                 temp_prompt.push_str(
                     ISO_CODES_PROMPT
                         .get(locale.as_str())
                         .map(|s| s.as_ref())
                         .unwrap_or("english")
-                ); 
-                temp_prompt.push_str(" and with a word limit of ");
-                temp_prompt.push_str(&limite_palabra.to_string());
-                temp_prompt.push_str(" and");
-                temp_prompt.push_str(&etiquetas);
-                temp_prompt.push_str(" with a comment and in the style of a someone with this tone of writing and expressing themselves: ");
-                temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
-                temp_prompt.push_str(". Remember three very very important rules: 1. Only give me the comment in your reply, nothing more. Do not tell me that the comment is there, only give the comment as it will go directly to post. For example NEVER write 'Here's the social media post:' or 'post:' or 'comment:', only give me the comment. 2. REMEMBER NEVER EVER NEVER EVER write a translation or a pronunciation, only I want the language specified above in the comment NOTHING ELSE. 3. If the language chosen above is not english DO NOT rewrite the comment in english, I only want that language. \n\npost :\n\nAssistant: sure, here's the required information:");
-                temp_prompt.push_str(&contenido);
+                );
+                temp_prompt.push_str(" and make sure to only use the alfabet of ");
+                temp_prompt.push_str(
+                    ISO_CODES_PROMPT
+                        .get(locale.as_str())
+                        .map(|s| s.as_ref())
+                        .unwrap_or("english")
+                );
+                temp_prompt.push_str(&etiquetas);                           
+                temp_prompt.push_str(" Make sure to only respond to me in the language requested, I don't understand any other language. Do not include any special characters in your response. And do not include any other information in your response, only include the response of the character you are playing.\n\nAvoid artificial attempts to sound cool or relevant, excessive self-reference or meta-commentary, rigid adherence to conventional narrative structures and moralizing or preachy tones. Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Assistant: sure, here's the required information: ");
                 temp_prompt
             };
 
