@@ -96,13 +96,13 @@ async fn manejar_conexion(
                 if let Some(key) = key_from_client {
                     if key.trim_end_matches("&EIO") == render_clave.trim() {
                         if let Some(origen) = origen {
-                            if origen == "https://www.npcstudio.xyz"
-                                || origen == "https://npc.digitalax.xyz"
-                            {
-                                Ok(respuesta)
-                            } else {
-                                Err(ErrorResponse::new(Some("Forbidden".to_string())))
-                            }
+                            // if origen == "https://www.npcstudio.xyz"
+                            //     || origen == "https://npc.digitalax.xyz"
+                            // {
+                            Ok(respuesta)
+                            // } else {
+                            //     Err(ErrorResponse::new(Some("Forbidden".to_string())))
+                            // }
                         } else {
                             Err(ErrorResponse::new(Some("Forbidden".to_string())))
                         }
@@ -128,7 +128,11 @@ async fn manejar_conexion(
             Message::Text(text) => {
                 if let Ok(parsed) = from_str::<Value>(&text) {
                     if let Some(tipo) = parsed.get("tipo").and_then(Value::as_str) {
-                        if tipo == "datosDeEscena" || tipo == "indiceDeEscena" {
+                        if tipo == "datosDeEscena"
+                            || tipo == "indiceDeEscena"
+                            || tipo == "datosDeEscenas"
+                        {
+                       
                             if let Some(clave) = parsed.get("clave").and_then(Value::as_str) {
                                 let mut escenas_guard = escenas.write().await;
 
@@ -156,6 +160,28 @@ async fn manejar_conexion(
                                                     {
                                                         eprintln!(
                                                     "Error al enviar la respuesta de estado de la escena: {}",
+                                                    err
+                                                );
+                                                        break;
+                                                    }
+                                                } else if tipo.trim() == "datosDeEscenas" {
+                                                    let json_respuesta = json!({
+                                                        "nombre": "datosDeEscenas",
+                                                        "datos": LISTA_ESCENA.clone()
+                                                    });
+                                                    let serialized_respuesta = to_string(
+                                                        &json_respuesta,
+                                                    )
+                                                    .unwrap_or_else(|_| {
+                                                        String::from("Error de serialización")
+                                                    });
+
+                                                    if let Err(err) = write
+                                                        .send(Message::Text(serialized_respuesta))
+                                                        .await
+                                                    {
+                                                        eprintln!(
+                                                    "Error al enviar la respuesta de los datos de las escenas: {}",
                                                     err
                                                 );
                                                         break;

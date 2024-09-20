@@ -17,6 +17,9 @@ use reqwest::{
 };
 use serde_json::{from_str, json};
 use std::{error::Error, sync::Arc};
+use unicode_normalization::UnicodeNormalization;
+use unicode_general_category::get_general_category;
+use unicode_general_category::GeneralCategory;
 
 pub fn between(min: f32, max: f32) -> f32 {
     let mut rng = rand::thread_rng();
@@ -66,7 +69,7 @@ pub async fn subir_ipfs_imagen(base64_data: &str) -> Result<IpfsRespuesta, Box<d
 pub async fn refrescar(
     cliente: Arc<Client>,
     token_refrescado: &str,
-    token_autorizado: &str
+    token_autorizado: &str,
 ) -> Result<LensTokens, Box<dyn std::error::Error>> {
     let consulta = json!({
         "query": r#"
@@ -150,7 +153,6 @@ pub async fn autenticar(
         .send()
         .await?;
 
-
     if respuesta.status().is_success() {
         let json: serde_json::Value = respuesta.json().await?;
         if let Some(desafio) = json["data"]["challenge"].as_object() {
@@ -224,4 +226,18 @@ pub async fn autenticar(
     } else {
         return Err(format!("Error: {}", respuesta.status()).into());
     }
+}
+
+
+fn combinar(c: char) -> bool {
+    match get_general_category(c) {
+        GeneralCategory::NonspacingMark | GeneralCategory::SpacingMark | GeneralCategory::EnclosingMark => true,
+        _ => false,
+    }
+}
+
+pub fn quitar_diacriticos(input: &str) -> String {
+    input.nfd()  
+         .filter(|&c| !combinar(c))  
+         .collect()
 }

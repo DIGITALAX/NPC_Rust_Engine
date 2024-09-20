@@ -124,6 +124,124 @@ pub async fn obtener_o_refrescar_tokens(
     }
 }
 
+pub async fn coger_boudica_comentario(
+) -> Result<(String, U256, U256, String), Box<dyn Error + Send + Sync>> {
+    let cliente = inicializar_api();
+    let consulta = json!({
+        "query": r#"
+            query Publications($request: PublicationsRequest!) {
+                publications(request: $request) {
+                    items {
+                        ... on Post {
+                            id
+                            metadata {
+                                ... on TextOnlyMetadataV3 {
+                                    content
+                                    rawURI
+                                }
+                                ... on ImageMetadataV3 {
+                                    content
+                                    rawURI
+                                }
+                                ... on VideoMetadataV3 {
+                                    content
+                                    rawURI
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        "#,
+        "variables": {
+            "request": {
+                "where": {
+                    "metadata": {
+                        "publishedOn": ["boudica"],
+                        "tags": {
+                          "all": ["boudica"],
+                        },
+                      },
+                }
+            }
+        }
+    });
+    let respuesta = cliente
+        .post(API_LENS)
+        .header("Content-Type", "application/json")
+        .json(&consulta)
+        .send()
+        .await?;
+
+    if respuesta.status().is_success() {
+        let json: serde_json::Value = respuesta.json().await?;
+
+        if let Some(items) = json["data"]["publications"]["items"].as_array() {
+            if !items.is_empty() {
+                let mut rng = rand::thread_rng();
+                let mut encontrado = None;
+                let mut indice_aleatorio: usize = 0;
+
+                while encontrado.is_none() {
+                    indice_aleatorio = rng.gen_range(0..items.len());
+                    if let Some(id_value) = items[indice_aleatorio].get("id") {
+                        if let Some(id) = id_value.as_str() {
+                            encontrado = Some(id);
+                        }
+                    }
+                }
+
+                if let Some(id) = encontrado {
+                    if let Some(hex_str) = id.split('-').nth(0) {
+                        let comentario_perfil = U256::from_str_radix(&hex_str[2..], 16)?;
+
+                        if let Some(hex_str) = id.split('-').nth(1) {
+                            let comentario_pub = U256::from_str_radix(&hex_str[2..], 16)?;
+
+                            if let Some(contenido) =
+                                items[indice_aleatorio]["metadata"]["content"].as_str()
+                            {
+                                if let Some(metadata_uri) =
+                                    items[indice_aleatorio]["metadata"]["rawURI"].as_str()
+                                {
+                                    return Ok((
+                                        contenido.to_string(),
+                                        comentario_perfil,
+                                        comentario_pub,
+                                        metadata_uri.to_string(),
+                                    ));
+                                } else {
+                                    return Err(
+                                        "El metadata no se encuentra o no es una cadena de texto."
+                                            .into(),
+                                    );
+                                }
+                            } else {
+                                return Err(
+                                    "El contenido no se encuentra o no es una cadena de texto."
+                                        .into(),
+                                );
+                            }
+                        } else {
+                            return Err("Error con el Hex".into());
+                        }
+                    } else {
+                        return Err("Error con el Hex".into());
+                    }
+                } else {
+                    return Err("ID no encontrado o no es una cadena de texto.".into());
+                }
+            } else {
+                return Ok(("".to_string(), U256::from(0), U256::from(0), "".to_string()));
+            }
+        } else {
+            return Ok(("".to_string(), U256::from(0), U256::from(0), "".to_string()));
+        }
+    } else {
+        return Err(format!("Error: {}", respuesta.status()).into());
+    }
+}
+
 pub async fn coger_comentario(
     perfil_id: &str,
 ) -> Result<(String, U256, U256, String), Box<dyn Error + Send + Sync>> {
@@ -301,6 +419,7 @@ pub async fn hacer_consulta(perfil_id: &str) -> Result<U256, Box<dyn Error>> {
         return Err(format!("Error: {}", respuesta.status()).into());
     }
 }
+
 pub fn inicializar_contrato(
     clave_privada: &str,
 ) -> (
@@ -842,6 +961,43 @@ async fn propogar(
         } else {
             return Ok("RelayError".to_string());
         }
+    } else {
+        return Err(format!("Error: {}", respuesta.status()).into());
+    }
+}
+
+pub async fn meGusta(
+    clave_privada: &str,
+    gusta_on: &str,
+    token_autorizado: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let cliente = inicializar_api();
+    let billetera = inicializar_billetera(&clave_privada);
+
+    let consulta = json!({
+        "query": r#"
+            mutation AddReaction($request: ReactionRequest!) {
+                addReaction(request: $request)
+            }
+        "#,
+        "variables": {
+            "request": {
+                "for": gusta_on,
+                "reaction": "UPVOTE"
+              }
+        }
+    });
+
+    let respuesta = cliente
+        .post(API_LENS)
+        .header("Authorization", format!("Bearer {}", token_autorizado))
+        .header("Content-Type", "application/json")
+        .json(&consulta)
+        .send()
+        .await?;
+
+    if respuesta.status().is_success() {
+        return Ok(gusta_on.to_string());
     } else {
         return Err(format!("Error: {}", respuesta.status()).into());
     }

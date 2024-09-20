@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use core::fmt;
 use ethers::{
     abi::{Token, Tokenizable, Tokenize},
@@ -6,16 +7,16 @@ use ethers::{
     middleware::SignerMiddleware,
     providers::{Http, Provider},
     signers::Wallet,
-    types::{Address, Bytes, U256},
+    types::{Address, Bytes, U256, U64},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     error::Error,
     sync::{Arc, Mutex},
 };
-use tokio::runtime::Handle;
+use tokio::{runtime::Handle, sync::RwLock};
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Coordenada {
@@ -316,6 +317,7 @@ pub struct NPCAleatorio {
     pub mapa: Mapa,
     pub escena: String,
     pub ultimo_tiempo_comprobacion: u64,
+    pub ultimo_tiempo_mencion: u64,
     pub lens_hub_contrato: Arc<
         ContractInstance<
             Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
@@ -336,6 +338,16 @@ pub struct NPCAleatorio {
     >,
     pub manija: Handle,
     pub tokens: Option<TokensAlmacenados>,
+    pub estado: Arc<RwLock<EstadoNPC>>,
+    pub ultima_mencion_procesada: Arc<RwLock<DateTime<Utc>>>,
+    pub menciones_procesadas: Arc<RwLock<HashSet<String>>>,
+    pub boudica: bool,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum EstadoNPC {
+    Activo,
+    Inactivo,
 }
 
 #[derive(Clone)]
@@ -579,21 +591,57 @@ impl Tokenizable for LensType {
     }
 }
 
+pub struct Boudica {
+    pub _language: String,
+    pub _pageNumber: U256,
+}
+
+impl Tokenize for Boudica {
+    fn into_tokens(self) -> Vec<Token> {
+        vec![
+            Token::String(self._language).into_token(),
+            Token::Uint(U256::from(self._pageNumber)).into_token(),
+        ]
+    }
+}
+
+pub struct PublicacionPrediccion {
+    pub _locale: String,
+    pub _npcWallet: Address,
+    pub _boudica: bool,
+}
+
+impl Tokenize for PublicacionPrediccion {
+    fn into_tokens(self) -> Vec<Token> {
+        vec![
+            Token::String(self._locale).into_token(),
+            Token::Address(self._npcWallet).into_token(),
+            Token::Bool(self._boudica).into_token(),
+        ]
+    }
+}
+
 pub struct RegisterPub {
+    pub _tensors: String,
+    pub _locale: String,
     pub _collection: U256,
     pub _profileId: U256,
     pub _pubId: U256,
     pub _pageNumber: u8,
     pub _lensType: LensType,
+    pub _boudica: bool,
 }
 
 impl Tokenize for RegisterPub {
     fn into_tokens(self) -> Vec<Token> {
         vec![
+            Token::String(self._tensors).into_token(),
+            Token::String(self._locale).into_token(),
             Token::Uint(self._collection).into_token(),
             Token::Uint(self._profileId).into_token(),
             Token::Uint(self._pubId).into_token(),
             Token::Uint(U256::from(self._pageNumber)).into_token(),
+            Token::Bool(self._boudica).into_token(),
             self._lensType.into_token(),
         ]
     }
@@ -655,7 +703,7 @@ pub struct LlamaOpciones {
     pub mirostat_eta: f32,
     pub penalize_newline: bool,
     pub numa: bool,
-    pub num_ctx: i32,
+    pub num_tokens: i32,
     pub num_batch: i32,
     pub num_gpu: i32,
     pub main_gpu: i32,
@@ -669,13 +717,13 @@ pub struct LlamaOpciones {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct LlamaRespuesta {
-    pub prompt: String,
+    pub response: String,
     pub json: Value,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MetadataAttribute {
-   pub key: String,
+    pub key: String,
     #[serde(rename = "type")]
     pub tipo: String,
     pub value: String,

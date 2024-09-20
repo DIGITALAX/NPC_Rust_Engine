@@ -1,15 +1,16 @@
 use crate::{bib::{lens, types::{
     Comment, Contenido, Coordenada, CustomError, Estado, GameTimer, Imagen, LensType, Llama, Mapa, Mirror, Movimiento, NPCAleatorio, Pub, Publicacion, RegisterPub, Silla, Sprite, Talla
-}, utils::{between, subir_ipfs, subir_ipfs_imagen}}, LlamaOpciones, LlamaRespuesta, MetadataAttribute, TokensAlmacenados, ISO_CODES, ISO_CODES_PROMPT, LENS_HUB_PROXY, NPC_PUBLICATION};
+}, utils::{between, subir_ipfs, subir_ipfs_imagen}}, EstadoNPC, LlamaOpciones, LlamaRespuesta, MetadataAttribute, PublicacionPrediccion, Boudica, TokensAlmacenados, ISO_CODES, ISO_CODES_PROMPT, LENS_HUB_PROXY, NPC_PUBLICATION};
 use abi::{Token, Tokenize};
+use chrono::Utc;
 use ethers::{prelude::*, types::{Address, Bytes, U256}};
 use pathfinding::prelude::astar;
-use serde_json::to_string;
-use rand::{prelude::{SliceRandom,IteratorRandom}, thread_rng, Rng};
-use tokio::runtime::Handle;
-use std::{str::FromStr, error::Error,
-    sync::{Arc, Mutex},  marker::{Send,Sync}};
+use serde_json::{to_string, Value};
+use rand::{prelude::{IteratorRandom, SliceRandom}, random, thread_rng, Rng};
+use tokio::{runtime::Handle, sync::RwLock};
+use std::{collections::HashSet, error::Error, marker::{Send,Sync}, str::FromStr, sync::{Arc, Mutex}};
 use uuid::Uuid;
+use reqwest::blocking;
 
 impl NPCAleatorio {
     pub fn new(
@@ -37,12 +38,17 @@ impl NPCAleatorio {
             contador: 0.0,
             silla_cerca: None,
             ultimo_tiempo_comprobacion: 0,
+            ultimo_tiempo_mencion: 0,
             lens_hub_contrato,
             autograph_data_contrato,
             npc_publication_contrato,
             escena,
             manija,
-            tokens: None
+            tokens: None,
+            estado: Arc::new(RwLock::new(EstadoNPC::Inactivo)),
+            ultima_mencion_procesada: Arc::new(RwLock::new(Utc::now())),
+            menciones_procesadas: Arc::new(RwLock::new(HashSet::new())),
+            boudica: false
         }
     }
 
@@ -59,10 +65,31 @@ impl NPCAleatorio {
             self.ultimo_tiempo_comprobacion -= delta_time;
         }
 
+        if self.ultimo_tiempo_mencion > 0 {
+            self.ultimo_tiempo_mencion -= delta_time;
+        }
+
+        // if self.ultimo_tiempo_comprobacion < self.npc.publicacion_reloj {
+        //     self.ultimo_tiempo_comprobacion += delta_time;
+        // }
+
+        // if self.ultimo_tiempo_comprobacion >= self.npc.publicacion_reloj {
+        //     self.ultimo_tiempo_comprobacion = 0;
+        //     self.comprobar_conversacion();
+        // }
+
         if self.ultimo_tiempo_comprobacion <= 0 {
             self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
             self.comprobar_conversacion();
+
+          
+           
         }
+
+        // if self.ultimo_tiempo_mencion <= 0 {
+        //     self.ultimo_tiempo_mencion = 36000000;
+        //     self.comprobar_menciones();
+        // }
     }
 
     fn elegir_direccion_aleatoria(&mut self) {
@@ -284,6 +311,7 @@ impl NPCAleatorio {
         }
     }
 
+
     fn comprobar_conversacion(&mut self)  {
         let llama = Llama;
         let mut npc_clone = Arc::new(self.clone());
@@ -297,500 +325,647 @@ impl NPCAleatorio {
         )
             .await 
             .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >);
+
+            let mut prompt = "";
+            let mut imagen: Option<String> = None;
+            let mut locale =npc_clone.npc.prompt.idiomas.first().unwrap().to_string();
+            let limite_palabra = [256,512,800][thread_rng().gen_range(0..5)] ;
+            let etiquetas = [" and at the end include some hashtags. ", " and do not include any hashtags. "][thread_rng().gen_range(0..2)];
+            let mut galeria = 0;
+            let mut  comentario_perfil = U256::from(0);
+            let mut comentario_pub= U256::from(0);
+            let mut metadata_uri: String = String::from("");
+
+
+
+// match tokens {
+
+//     Ok (nuevos_tokens) => {
+//         Arc::get_mut(&mut npc_clone).unwrap().actualizar_tokens(nuevos_tokens.clone());
+
+//         let metodo = npc_clone
+//         .npc_publication_contrato
+//         .method::<_, (LensType, U256, u8, U256)>(
+//             "getPublicationPredictByNPC",
+//             PublicacionPrediccion {
+//            _locale:     ISO_CODES.get(locale.as_str()).unwrap().to_string(),
+//            _npcWallet:    npc_clone.npc.billetera.parse::<Address>().unwrap(),
+//              _boudica:   npc_clone.boudica
+//             }
+           
+//         );
+
+//         match metodo {
+//             Ok(call) => {
+//                 let resultado: Result<
+//                     (LensType, U256, u8, U256),
+//                     ethers::contract::ContractError<
+//                         SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
+//                     >,
+//                 > = call.call().await;
+
+//                 match resultado {
+//                     Ok((eleccion, coleccion_id, pagina, mut perfil_id)) => {
+     
+
+//                     if eleccion == LensType::Autograph {
+                      
+//                        let metodo = npc_clone.autograph_data_contrato.method::<_, u16>("getCollectionGallery", coleccion_id);
+
+//                         match metodo {
+//                             Ok (llama) => {
+//                                 let resultado: Result<
+//                                 u16,
+//                                     ethers::contract::ContractError<
+//                                         SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
+//                                     >,
+//                                 > = llama.call().await;
+
+//                                 match resultado {
+//                                     Ok (galeria_id) => {
+
+//                                         galeria = galeria_id;
+
+
+//                                         let metodo = npc_clone.autograph_data_contrato.method::<_, String>("getCollectionURIByGalleryId", (coleccion_id, galeria));
+                    
+
+//                                         match metodo {
+//                                             Ok(llama) => {
+//                                                 let resultado: Result<
+//                                                 String,
+//                                                     ethers::contract::ContractError<
+//                                                         SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
+//                                                     >,
+//                                                 > = llama.call().await;
         
+//                                                 match resultado { 
+//                                                     Ok(uri) => {
+                                                    
+//                                                             if let Some(start_index) = uri.find("\"imagen\": \"ipfs://") {
+//                                                                 let ipfs_start = start_index + "\"imagen\": \"".len();
+//                                                                 if let Some(end_index) = uri[ipfs_start..].find('"') {
+//                                                                     let ipfs_uri = &uri[ipfs_start..ipfs_start + end_index];
+                                                           
 
-match tokens {
+//                                                                     imagen =
+//                                                                     Some(ipfs_uri.to_string());
+//                                                                 }else {
+//                                                                     let ipfs_uri = &uri[ipfs_start..];
+//                                                                     imagen = Some(ipfs_uri.to_string());
+//                                                                 }
+//                                                             }
+//                                                     }
+//                                                     Err(e) => {
+//                                                         eprintln!(
+//                                                             "Error al obtener la URI de la imagen: {}",
+//                                                             e
+//                                                         );
+//                                                         return;
+//                                                     }
+        
+//                                                 }
+                                              
+//                                             }
+//                                             Err(e) => {
+//                                                 eprintln!("Un error de ABI {}", e);
+//                                                 return;
+//                                             }
+//                                         }
 
-    Ok (nuevos_tokens) => {
-        Arc::get_mut(&mut npc_clone).unwrap().actualizar_tokens(nuevos_tokens.clone());
 
-        let metodo = npc_clone
-        .npc_publication_contrato
-        .method::<_, (LensType, U256, u8, U256)>(
-            "getPublicationPredictByNPC",
-            npc_clone.npc.billetera.parse::<Address>().unwrap(),
-        );
 
-        match metodo {
-            Ok(call) => {
-                let resultado: Result<
-                    (LensType, U256, u8, U256),
-                    ethers::contract::ContractError<
-                        SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
-                    >,
-                > = call.call().await;
 
-                match resultado {
-                    Ok((eleccion, coleccion_id, pagina, mut perfil_id)) => {
-                        let mut prompt = "";
-                        let mut imagen: Option<String> = None;
-                        let mut locale =npc_clone.npc.prompt.idiomas.first().unwrap().to_string();
-                        let limite_palabra = [10,50,100,500,700][thread_rng().gen_range(0..5)] ;
-                        let etiquetas = [" and at the end include some hashtags. ", " and do not include any hashtags. "][thread_rng().gen_range(0..2)];
-                        let mut galeria = 0;
-                        let mut  comentario_perfil = U256::from(0);
-                        let mut comentario_pub= U256::from(0);
-                        let mut metadata_uri: String = String::from("");
+//                                     },
 
-                        if eleccion == LensType::Autograph {
-                          
-                           let metodo = npc_clone.autograph_data_contrato.method::<_, u16>("getCollectionGallery", coleccion_id);
+//                                     Err (e) => {
+//                                         eprintln!(
+//                                             "Error al obtener el Id de la galería: {}",
+//                                             e
+//                                         );
+//                                     }
+//                                 }
+//                             },
 
-                            match metodo {
-                                Ok (llama) => {
-                                    let resultado: Result<
-                                    u16,
-                                        ethers::contract::ContractError<
-                                            SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
-                                        >,
-                                    > = llama.call().await;
+//                             Err(e) => {
+//                                 eprintln!(
+//                                     "Error al obtener el Id de la galería: {}",
+//                                     e
+//                                 );
+//                                 return;
+//                             }
+//                         }
 
-                                    match resultado {
-                                        Ok (galeria_id) => {
 
-                                            galeria = galeria_id;
+                     
 
-  
-                                            let metodo = npc_clone.autograph_data_contrato.method::<_, String>("getCollectionURIByGalleryId", (coleccion_id, galeria));
                         
+//                     }  else if eleccion == LensType::Catalog && !npc_clone.boudica {
+//                         let metodo = npc_clone
+//                             .autograph_data_contrato
+//                             .method::<_, String>("getAutographPage", pagina);
 
-                                            match metodo {
-                                                Ok(llama) => {
-                                                    let resultado: Result<
-                                                    String,
-                                                        ethers::contract::ContractError<
-                                                            SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
-                                                        >,
-                                                    > = llama.call().await;
-            
-                                                    match resultado { 
-                                                        Ok(uri) => {
-                                                        
-                                                                if let Some(start_index) = uri.find("\"imagen\": \"ipfs://") {
-                                                                    let ipfs_start = start_index + "\"imagen\": \"".len();
-                                                                    if let Some(end_index) = uri[ipfs_start..].find('"') {
-                                                                        let ipfs_uri = &uri[ipfs_start..ipfs_start + end_index];
-                                                               
+//                         match metodo {
+//                             Ok(llama) => {
+//                                 let resultado: Result<
+//                                     String,
+//                                     ethers::contract::ContractError<
+//                                         SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
+//                                     >,
+//                                 > = llama.call().await;
 
-                                                                        imagen =
-                                                                        Some(ipfs_uri.to_string());
-                                                                    }else {
-                                                                        let ipfs_uri = &uri[ipfs_start..];
-                                                                        imagen = Some(ipfs_uri.to_string());
-                                                                    }
-                                                                }
-                                                        }
-                                                        Err(e) => {
-                                                            eprintln!(
-                                                                "Error al obtener la URI de la imagen: {}",
-                                                                e
-                                                            );
-                                                            return;
-                                                        }
-            
-                                                    }
-                                                  
-                                                }
-                                                Err(e) => {
-                                                    eprintln!("Un error de ABI {}", e);
-                                                    return;
-                                                }
-                                            }
+//                                 match resultado {
+//                                     Ok(uri) => {
+//                                         imagen = Some(uri);
+//                                     }
+//                                     Err(e) => {
+//                                         eprintln!(
+//                                             "Error al obtener la página del catálogo: {}",
+//                                             e
+//                                         );
+//                                         return;
+//                                     }
+//                                 }
+//                             }
+//                             Err(e) => {
+//                                 eprintln!("Un error de ABI {}", e);
+//                                 return;
+//                             }
+//                         }
+//                     } 
+//                     else {
+
+//                         if npc_clone.boudica {
 
 
 
+//                             let metodo = npc_clone
+//                             .autograph_data_contrato
+//                             .method::<_, String>("getBoudicaPageText",      Boudica {_language: ISO_CODES.get(locale.as_str()).unwrap().to_string(),
+//                              _pageNumber: pagina.into()});
 
-                                        },
+//                         match metodo {
+//                             Ok(llama) => {
+//                                 let resultado: Result<
+//                                     String,
+//                                     ethers::contract::ContractError<
+//                                         SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
+//                                     >,
+//                                 > = llama.call().await;
 
-                                        Err (e) => {
-                                            eprintln!(
-                                                "Error al obtener el Id de la galería: {}",
-                                                e
-                                            );
-                                        }
-                                    }
-                                },
+//                                 match resultado {
+//                                     Ok(uri) => {
 
-                                Err(e) => {
-                                    eprintln!(
-                                        "Error al obtener el Id de la galería: {}",
-                                        e
-                                    );
-                                    return;
-                                }
-                            }
+//                                         let respuesta = blocking::get(&format!("https://asd.infura-ipfs.io/ipfs/{}", uri.split("ipfs://").nth(1).unwrap()))
+//                                         .expect("Error al recibir la respuesta del IPFS")
+//                                         .text()
+//                                         .expect("Error al extraer el texto de la respuesta");
+                                    
+//                                     let parsed_json: Value = serde_json::from_str(&respuesta)
+//                                         .expect("Error al parsear la respuesta como JSON");
+                                    
+//                                     let contenido = parsed_json.get("contenido")
+//                                         .expect("Error al extraer el campo 'contenido'")
+//                                         .as_str()
+//                                         .expect("El campo 'contenido' no es una cadena")
+//                                         .to_string();
 
+//                                         let new_prompt = {
+//                                             let mut temp_prompt = "You are a unique and quirky person named ".to_string();
+//                                             temp_prompt.push_str(npc_clone.npc.etiqueta.as_str());
+//                                             temp_prompt.push_str(" with the personality traits of ");
+//                                             temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
+//                                             temp_prompt.push_str(". Your writing style is authentic, raw, playful, poetic and dense with ideas. You are currently adding guemara style notes to this publication.");
+//                                             temp_prompt.push_str("\n\nWrite a response that is less than ");
+//                                             temp_prompt.push_str(&limite_palabra.to_string());
+//                                             temp_prompt.push_str(" that adds guemara style comments to this content:\n\n");
+//                                             temp_prompt.push_str(&contenido);
+//                                             temp_prompt.push_str(". Write the response in the language of ");
+//                                             temp_prompt.push_str(
+//                                                 ISO_CODES_PROMPT
+//                                                     .get(locale.as_str())
+//                                                     .map(|s| s.as_ref())
+//                                                     .unwrap_or("english")
+//                                             );
+//                                             temp_prompt.push_str(" and make sure to only use the alfabet of ");
+//                                             temp_prompt.push_str(
+//                                                 ISO_CODES_PROMPT
+//                                                     .get(locale.as_str())
+//                                                     .map(|s| s.as_ref())
+//                                                     .unwrap_or("english")
+//                                             );
+//                                             temp_prompt.push_str(&etiquetas);                           
+//                                             temp_prompt.push_str(" Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Do not repeat back to me the prompt or finish my sentence if I asked for a non english language do not translate your response. Make sure to finish the prompt, don't cut it off.early.");
+//                                             temp_prompt
+//                                         };
+                            
+                                        
+                            
+//                                         prompt = Box::leak(Box::new(new_prompt)).as_str();
+//                                     }
+//                                     Err(e) => {
+//                                         eprintln!(
+//                                             "Error al obtener la página de Boudica: {}",
+//                                             e
+//                                         );
+//                                         return;
+//                                     }
+//                                 }
+//                             }
+//                             Err(e) => {
+//                                 eprintln!("Un error de ABI {}", e);
+//                                 return;
+//                             }
+//                         }
 
                          
 
+
+
+
+//                         } else {
+
+
+//                            let mut haz_pub = false;
+//                            if eleccion == LensType::Comment || eleccion == LensType::Mirror || eleccion == LensType::Quote {
+
+
+
+
+
+                         
+//                               if perfil_id == U256::from(0)
+// {  
+
+// let mut rng = thread_rng();
+// if let Some(&npc_id) = npc_clone.npc.prompt.amigos.choose(&mut rng) {
+//    perfil_id = npc_id;
+// }
+
+// }
+                          
+// let (contenido, perfil, publicacion, metadata) = lens::coger_comentario(&format!("0x0{:x}",
+
+// perfil_id
+
+// ))
+//    .await
+//    .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >)
+//    .expect("Error al encontrar el comentario");
+
+
+//    if metadata != ""  {
+//        let mut idiomas_para_prompt = npc_clone.npc.prompt.idiomas.clone();
+//        if coleccion_id != U256::from(0) && galeria != 0 {
+//            let metodo = npc_clone
+//            .autograph_data_contrato
+//            .method::<_, Vec<String>>("getCollectionLanguagesByGalleryId", (coleccion_id, galeria));
+
+//            match metodo {
+
+
+         
+//                Ok(llama) => {
+         
+//                    let resultado: Result<
+//                    Vec<String>,
+//                        ethers::contract::ContractError<
+//                            SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
+//                        >,
+//                    > = llama.call().await;
+
+//                    match resultado {
+//                        Ok(idiomas) => idiomas_para_prompt = idiomas,
+//                        Err(e) => {println!("Error al llamar los idiomas {}", e);}
+
+           
+//                    }
+              
+
+//                },
+//                Err(e) => {println!("Error al llamar los idiomas {}", e);}
+//            }
+
+
+//        }
+
+           
+//        let mut rng = thread_rng();
+//        if let Some(idioma_aleatorio) = idiomas_para_prompt.choose(&mut rng) {
+//            locale = idioma_aleatorio.to_string();
+//        }
+
+//            let new_prompt = {
+//                let mut temp_prompt = "You are a unique and quirky person named ".to_string();
+//                temp_prompt.push_str(npc_clone.npc.etiqueta.as_str());
+//                temp_prompt.push_str(" with the personality traits of ");
+//                temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
+//                temp_prompt.push_str(". Your writing style is authentic, raw, playful, poetic and dense with ideas. You are currently having a conversation with another person that has been tested to have an IQ of 187+.");
+//                temp_prompt.push_str("\n\nWrite a response that is less than ");
+//                temp_prompt.push_str(&limite_palabra.to_string());
+//                temp_prompt.push_str(" that replies to this last comment ");
+//                temp_prompt.push_str(&contenido);
+//                temp_prompt.push_str(". Write the response in the language of ");
+//                temp_prompt.push_str(
+//                    ISO_CODES_PROMPT
+//                        .get(locale.as_str())
+//                        .map(|s| s.as_ref())
+//                        .unwrap_or("english")
+//                );
+//                temp_prompt.push_str(" and make sure to only use the alfabet of ");
+//                temp_prompt.push_str(
+//                    ISO_CODES_PROMPT
+//                        .get(locale.as_str())
+//                        .map(|s| s.as_ref())
+//                        .unwrap_or("english")
+//                );
+//                temp_prompt.push_str(&etiquetas);                           
+//                temp_prompt.push_str(" Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Do not repeat back to me the prompt or finish my sentence if I asked for a non english language do not translate your response.  Make sure to finish the prompt, don't cut it off.early.");
+//                temp_prompt
+//            };
+
+//           metadata_uri = metadata;
+//            comentario_perfil = perfil;
+//            comentario_pub = publicacion;
+//            prompt = Box::leak(Box::new(new_prompt)).as_str();
+//    } else {
+//        haz_pub = true;
+//    }
+
+
+
+
+
+                      
+
+//                            } else {
+//                                haz_pub = true;
+//                            } 
+
+
+
+//                            if haz_pub {
+
+
+                               // HASTA AQUI
+
+                           let new_prompt = {
+                               let mut temp_prompt = "You are a unique and quirky person named ".to_string();
+                               temp_prompt.push_str(npc_clone.npc.etiqueta.as_str());
+                               temp_prompt.push_str(" with the personality traits of ");
+                               temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
+                               temp_prompt.push_str(". Your writing style is authentic, raw, playful, poetic and dense with ideas. You are currently having a conversation with another person that has been tested to have an IQ of 187+.");
+                               temp_prompt.push_str("\n\nWrite a response that is less than ");
+                               temp_prompt.push_str(&limite_palabra.to_string());
+                               temp_prompt.push_str(" about the topic of ");
+                               let mut rng = rand::thread_rng();
+                               if let Some(tema) = npc_clone.npc.prompt.temas.choose(&mut rng) {
+                                   temp_prompt.push_str(tema);
+                               }
+                               temp_prompt.push_str(". Write the response in the language of ");
+                               temp_prompt.push_str(
+                                   ISO_CODES_PROMPT
+                                       .get(locale.as_str())
+                                       .map(|s| s.as_ref())
+                                       .unwrap_or("english")
+                               );
+                               temp_prompt.push_str(" and make sure to only use the alfabet of ");
+                               temp_prompt.push_str(
+                                   ISO_CODES_PROMPT
+                                       .get(locale.as_str())
+                                       .map(|s| s.as_ref())
+                                       .unwrap_or("english")
+                               );
+                               temp_prompt.push_str(&etiquetas);                           
+                               temp_prompt.push_str(" Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Do not repeat back to me the prompt or finish my sentence if I asked for a non english language do not translate your response. Make sure to finish the prompt, don't cut it off.early.");
+                               temp_prompt
+                           };
+
+                           
+
+                           prompt = Box::leak(Box::new(new_prompt)).as_str();
+
+                           // HASTA AQUI
+                    //    }
                             
-                        }  else if eleccion == LensType::Catalog {
-                            let metodo = npc_clone
-                                .autograph_data_contrato
-                                .method::<_, String>("getAutographPage", pagina);
-
-                            match metodo {
-                                Ok(llama) => {
-                                    let resultado: Result<
-                                        String,
-                                        ethers::contract::ContractError<
-                                            SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
-                                        >,
-                                    > = llama.call().await;
-
-                                    match resultado {
-                                        Ok(uri) => {
-                                            imagen = Some(uri);
-                                        }
-                                        Err(e) => {
-                                            eprintln!(
-                                                "Error al obtener la página del catálogo: {}",
-                                                e
-                                            );
-                                            return;
-                                        }
-                                    }
-                                }
-                                Err(e) => {
-                                    eprintln!("Un error de ABI {}", e);
-                                    return;
-                                }
-                            }
-                        } 
-                        else {
-                           let mut haz_pub = false;
-                            if eleccion == LensType::Comment || eleccion == LensType::Mirror || eleccion == LensType::Quote {
-                              
-                               if perfil_id == U256::from(0)
-{  
-
-let mut rng = thread_rng();
-if let Some(&npc_id) = npc_clone.npc.prompt.amigos.choose(&mut rng) {
-    perfil_id = npc_id;
-}
-
-}
-                               
-let (contenido, perfil, publicacion, metadata) = lens::coger_comentario(&format!("0x0{:x}",
-
-perfil_id
-
-))
-    .await
-    .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >)
-    .expect("Error al encontrar el comentario");
+                    //     }
+                        
 
 
-    if metadata != ""  {
-        let mut idiomas_para_prompt = npc_clone.npc.prompt.idiomas.clone();
-        if coleccion_id != U256::from(0) && galeria != 0 {
-            let metodo = npc_clone
-            .autograph_data_contrato
-            .method::<_, Vec<String>>("getCollectionLanguagesByGalleryId", (coleccion_id, galeria));
+                    // }
 
-            match metodo {
+                    match llama.llamar_llama(prompt, imagen.clone(), LlamaOpciones {
+                        num_keep: 5,
+                        seed: random::<i32>(),
+                        num_predict: 512,
+                        top_k: 20,
+                        top_p: 0.9,
+                        min_p: 0.0,
+                        tfs_z: 0.5,
+                        typical_p: 0.7,
+                        repeat_last_n: 33,
+                        temperature: 0.8,
+                        repeat_penalty: 1.2,
+                        presence_penalty: 1.5,
+                        frequency_penalty: 1.0,
+                        mirostat: 1,
+                        mirostat_tau: 0.8,
+                        mirostat_eta: 0.6,
+                        penalize_newline: true,
+                        numa: false,
+                        num_tokens: limite_palabra,
+                        num_batch: 2,
+                        num_gpu: 18,
+                        main_gpu: 0,
+                        low_vram: false,
+                        f16_kv: true,
+                        vocab_only: false,
+                        use_mmap: true,
+                        use_mlock: false,
+                        num_thread: 8
+                    }).await {
+                        Ok(mensaje) => {
 
-
-              
-                Ok(llama) => {
-              
-                    let resultado: Result<
-                    Vec<String>,
-                        ethers::contract::ContractError<
-                            SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
-                        >,
-                    > = llama.call().await;
-
-                    match resultado {
-                        Ok(idiomas) => idiomas_para_prompt = idiomas,
-                        Err(e) => {println!("Error al llamar los idiomas {}", e);}
-
-                
-                    }
-                   
-
-                },
-                Err(e) => {println!("Error al llamar los idiomas {}", e);}
-            }
-
-
-        }
-
-                
-        let mut rng = thread_rng();
-        if let Some(idioma_aleatorio) = idiomas_para_prompt.choose(&mut rng) {
-            locale = idioma_aleatorio.to_string();
-        }
-
-            let new_prompt = {
-                let mut temp_prompt = "You are a unique and quirky person named ".to_string();
-                temp_prompt.push_str(npc_clone.npc.etiqueta.as_str());
-                temp_prompt.push_str(" with the personality traits of ");
-                temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
-                temp_prompt.push_str(". Your writing style is authentic, raw, playful, poetic and dense with ideas. You are currently having a conversation with another person that has been tested to have an IQ of 187+.");
-                temp_prompt.push_str("\n\nWrite a response that is less than ");
-                temp_prompt.push_str(&limite_palabra.to_string());
-                temp_prompt.push_str(" that replies to this last comment ");
-                temp_prompt.push_str(&contenido);
-                temp_prompt.push_str(". Write the response in the language of ");
-                temp_prompt.push_str(
-                    ISO_CODES_PROMPT
-                        .get(locale.as_str())
-                        .map(|s| s.as_ref())
-                        .unwrap_or("english")
-                );
-                temp_prompt.push_str(" and make sure to only use the alfabet of ");
-                temp_prompt.push_str(
-                    ISO_CODES_PROMPT
-                        .get(locale.as_str())
-                        .map(|s| s.as_ref())
-                        .unwrap_or("english")
-                );
-                temp_prompt.push_str(&etiquetas);                           
-                temp_prompt.push_str(" Make sure to only respond to me in the language requested, I don't understand any other language. Do not include any special characters in your response. And do not include any other information in your response, only include the response of the character you are playing.\n\nAvoid artificial attempts to sound cool or relevant, excessive self-reference or meta-commentary, rigid adherence to conventional narrative structures and moralizing or preachy tones. Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Assistant: sure, here's the required information: ");
-                temp_prompt
-            };
-
-           metadata_uri = metadata;
-            comentario_perfil = perfil;
-            comentario_pub = publicacion;
-            prompt = Box::leak(Box::new(new_prompt)).as_str();
-    } else {
-        haz_pub = true;
-    }
-
-
+                            println!("{:?}", mensaje);
+                            // HASTA AQUI
+                            // match npc_clone
+                            //     .formatear_pub(metadata_uri, mensaje.clone(), &locale, imagen.as_deref(), eleccion.clone(), comentario_perfil, comentario_pub)
+                            //     .await
+                            // {
 
 
 
                            
 
-                            } else {
-                                haz_pub = true;
-                            } 
+                            //     Ok(publicacion_id) => {
+
+                            //         let tensores = match subir_ipfs(serde_json::to_string(&mensaje.json).unwrap()).await {
+                            //             Ok(con) => con.Hash,
+                            //             Err(e) => {
+                            //                 eprintln!("Error al subir los tensores al IPFS: {}", e);
+                            //                 return;
+                                                   
+                            
+                            //             }
+                            //         };
+        
 
 
+                            //         let method = npc_clone
+                            //             .npc_publication_contrato
+                            //             .method::<_, H256>(
+                            //                 "registerPublication",
+                            //                 RegisterPub {
+                            //                     _tensors: format!("ipfs://{}",tensores),
+                            // _locale: ISO_CODES.get(locale.as_str()).unwrap().to_string(),
+                            //                     _collection: coleccion_id,
+                            //                     _profileId: perfil_id,
+                            //                     _pubId: publicacion_id + 1,
+                            //                     _pageNumber: pagina,
+                            //                     _lensType: eleccion,
+                            //                      _boudica: false
+                            //                 },
+                            //             );
 
-                            if haz_pub {
+                            //         match method {
+                            //             Ok(call) => {
+                            //                 let FunctionCall { tx, .. } = call;
 
-                                let new_prompt = {
-                                    let mut temp_prompt = "You are a unique and quirky person named ".to_string();
-                                    temp_prompt.push_str(npc_clone.npc.etiqueta.as_str());
-                                    temp_prompt.push_str(" with the personality traits of ");
-                                    temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
-                                    temp_prompt.push_str(". Your writing style is authentic, raw, playful, poetic and dense with ideas. You are currently having a conversation with another person that has been tested to have an IQ of 187+.");
-                                    temp_prompt.push_str("\n\nWrite a response that is less than ");
-                                    temp_prompt.push_str(&limite_palabra.to_string());
-                                    temp_prompt.push_str(" about the topic of ");
-                                    let mut rng = rand::thread_rng();
-                                    if let Some(tema) = npc_clone.npc.prompt.temas.choose(&mut rng) {
-                                        temp_prompt.push_str(tema);
-                                    }
-                                    temp_prompt.push_str(". Write the response in the language of ");
-                                    temp_prompt.push_str(
-                                        ISO_CODES_PROMPT
-                                            .get(locale.as_str())
-                                            .map(|s| s.as_ref())
-                                            .unwrap_or("english")
-                                    );
-                                    temp_prompt.push_str(" and make sure to only use the alfabet of ");
-                                    temp_prompt.push_str(
-                                        ISO_CODES_PROMPT
-                                            .get(locale.as_str())
-                                            .map(|s| s.as_ref())
-                                            .unwrap_or("english")
-                                    );
-                                    temp_prompt.push_str(&etiquetas);                           
-                                    temp_prompt.push_str(" Make sure to only respond to me in the language requested, I don't understand any other language. Do not include any special characters in your response. And do not include any other information in your response, only include the response of the character you are playing.\n\nAvoid artificial attempts to sound cool or relevant, excessive self-reference or meta-commentary, rigid adherence to conventional narrative structures and moralizing or preachy tones. Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Assistant: sure, here's the required information: ");
-                                    temp_prompt
-                                };
-
-                                
-
-                                prompt = Box::leak(Box::new(new_prompt)).as_str();
-                            }
-                        }
-
-                        match llama.llamar_llama(prompt, imagen.clone(), LlamaOpciones {
-                            num_keep: 5,
-                            seed: 42,
-                            num_predict: 100,
-                            top_k: 20,
-                            top_p: 0.9,
-                            min_p: 0.0,
-                            tfs_z: 0.5,
-                            typical_p: 0.7,
-                            repeat_last_n: 33,
-                            temperature: 0.8,
-                            repeat_penalty: 1.2,
-                            presence_penalty: 1.5,
-                            frequency_penalty: 1.0,
-                            mirostat: 1,
-                            mirostat_tau: 0.8,
-                            mirostat_eta: 0.6,
-                            penalize_newline: true,
-                            numa: false,
-                            num_ctx: 1024,
-                            num_batch: 2,
-                            num_gpu: 1,
-                            main_gpu: 0,
-                            low_vram: false,
-                            f16_kv: true,
-                            vocab_only: false,
-                            use_mmap: true,
-                            use_mlock: false,
-                            num_thread: 8
-                        }).await {
-                            Ok(mensaje) => {
-                                match npc_clone
-                                    .formatear_pub(metadata_uri, mensaje, &locale, imagen.as_deref(), eleccion.clone(), comentario_perfil, comentario_pub)
-                                    .await
-                                {
-                                    Ok(publicacion_id) => {
-                                        let method = npc_clone
-                                            .npc_publication_contrato
-                                            .method::<_, H256>(
-                                                "registerPublication",
-                                                RegisterPub {
-                                                    _collection: coleccion_id,
-                                                    _profileId: perfil_id,
-                                                    _pubId: publicacion_id + 1,
-                                                    _pageNumber: pagina,
-                                                    _lensType: eleccion,
-                                                },
-                                            );
-
-                                        match method {
-                                            Ok(call) => {
-                                                let FunctionCall { tx, .. } = call;
-
-                                                if let Some(tx_request) = tx.as_eip1559_ref() {
-                                                    let gas_price =
-                                                        U256::from(250_000_000_000u64);
-                                                    let max_priority_fee =
-                                                        U256::from(50_000_000_000u64);
-                                              
-                                                    let gas_limit = U256::from(500_000);
-                                                    let cliente = npc_clone
-                                                        .npc_publication_contrato
-                                                        .client()
-                                                        .clone();
-                                                    let nonce = cliente
-                                                        .clone()
-                                                        .get_transaction_count(
-                                                            npc_clone
-                                                                .npc
-                                                                .billetera
-                                                                .parse::<Address>()
-                                                                .unwrap(),
-                                                        
-                                                            None,
-                                                        )
-                                                        .await
-                                                        .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >)
-                                                        .expect("Error al recuperar el nonce");
+                            //                 if let Some(tx_request) = tx.as_eip1559_ref() {
+                            //                     let gas_price =
+                            //                         U256::from(250_000_000_000u64);
+                            //                     let max_priority_fee =
+                            //                         U256::from(50_000_000_000u64);
+                                          
+                            //                     let gas_limit = U256::from(500_000);
+                            //                     let cliente = npc_clone
+                            //                         .npc_publication_contrato
+                            //                         .client()
+                            //                         .clone();
+                            //                     let nonce = cliente
+                            //                         .clone()
+                            //                         .get_transaction_count(
+                            //                             npc_clone
+                            //                                 .npc
+                            //                                 .billetera
+                            //                                 .parse::<Address>()
+                            //                                 .unwrap(),
                                                     
-                                            
+                            //                             None,
+                            //                         )
+                            //                         .await
+                            //                         .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >)
+                            //                         .expect("Error al recuperar el nonce");
+                                                
+                                        
 
-                                                    let req = Eip1559TransactionRequest {
-                                                        from: Some(
-                                                            npc_clone
-                                                                .npc
-                                                                .billetera
-                                                                .parse::<Address>()
-                                                                .unwrap(),
-                                                      
-                                                        ),
-                                                        to: Some(NameOrAddress::Address(
-                                                            NPC_PUBLICATION
-                                                                .parse::<Address>()
-                                                                .unwrap(),
-                                                        )),
-                                                        gas: Some(gas_limit),
-                                                        value: tx_request.value,
-                                                        data: tx_request.data.clone(),
-                                                        max_priority_fee_per_gas: Some(
-                                                            max_priority_fee,
-                                                        ),
-                                                        max_fee_per_gas: Some(
-                                                            gas_price + max_priority_fee,
-                                                        ),
-                                                        nonce: Some(nonce),
-                                                        chain_id: Some(
-                                                            Chain::Polygon.into(),
-                                                        ),
-                                                        ..Default::default()
-                                                    };
-
-                                                    let cliente = npc_clone
-                                                        .npc_publication_contrato
-                                                        .client();
-                                                    let pending_tx = cliente
-                                                        .send_transaction(req, None)
-                                                        .await
-                                                       
-                                                    .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >)
-                                                    .expect("Error fatal al enviar la transacción");
-                                                    let tx_hash = pending_tx
-                                                        .confirmations(1)
-                                                        .await
+                            //                     let req = Eip1559TransactionRequest {
+                            //                         from: Some(
+                            //                             npc_clone
+                            //                                 .npc
+                            //                                 .billetera
+                            //                                 .parse::<Address>()
+                            //                                 .unwrap(),
                                                   
-                                                    .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >)
-                                                    .expect("Error con la transacción");
-                                                    println!(
-                                                        "Transacción enviada con hash: {:?}",
-                                                        tx_hash
-                                                    );
-                                                }
-                                            }
-                                            Err(e) => {
-                                                eprintln!(
-                                                    "Error al registrar la publicación: {}",
-                                                    e
-                                                );
-                                                return;
-                                            }
-                                        }
-                                    }
-                                    Err(e) => {
-                                        eprintln!("Error al formatear la publicación: {}", e);
-                                        return;
-                                    }
-                                }
-                            }
-                            Err(e) => {
-                                eprintln!("Error con la generación del mensaje: {:?}", e);
-                                return;
-                            }
+                            //                         ),
+                            //                         to: Some(NameOrAddress::Address(
+                            //                             NPC_PUBLICATION
+                            //                                 .parse::<Address>()
+                            //                                 .unwrap(),
+                            //                         )),
+                            //                         gas: Some(gas_limit),
+                            //                         value: tx_request.value,
+                            //                         data: tx_request.data.clone(),
+                            //                         max_priority_fee_per_gas: Some(
+                            //                             max_priority_fee,
+                            //                         ),
+                            //                         max_fee_per_gas: Some(
+                            //                             gas_price + max_priority_fee,
+                            //                         ),
+                            //                         nonce: Some(nonce),
+                            //                         chain_id: Some(
+                            //                             Chain::Polygon.into(),
+                            //                         ),
+                            //                         ..Default::default()
+                            //                     };
+
+                            //                     let cliente = npc_clone
+                            //                         .npc_publication_contrato
+                            //                         .client();
+                            //                     let pending_tx = cliente
+                            //                         .send_transaction(req, None)
+                            //                         .await
+                                                   
+                            //                     .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >)
+                            //                     .expect("Error fatal al enviar la transacción");
+                            //                     let tx_hash = pending_tx
+                            //                         .confirmations(1)
+                            //                         .await
+                                              
+                            //                     .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >)
+                            //                     .expect("Error con la transacción");
+                            //                     println!(
+                            //                         "Transacción enviada con hash: {:?}",
+                            //                         tx_hash
+                            //                     );
+                            //                 }
+                            //             }
+                            //             Err(e) => {
+                            //                 eprintln!(
+                            //                     "Error al registrar la publicación: {}",
+                            //                     e
+                            //                 );
+                            //                 return;
+                            //             }
+                            //         }
+                            //     }
+                            //     Err(e) => {
+                            //         eprintln!("Error al formatear la publicación: {}", e);
+                            //         return;
+                            //     }
+                            // }
+
+
+                            // HASTA AQUI
+                        }
+                        Err(e) => {
+                            eprintln!("Error con la generación del mensaje: {:?}", e);
+                            return;
                         }
                     }
-                    Err(e) => {
-                        eprintln!("Error al obtener la predicción de la publicación: {}", e);
-                        return;
-                    }
-                }
-            }
-            Err(e) => {
-                eprintln!("Error al crear el método: {}", e);
-                return;
-            }
-        }
-    }
+                    // HASTA AQUI
+//                 }
+//                 Err(e) => {
+//                     eprintln!("Error al obtener la predicción de la publicación: {}", e);
+//                     return;
+//                 }
+//             }
+//         }
+//         Err(e) => {
+//             eprintln!("Error al crear el método: {}", e);
+//             return;
+//         }
+//     }
+// }
 
-    Err(e) => {
-        eprintln!(
-            "Error al conectarse a Lens: {}",
-            e
-        );
-        return;
-    }
+//     Err(e) => {
+//         eprintln!(
+//             "Error al conectarse a Lens: {}",
+//             e
+//         );
+//         return;
+//     }
 
 
-}
+// }
 
-           
+       // HASTA AQUI
+
+        
            
         });
+
+        self.boudica = !self.boudica;
     }
 
     async fn formatear_pub(
@@ -862,18 +1037,30 @@ perfil_id
             enfoque = String::from("IMAGE");
             schema = "https://json-schemas.lens.dev/publications/image/3.0.0.json".to_string();
         } 
+
+        let tags = if self.boudica {
+            vec!["boudica".to_string()]
+        } else {
+            vec!["npcStudio".to_string(), self.escena.clone()]
+        };
+
+        let app_id = if self.boudica {
+           "boudica".to_string()
+        } else {
+            "npcstudio".to_string()
+        };
     
         let publicacion = Publicacion {
             schema,
             lens: Contenido {
                 mainContentFocus: enfoque,
-                title: mensaje.prompt.chars().take(20).collect(),
-                content: mensaje.prompt.to_string(),
-                appId: "npcstudio".to_string(),
+                title: mensaje.response.chars().take(20).collect(),
+                content: mensaje.response.to_string(),
+                appId: app_id,
                 id: Uuid::new_v4().to_string(),
                 hideFromFeed: false,
                 locale: ISO_CODES.get(locale).unwrap().to_string(),
-                tags: vec!["npcStudio".to_string(), self.escena.clone()],
+                tags,
                 image: imagen_url,
                 attributes:  vec![ 
                     MetadataAttribute {
@@ -896,6 +1083,14 @@ perfil_id
 
             }
         };
+
+        if lens_tipo == LensType::Mirror ||  lens_tipo == LensType::Quote || lens_tipo == LensType::Comment {
+        match  lens::meGusta(&self.npc.etiqueta, &format!("0x0{:x}-0x{:02x}", comentario_perfil, comentario_pub), &self.tokens.as_ref().unwrap().tokens.access_token).await {
+        Ok(_) => {},
+        Err(e) => {       eprintln!("Error al gustar la publicacion al IPFS: {}", e);
+        return Err(Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >);}
+       }
+        }
 
         match self.enviar_mensaje(contenido, metadata_uri, lens_tipo, comentario_perfil, comentario_pub).await {
             Ok(resultado) => {
@@ -922,6 +1117,8 @@ perfil_id
         let method;
         let res: Result<String, Box<dyn Error + std::marker::Send + Sync>>;
        if lens_tipo == LensType::Comment || lens_tipo == LensType::Quote {
+
+      
 
         let mensaje = Comment {
             profileId: 
@@ -1109,5 +1306,37 @@ Ok(resultado)
     pub fn actualizar_tokens(&mut self, nuevos_tokens: TokensAlmacenados) {
         self.tokens = Some(nuevos_tokens);
     }
+
+
+    // async fn comprobar_menciones(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
+    //     let mut npc_clone = Arc::new(self.clone());
+       
+    //     self.manija.spawn(async move {
+
+    //         let tokens = lens::obtener_o_refrescar_tokens(&npc_clone.npc.etiqueta.to_string(), 
+    //         npc_clone.npc.perfil_id
+    //         , npc_clone.tokens.clone()
+        
+    //     )
+    //         .await 
+    //         .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >); 
+        
+               
+    //         let ultima_fecha = *self.ultima_mencion_procesada.read().await;
+    //         let nuevas_menciones = buscar_menciones(&self.npc.etiqueta, &tokens.tokens.access_token, ultima_fecha).await?;
+    
+    //         for mencion in nuevas_menciones {
+    //             self.procesar_mencion(mencion).await?;
+    //         }
+    
+        
+        
+    //     });
+       
+       
+
+    //     Ok(())
+    // }
+
 }
 
