@@ -10,7 +10,7 @@ pub static LENS_HUB_PROXY: &'static str = "0xDb46d1Dc155634FbC732f92E853b10B288A
 
 pub static AUTOGRAPH_DATA: &'static str = "0xd52dA212D5C7Ec8f7Bb3594372530b19f3e5f37E";
 
-pub static NPC_PUBLICATION: &'static str = "0xfa434c00030ba27C651F5D3b476645AB616c08D0";
+pub static NPC_PUBLICATION: &'static str = "0x4A460DdFB146B17c0Fe88E44944b551Ae2834cBB";
 
 pub static ISO_CODES: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
     let mut m = HashMap::new();
