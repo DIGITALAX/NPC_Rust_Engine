@@ -16,10 +16,10 @@ use reqwest::{
     Client,
 };
 use serde_json::{from_str, json};
-use std::{error::Error, sync::Arc};
-use unicode_normalization::UnicodeNormalization;
+use std::{error::Error, num::ParseIntError, sync::Arc};
 use unicode_general_category::get_general_category;
 use unicode_general_category::GeneralCategory;
+use unicode_normalization::UnicodeNormalization;
 
 pub fn between(min: f32, max: f32) -> f32 {
     let mut rng = rand::thread_rng();
@@ -228,16 +228,29 @@ pub async fn autenticar(
     }
 }
 
-
 fn combinar(c: char) -> bool {
     match get_general_category(c) {
-        GeneralCategory::NonspacingMark | GeneralCategory::SpacingMark | GeneralCategory::EnclosingMark => true,
+        GeneralCategory::NonspacingMark
+        | GeneralCategory::SpacingMark
+        | GeneralCategory::EnclosingMark => true,
         _ => false,
     }
 }
 
 pub fn quitar_diacriticos(input: &str) -> String {
-    input.nfd()  
-         .filter(|&c| !combinar(c))  
-         .collect()
+    input
+        .chars()
+        .map(|c| {
+            if c.is_ascii() {
+                c.nfd().filter(|&c| !combinar(c)).collect::<String>()
+            } else {
+                c.to_string()
+            }
+        })
+        .collect::<Vec<String>>()
+        .concat()
+}
+
+pub fn from_hex_string(hex_str: &str) -> Result<u64, ParseIntError> {
+    u64::from_str_radix(hex_str.trim_start_matches("0x"), 16)
 }

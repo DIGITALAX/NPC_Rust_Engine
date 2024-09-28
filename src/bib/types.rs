@@ -342,6 +342,7 @@ pub struct NPCAleatorio {
     pub ultima_mencion_procesada: Arc<RwLock<DateTime<Utc>>>,
     pub menciones_procesadas: Arc<RwLock<HashSet<String>>>,
     pub boudica: bool,
+    pub llama_recibido: Option<String>
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -540,7 +541,7 @@ pub struct Imagen {
 #[derive(Clone)]
 pub struct Llama;
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Deserialize, Debug)]
 pub enum LensType {
     Catalog,
     Comment,
@@ -549,6 +550,7 @@ pub enum LensType {
     Quote,
     Mirror,
 }
+
 
 impl TryFrom<u8> for LensType {
     type Error = ();
@@ -559,7 +561,22 @@ impl TryFrom<u8> for LensType {
             1 => Ok(LensType::Comment),
             2 => Ok(LensType::Publication),
             3 => Ok(LensType::Autograph),
+            4 => Ok(LensType::Quote),
+            5 => Ok(LensType::Mirror),
             _ => Err(()),
+        }
+    }
+}
+
+impl LensType {
+    pub fn as_u8(&self) -> u8 {
+        match self {
+            LensType::Catalog => 0,
+            LensType::Comment => 1,
+            LensType::Publication => 2,
+            LensType::Autograph => 3,
+            LensType::Quote => 4,
+            LensType::Mirror => 5,
         }
     }
 }
@@ -579,6 +596,7 @@ impl Tokenizable for LensType {
         }
     }
 
+
     fn into_token(self) -> Token {
         match self {
             LensType::Catalog => Token::Uint(0u64.into()),
@@ -593,7 +611,7 @@ impl Tokenizable for LensType {
 
 pub struct Boudica {
     pub _language: String,
-    pub _pageNumber: U256,
+    pub _pageNumber: u8,
 }
 
 impl Tokenize for Boudica {
@@ -621,6 +639,7 @@ impl Tokenize for PublicacionPrediccion {
     }
 }
 
+#[derive(Debug)]
 pub struct RegisterPub {
     pub _tensors: String,
     pub _locale: String,
@@ -628,24 +647,40 @@ pub struct RegisterPub {
     pub _profileId: U256,
     pub _pubId: U256,
     pub _pageNumber: u8,
-    pub _lensType: LensType,
+    pub _lensType: u8,
     pub _boudica: bool,
 }
+
+// impl Tokenize for RegisterPub {
+//     fn into_tokens(self) -> Vec<Token> {
+//         vec![
+//             Token::String(self._tensors).into_token(),
+//             Token::String(self._locale).into_token(),
+//             Token::Uint(self._collection).into_token(),
+//             Token::Uint(self._profileId).into_token(),
+//             Token::Uint(self._pubId).into_token(),
+//             Token::Uint(U256::from(self._pageNumber)).into_token(),
+//             Token::Bool(self._boudica).into_token(),
+//             self._lensType.into_token(),
+//         ]
+//     }
+// }
 
 impl Tokenize for RegisterPub {
     fn into_tokens(self) -> Vec<Token> {
         vec![
-            Token::String(self._tensors).into_token(),
-            Token::String(self._locale).into_token(),
-            Token::Uint(self._collection).into_token(),
-            Token::Uint(self._profileId).into_token(),
-            Token::Uint(self._pubId).into_token(),
-            Token::Uint(U256::from(self._pageNumber)).into_token(),
-            Token::Bool(self._boudica).into_token(),
-            self._lensType.into_token(),
+            Token::String(self._tensors),                    
+            Token::String(self._locale),                     
+            Token::Uint(self._collection),                   
+            Token::Uint(self._profileId),                    
+            Token::Uint(self._pubId),                        
+            Token::Uint(U256::from(self._pageNumber)),       
+            Token::Uint(U256::from(self._lensType)),         
+            Token::Bool(self._boudica),                       
         ]
     }
 }
+
 
 #[derive(Debug)]
 pub struct CustomError {
@@ -715,7 +750,7 @@ pub struct LlamaOpciones {
     pub num_thread: i32,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LlamaRespuesta {
     pub response: String,
     pub json: Value,

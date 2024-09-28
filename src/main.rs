@@ -83,8 +83,11 @@ async fn manejar_conexion(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let ws_stream = accept_hdr_async(stream, |req: &Request, respuesta: Response| {
         if req.method() != method::Method::GET && req.method() != method::Method::HEAD {
-            return Ok(respuesta);
+            return Err(ErrorResponse::new(Some(
+                "Método HTTP no soportado".to_string(),
+            )));
         }
+
 
         if req.method() == method::Method::GET {
             let uri = req.uri();
@@ -95,33 +98,51 @@ async fn manejar_conexion(
                 let key_from_client = query.split('=').nth(1);
                 if let Some(key) = key_from_client {
                     if key.trim_end_matches("&EIO") == render_clave.trim() {
+
                         if let Some(origen) = origen {
-                            // if origen == "https://www.npcstudio.xyz"
-                            //     || origen == "https://npc.digitalax.xyz"
-                            // {
-                            Ok(respuesta)
-                            // } else {
-                            //     Err(ErrorResponse::new(Some("Forbidden".to_string())))
-                            // }
+                            match origen.to_str() {
+                                Ok(origen_str) => {
+
+                                    // Aquí no modificamos la respuesta.
+                                    Ok(respuesta) // Retorna la respuesta si todo está bien
+
+                                    //   if origen == "https://www.npcstudio.xyz"
+                                    //                             || origen == "https://npc.digitalax.xyz"
+                                    //                             || origen == "https://glorious-eft-deeply.ngrok-free.app"
+                                    //                         {
+                                    //                            return Ok(respuesta)
+                                    //                         } else {
+                                    //                             return Err(ErrorResponse::new(Some("Forbidden".to_string())))
+                                    //                         }
+                                }
+                                Err(e) => {
+                                    eprintln!("Error al procesar el encabezado origin: {:?}", e);
+                                    Err(ErrorResponse::new(Some(
+                                        "Invalid origin header".to_string(),
+                                    )))
+                                }
+                            }
                         } else {
-                            Err(ErrorResponse::new(Some("Forbidden".to_string())))
+                            return Err(ErrorResponse::new(Some("Forbidden".to_string())));
                         }
                     } else {
-                        Err(ErrorResponse::new(Some("Forbidden".to_string())))
+                        return Err(ErrorResponse::new(Some("Forbidden".to_string())));
                     }
                 } else {
-                    Err(ErrorResponse::new(Some("Bad Request".to_string())))
+                    return Err(ErrorResponse::new(Some("Bad Request".to_string())));
                 }
             } else {
-                Err(ErrorResponse::new(Some("Bad Request".to_string())))
+                return Err(ErrorResponse::new(Some("Bad Request".to_string())));
             }
         } else {
-            Ok(respuesta)
+            return Ok(respuesta);
         }
     })
     .await?;
 
+
     let (mut write, mut read) = ws_stream.split();
+
 
     while let Some(Ok(msg)) = read.next().await {
         match msg {
@@ -131,11 +152,10 @@ async fn manejar_conexion(
                         if tipo == "datosDeEscena"
                             || tipo == "indiceDeEscena"
                             || tipo == "datosDeEscenas"
+                            || tipo == "llamaContenido"
                         {
-                       
                             if let Some(clave) = parsed.get("clave").and_then(Value::as_str) {
                                 let mut escenas_guard = escenas.write().await;
-
                                 if let Some(escena) = escenas_guard.get_mut(clave) {
                                     if let Some(respuesta) = escena.request_state() {
                                         match respuesta {
@@ -185,6 +205,49 @@ async fn manejar_conexion(
                                                     err
                                                 );
                                                         break;
+                                                    }
+                                                } else if tipo == "llamaContenido" {
+                                                    if let Some(npc_id) =
+                                                        parsed.get("npc").and_then(Value::as_str)
+                                                    {
+                                                        if let Some(npc) = escena
+                                                            .npcs
+                                                            .iter_mut()
+                                                            .find(|n| n.npc.etiqueta == npc_id)
+                                                        {
+                                                            if let Some(json) = parsed.get("json") {
+                                                                if let Ok(json_string) =
+                                                                    serde_json::to_string(json)
+                                                                {
+                                                                    npc.llama_recibido(
+                                                                        &json_string,
+                                                                    );
+                                                                } else {
+                                                                    eprintln!("Error al convertir el contenido JSON a cadena");
+                                                                }
+                                                            } else {
+                                                                if let Err(err) = write
+                                                                    .send(Message::Text(
+                                                                        "JSON no encontrada"
+                                                                            .to_string(),
+                                                                    ))
+                                                                    .await
+                                                                {
+                                                                    eprintln!("Error al procesar mensaje de Llama: {}", err);
+                                                                    break;
+                                                                }
+                                                            }
+                                                        } else {
+                                                            if let Err(err) = write
+                                                                .send(Message::Text(
+                                                                    "NPC no encontrado".to_string(),
+                                                                ))
+                                                                .await
+                                                            {
+                                                                eprintln!("Error al enviar mensaje de NPC no encontrado: {}", err);
+                                                                break;
+                                                            }
+                                                        }
                                                     }
                                                 } else {
                                                     let scene_info = LISTA_ESCENA
