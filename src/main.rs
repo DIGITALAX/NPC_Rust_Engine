@@ -88,7 +88,6 @@ async fn manejar_conexion(
             )));
         }
 
-
         if req.method() == method::Method::GET {
             let uri = req.uri();
             let query: Option<&str> = uri.query();
@@ -98,22 +97,20 @@ async fn manejar_conexion(
                 let key_from_client = query.split('=').nth(1);
                 if let Some(key) = key_from_client {
                     if key.trim_end_matches("&EIO") == render_clave.trim() {
-
                         if let Some(origen) = origen {
                             match origen.to_str() {
                                 Ok(origen_str) => {
-
-                                    // Aquí no modificamos la respuesta.
-                                    Ok(respuesta) // Retorna la respuesta si todo está bien
-
-                                    //   if origen == "https://www.npcstudio.xyz"
-                                    //                             || origen == "https://npc.digitalax.xyz"
-                                    //                             || origen == "https://glorious-eft-deeply.ngrok-free.app"
-                                    //                         {
-                                    //                            return Ok(respuesta)
-                                    //                         } else {
-                                    //                             return Err(ErrorResponse::new(Some("Forbidden".to_string())))
-                                    //                         }
+                                    if origen_str == "https://www.npcstudio.xyz"
+                                        || origen_str == "https://npc.digitalax.xyz"
+                                        || origen_str
+                                            == "https://glorious-eft-deeply.ngrok-free.app"
+                                    {
+                                        return Ok(respuesta);
+                                    } else {
+                                        return Err(ErrorResponse::new(Some(
+                                            "Forbidden".to_string(),
+                                        )));
+                                    }
                                 }
                                 Err(e) => {
                                     eprintln!("Error al procesar el encabezado origin: {:?}", e);
@@ -140,9 +137,7 @@ async fn manejar_conexion(
     })
     .await?;
 
-
     let (mut write, mut read) = ws_stream.split();
-
 
     while let Some(Ok(msg)) = read.next().await {
         match msg {
@@ -323,7 +318,6 @@ async fn manejar_conexion(
             }
         }
     }
-
     Ok(())
 }
 

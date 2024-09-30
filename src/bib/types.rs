@@ -7,10 +7,9 @@ use ethers::{
     middleware::SignerMiddleware,
     providers::{Http, Provider},
     signers::Wallet,
-    types::{Address, Bytes, U256, U64},
+    types::{Address, Bytes, U256},
 };
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 use std::{
     collections::{HashMap, HashSet},
     error::Error,
@@ -342,7 +341,7 @@ pub struct NPCAleatorio {
     pub ultima_mencion_procesada: Arc<RwLock<DateTime<Utc>>>,
     pub menciones_procesadas: Arc<RwLock<HashSet<String>>>,
     pub boudica: bool,
-    pub llama_recibido: Option<String>
+    pub llama_recibido: Option<String>,
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -551,7 +550,6 @@ pub enum LensType {
     Mirror,
 }
 
-
 impl TryFrom<u8> for LensType {
     type Error = ();
 
@@ -595,7 +593,6 @@ impl Tokenizable for LensType {
             )),
         }
     }
-
 
     fn into_token(self) -> Token {
         match self {
@@ -669,18 +666,17 @@ pub struct RegisterPub {
 impl Tokenize for RegisterPub {
     fn into_tokens(self) -> Vec<Token> {
         vec![
-            Token::String(self._tensors),                    
-            Token::String(self._locale),                     
-            Token::Uint(self._collection),                   
-            Token::Uint(self._profileId),                    
-            Token::Uint(self._pubId),                        
-            Token::Uint(U256::from(self._pageNumber)),       
-            Token::Uint(U256::from(self._lensType)),         
-            Token::Bool(self._boudica),                       
+            Token::String(self._tensors),
+            Token::String(self._locale),
+            Token::Uint(self._collection),
+            Token::Uint(self._profileId),
+            Token::Uint(self._pubId),
+            Token::Uint(U256::from(self._pageNumber)),
+            Token::Uint(U256::from(self._lensType)),
+            Token::Bool(self._boudica),
         ]
     }
 }
-
 
 #[derive(Debug)]
 pub struct CustomError {
@@ -753,7 +749,7 @@ pub struct LlamaOpciones {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LlamaRespuesta {
     pub response: String,
-    pub json: Value,
+    pub json: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

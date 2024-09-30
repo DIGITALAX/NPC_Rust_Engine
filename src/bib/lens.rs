@@ -880,6 +880,7 @@ pub async fn hacer_publicacion(
         .send()
         .await?;
 
+
     if respuesta.status().is_success() {
         let json: serde_json::Value = respuesta.json().await?;
 
@@ -959,9 +960,11 @@ async fn propogar(
         if let Some(_) = json["data"]["broadcastOnchain"]["txId"].as_str() {
             return Ok("RelaySuccess".to_string());
         } else {
+ 
             return Ok("RelayError".to_string());
         }
     } else {
+ 
         return Err(format!("Error: {}", respuesta.status()).into());
     }
 }

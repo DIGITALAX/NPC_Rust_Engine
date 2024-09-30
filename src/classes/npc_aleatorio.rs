@@ -1,17 +1,16 @@
 use crate::{bib::{lens, types::{
     Comment, Contenido, Coordenada, CustomError, Estado, GameTimer, Imagen, LensType, Llama, Mapa, Mirror, Movimiento, NPCAleatorio, Pub, Publicacion, RegisterPub, Silla, Sprite, Talla
 }, utils::{between, from_hex_string, subir_ipfs, subir_ipfs_imagen}}, Boudica, EstadoNPC, LlamaOpciones, LlamaRespuesta, MetadataAttribute, PublicacionPrediccion, TokensAlmacenados, ISO_CODES, ISO_CODES_PROMPT, LENS_HUB_PROXY, NPC_PUBLICATION};
-use abi::{Token, Tokenizable, Tokenize};
+use abi::{Token, Tokenize};
 use chrono::Utc;
 use ethers::{prelude::*, types::{Address, Bytes, U256}};
-use k256::pkcs8::der::asn1::Null;
 use pathfinding::prelude::astar;
 use serde_json::{from_str, to_string, Value};
 use rand::{prelude::{IteratorRandom, SliceRandom}, random, thread_rng, Rng};
 use tokio::{runtime::Handle, sync::RwLock};
 use std::{collections::HashSet, error::Error, marker::{Send,Sync}, str::FromStr, sync::{Arc, Mutex}};
 use uuid::Uuid;
-use reqwest::blocking;
+use reqwest::{blocking, get};
 
 impl NPCAleatorio {
     pub fn new(
@@ -63,17 +62,18 @@ impl NPCAleatorio {
         self.elegir_direccion_aleatoria();
         self.limpiar_caminos();
 
-        if self.ultimo_tiempo_comprobacion > 0 {
-            self.ultimo_tiempo_comprobacion -= delta_time;
-        }
+        // if self.ultimo_tiempo_comprobacion > 0 {
+        //     self.ultimo_tiempo_comprobacion -= delta_time;
+        // }
 
-        if self.ultimo_tiempo_mencion > 0 {
-            self.ultimo_tiempo_mencion -= delta_time;
-        }
+        // if self.ultimo_tiempo_mencion > 0 {
+        //     self.ultimo_tiempo_mencion -= delta_time;
+        // }
 
         if self.ultimo_tiempo_comprobacion < self.npc.publicacion_reloj {
             self.ultimo_tiempo_comprobacion += delta_time;
         }
+        
 
         if self.ultimo_tiempo_comprobacion >= self.npc.publicacion_reloj && self.llama_recibido.is_none() {
             self.ultimo_tiempo_comprobacion = 0;
@@ -83,9 +83,6 @@ impl NPCAleatorio {
         // if self.ultimo_tiempo_comprobacion <= 0 && self.llama_recibido.is_none() {
         //     self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
         //     self.comprobar_conversacion();
-
-          
-           
         // }
 
         if let Some(datos) = self.llama_recibido.take() {
@@ -587,9 +584,7 @@ match tokens {
                                             temp_prompt.push_str(" Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Do not repeat back to me the prompt or finish my sentence if I asked for a non english language do not translate your response. Make sure to finish the prompt, don't cut it off.early.");
                                             temp_prompt
                                         };
-                            
-                                        print!("BOUDDICAAA");
-                            
+                                                        
                                         prompt = Box::leak(Box::new(new_prompt)).as_str();
                                     }
                                     Err(e) => {
@@ -962,8 +957,8 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
                 attributes:  vec![ 
                     MetadataAttribute {
                         key: "llm_info".to_string(),
-                        tipo: "JSON".to_string(),
-                        value: mensaje.json.to_string(),
+                        tipo: "STRING".to_string(),
+                        value: mensaje.json,
                     }
                 ].into()
             },
@@ -980,6 +975,9 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
 
             }
         };
+        
+
+
 
         if lens_tipo == LensType::Mirror ||  lens_tipo == LensType::Quote || lens_tipo == LensType::Comment {
         match  lens::meGusta(&self.npc.etiqueta, &format!("0x0{:x}-0x{:02x}", comentario_perfil, comentario_pub), &self.tokens.as_ref().unwrap().tokens.access_token).await {
@@ -988,6 +986,8 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
         return Err(Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >);}
        }
         }
+
+        print!("{}", contenido);
 
         match self.enviar_mensaje(contenido, metadata_uri, lens_tipo, comentario_perfil, comentario_pub).await {
             Ok(resultado) => {
@@ -1015,7 +1015,6 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
         let res: Result<String, Box<dyn Error + std::marker::Send + Sync>>;
        if lens_tipo == LensType::Comment || lens_tipo == LensType::Quote {
 
-      
 
         let mensaje = Comment {
             profileId: 
@@ -1116,7 +1115,6 @@ Bytes::from_str("0x000000000000000000000000185b529b421ff60b0f2388483b757b39103cf
         });
        } 
 
-
        if res.unwrap() != "RelaySuccess" {
     
         let FunctionCall { tx, .. } = method;
@@ -1170,7 +1168,7 @@ Bytes::from_str("0x000000000000000000000000185b529b421ff60b0f2388483b757b39103cf
             let pending_tx = match cliente.send_transaction(req, None).await {
                 Ok(tx) => tx,
                 Err(e) => {
-                    println!("Error al enviar la transacción: {:?}", e);
+                    eprintln!("Error al enviar la transacción: {:?}", e);
                     return Err(Box::new(CustomError::new("Error al enviar la transacción")) as Box<dyn Error + Send + Sync  >)
                 }
             };
@@ -1178,13 +1176,13 @@ Bytes::from_str("0x000000000000000000000000185b529b421ff60b0f2388483b757b39103cf
         let tx_hash = match pending_tx.confirmations(1).await {
             Ok(hash) => hash,
             Err(e) => {
-                println!("Error con la transacción: {:?}", e);
+                eprintln!("Error con la transacción: {:?}", e);
                 return Err(Box::new(CustomError::new("Error con la transacción")) as Box<dyn Error + Send + Sync  >)
             }
         };
         
         
-            println!("Transacción enviada con hash: {:?}", tx_hash);
+            println!("Transacción del mensaje enviada con hash: {:?}", tx_hash);
 
 
         } else {
@@ -1192,9 +1190,7 @@ Bytes::from_str("0x000000000000000000000000185b529b421ff60b0f2388483b757b39103cf
 
 
         }
-    }
- 
-
+    } 
     let resultado = lens::hacer_consulta(&format!("0x0{:x}", 
 
     
@@ -1273,201 +1269,240 @@ match tokens {
         Arc::get_mut(&mut npc_clone).unwrap().actualizar_tokens(nuevos_tokens.clone()); 
     
             if let Ok(parsed) = from_str::<Value>(&datos_clone) {
-                let locale = parsed.get("locale").and_then(Value::as_str).unwrap_or("");
+
+                let ipfs = parsed.get("json").and_then(Value::as_str).unwrap_or("").strip_prefix("ipfs://").unwrap_or("");
+                if ipfs.is_empty() {
+                    eprintln!("Error: No se encontró un hash IPFS válido en el JSON.");
+                    return;
+                }
+                let ipfs_url = format!("https://thedial.infura-ipfs.io/ipfs/{}", ipfs);
+                let respuesta =   get(ipfs_url).await;
     
-                let metadata_uri = parsed
-                    .get("metadata_uri")
-                    .and_then(Value::as_str)
-                    .unwrap_or("") 
-                    .to_string();
-                
-                    let comentario_perfil: U256 = match parsed
-                    .get("comentario_perfil")
-                    .and_then(Value::as_str)
-                    .map(|val| from_hex_string(val)) {
-                        Some(Ok(val)) => U256::from(val),
-                        _ => U256::zero(),
-                };
-                let comentario_pub: U256 = match parsed
-                .get("comentario_pub")
-                .and_then(Value::as_str)
-                .map(|val| from_hex_string(val)) {
-                    Some(Ok(val)) => U256::from(val),
-                    _ => U256::zero(),
-            };
-                    let coleccion_id: U256 = match parsed
-                    .get("coleccion_id")
-                    .and_then(Value::as_str)
-                    .map(|val| from_hex_string(val)) {
-                        Some(Ok(val)) => U256::from(val),
-                        _ => U256::zero(),
+                let respuesta = match respuesta {
+                    Ok(resp) => resp,
+                    Err(err) => {
+                        eprintln!("Error de red al acceder a IPFS: {}", err);
+                        return;
+                    }
                 };
 
-                let perfil_id: U256 = match parsed
-                .get("perfil_id")
-                .and_then(Value::as_str)
-                .map(|val| from_hex_string(val)) {
-                    Some(Ok(val)) => U256::from(val),
-                    _ => U256::zero(),
-            };
-                
-            
-                let pagina: u8 = parsed
-                    .get("pagina")
-                    .and_then(Value::as_u64)
-                    .unwrap_or(0)
-                    .try_into()
-                    .unwrap();  
-                let eleccion = match parsed.get("eleccion")
-                .and_then(|eleccion| eleccion.get("Uint"))
-                .and_then(Value::as_str)
-                .map(|val| from_hex_string(val)) {
-                    Some(Ok(val)) => val as u8,
-                    _ => 0,
-            };
-
-                let eleccion = match LensType::try_from(eleccion) {
-                Ok(val) => val,
-                Err(e) => {
-                    eprintln!("Error al convertir valor a LensType: {:?}", e);
+                if !respuesta.status().is_success() {
+                    eprintln!("Error: la solicitud a IPFS falló con el estado {}", respuesta.status());
                     return;
                 }
-            };
+
+                let contenido = match respuesta.text().await {
+                        Ok(texto) => texto,
+                        Err(err) => {
+                            eprintln!("Error al leer el cuerpo de la respuesta IPFS: {}", err);
+                            return;
+                        }
+                    };
+          
+                    match serde_json::from_str::<Value>(&contenido) {
+                        Ok(ipfs_json) => {
+                     
+
+                            let locale = ipfs_json.get("locale").and_then(Value::as_str).unwrap_or("");
+    
+                            let metadata_uri = ipfs_json
+                                .get("metadata_uri")
+                                .and_then(Value::as_str)
+                                .unwrap_or("") 
+                                .to_string();
+                            
+                                let comentario_perfil: U256 = match ipfs_json
+                                .get("comentario_perfil")
+                                .and_then(Value::as_str)
+                                .map(|val| from_hex_string(val)) {
+                                    Some(Ok(val)) => U256::from(val),
+                                    _ => U256::zero(),
+                            };
+                            let comentario_pub: U256 = match ipfs_json
+                            .get("comentario_pub")
+                            .and_then(Value::as_str)
+                            .map(|val| from_hex_string(val)) {
+                                Some(Ok(val)) => U256::from(val),
+                                _ => U256::zero(),
+                        };
+                                let coleccion_id: U256 = match ipfs_json
+                                .get("coleccion_id")
+                                .and_then(Value::as_str)
+                                .map(|val| from_hex_string(val)) {
+                                    Some(Ok(val)) => U256::from(val),
+                                    _ => U256::zero(),
+                            };
             
-            let valores = match parsed.get("mensaje") {
-                Some(val) => val,
-                None => {
-                    eprintln!("Campo 'mensaje' no encontrado");
-                    return;
-                }
-            };
-                
-                let json_clonado = valores.clone();
+                            let perfil_id: U256 = match ipfs_json
+                            .get("perfil_id")
+                            .and_then(Value::as_str)
+                            .map(|val| from_hex_string(val)) {
+                                Some(Ok(val)) => U256::from(val),
+                                _ => U256::zero(),
+                        };
+                            
+                        
+                            let pagina: u8 = ipfs_json
+                                .get("pagina")
+                                .and_then(Value::as_u64)
+                                .unwrap_or(0)
+                                .try_into()
+                                .unwrap();  
+                            let eleccion = match ipfs_json.get("eleccion")
+                            .and_then(|eleccion| eleccion.get("Uint"))
+                            .and_then(Value::as_str)
+                            .map(|val| from_hex_string(val)) {
+                                Some(Ok(val)) => val as u8,
+                                _ => 0,
+                        };
             
-
-                let response = valores.get("output")
-                .and_then(Value::as_str)
-                .unwrap_or("") 
-                .to_string();
-
-
-let mensaje = LlamaRespuesta {
-    response,
-    json: json_clonado,
-};
-
-
-if mensaje.response == "" || mensaje.json.is_null(){
-    eprintln!("Mensaje es null {:?}", mensaje);
-return;
-} else {
-       
-                match npc_clone
-                    .formatear_pub(
-                        metadata_uri,
-                        mensaje.clone(),
-                        locale,
-                        parsed.get("image").and_then(Value::as_str), 
-                        eleccion.clone(),
-                        comentario_perfil,
-                        comentario_pub,
-                    )
-                    .await
-                {
-                    Ok(publicacion_id) => {
-                        let tensores = match subir_ipfs(serde_json::to_string(&mensaje.json).unwrap()).await {
-                            Ok(con) => con.Hash,
+                            let eleccion = match LensType::try_from(eleccion) {
+                            Ok(val) => val,
                             Err(e) => {
-                                eprintln!("Error al subir los tensores al IPFS: {}", e);
+                                eprintln!("Error al convertir valor a LensType: {:?}", e);
                                 return;
                             }
                         };
 
-                        let method = npc_clone
-                            .npc_publication_contrato
-                            .method::<_, H256>(
-                                "registerPublication",
-                                RegisterPub {
-                                    _tensors: format!("ipfs://{}", tensores),
-                                    _locale: ISO_CODES.get(locale).unwrap().to_string(),
-                                    _collection: U256::from(coleccion_id),  
-                                    _profileId: U256::from(perfil_id),      
-                                    _pubId: U256::from(publicacion_id + 1), 
-                                    _pageNumber: pagina,                    
-                                    _lensType: eleccion.as_u8(),            
-                                    _boudica: false,
-                                },
-                            );
+                        let  mensaje = LlamaRespuesta {
+                            response:   parsed.get("response").and_then(Value::as_str).unwrap_or("").to_string(),
+                            json: parsed.get("json").and_then(Value::as_str).unwrap_or("").to_string(),
+                        };
+                        
 
-    
-                        match method {
-                            Ok(call) => {
-                                let FunctionCall { tx, .. } = call;
-    
-                                if let Some(tx_request) = tx.as_eip1559_ref() {
-                                    let gas_price = U256::from(500_000_000_000u64);
-                                    let max_priority_fee = U256::from(25_000_000_000u64);
-                                    let gas_limit = U256::from(300_000);
-    
-                                    let cliente = npc_clone.npc_publication_contrato.client().clone();
-                                    // let nonce = cliente
-                                    //     .clone()
-                                    //     .get_transaction_count(
-                                    //         npc_clone.npc.billetera.parse::<Address>().unwrap(),
-                                    //         None,
-                                    //     )
-                                    //     .await
-                                    //     .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>)
-                                    //     .expect("Error al recuperar el nonce");
-    
-                                    let req = Eip1559TransactionRequest {
-                                        from: Some(npc_clone.npc.billetera.parse::<Address>().unwrap()),
-                                        to: Some(NameOrAddress::Address(
-                                            NPC_PUBLICATION.parse::<Address>().unwrap(),
-                                        )),
-                                        gas: Some(gas_limit),
-                                        value: tx_request.value,
-                                        data: tx_request.data.clone(),
-                                        max_priority_fee_per_gas: Some(max_priority_fee),
-                                        max_fee_per_gas: Some(gas_price + max_priority_fee),
-                                        // nonce: Some(nonce),
-                                        chain_id: Some(Chain::Polygon.into()),
-                                        ..Default::default()
-                                    };
 
-                                        let pending_tx = match cliente.send_transaction(req, None).await {
-                                            Ok(tx) => tx,
-                                            Err(e) => {
-                                                println!("Error al enviar la transacción: {:?}", e);
-                                                return;
-                                            }
-                                        };
-                            
-                                    let tx_hash = match pending_tx.confirmations(1).await {
-                                        Ok(hash) => hash,
-                                        Err(e) => {
-                                            println!("Error con la transacción: {:?}", e);
-                                            return;
-                                        }
-                                    };
-                                    
-    
-                                    println!("Transacción enviada con hash: {:?}", tx_hash);
-                                }
-                            }
+
+if mensaje.response == "" || mensaje.json  == "" {
+    eprintln!("Mensaje es null {:?}", mensaje);
+return;
+} else {
+
+
+
+    match npc_clone
+    .formatear_pub(
+        metadata_uri,
+        mensaje.clone(),
+        locale,
+        ipfs_json.get("image").and_then(Value::as_str), 
+        eleccion.clone(),
+        comentario_perfil,
+        comentario_pub,
+    )
+    .await
+{
+    Ok(publicacion_id) => {
+        let tensores = match subir_ipfs(serde_json::to_string(&mensaje.json).unwrap()).await {
+            Ok(con) => con.Hash,
+            Err(e) => {
+                eprintln!("Error al subir los tensores al IPFS: {}", e);
+                return;
+            }
+        };
+
+        let method = npc_clone
+            .npc_publication_contrato
+            .method::<_, H256>(
+                "registerPublication",
+                RegisterPub {
+                    _tensors: format!("ipfs://{}", tensores),
+                    _locale: ISO_CODES.get(locale).unwrap().to_string(),
+                    _collection: U256::from(coleccion_id),  
+                    _profileId: U256::from(perfil_id),      
+                    _pubId: U256::from(publicacion_id + 1), 
+                    _pageNumber: pagina,                    
+                    _lensType: eleccion.as_u8(),            
+                    _boudica: false,
+                },
+            );
+
+
+        match method {
+            Ok(call) => {
+                let FunctionCall { tx, .. } = call;
+
+                if let Some(tx_request) = tx.as_eip1559_ref() {
+                    let gas_price = U256::from(500_000_000_000u64);
+                    let max_priority_fee = U256::from(25_000_000_000u64);
+                    let gas_limit = U256::from(300_000);
+
+                    let cliente = npc_clone.npc_publication_contrato.client().clone();
+                    // let nonce = cliente
+                    //     .clone()
+                    //     .get_transaction_count(
+                    //         npc_clone.npc.billetera.parse::<Address>().unwrap(),
+                    //         None,
+                    //     )
+                    //     .await
+                    //     .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>)
+                    //     .expect("Error al recuperar el nonce");
+
+                    let req = Eip1559TransactionRequest {
+                        from: Some(npc_clone.npc.billetera.parse::<Address>().unwrap()),
+                        to: Some(NameOrAddress::Address(
+                            NPC_PUBLICATION.parse::<Address>().unwrap(),
+                        )),
+                        gas: Some(gas_limit),
+                        value: tx_request.value,
+                        data: tx_request.data.clone(),
+                        max_priority_fee_per_gas: Some(max_priority_fee),
+                        max_fee_per_gas: Some(gas_price + max_priority_fee),
+                        // nonce: Some(nonce),
+                        chain_id: Some(Chain::Polygon.into()),
+                        ..Default::default()
+                    };
+
+                        let pending_tx = match cliente.send_transaction(req, None).await {
+                            Ok(tx) => tx,
                             Err(e) => {
-                                eprintln!("Error al registrar la publicación: {}", e);
+                                eprintln!("Error al enviar la transacción: {:?}", e);
                                 return;
                             }
+                        };
+            
+                    let tx_hash = match pending_tx.confirmations(1).await {
+                        Ok(hash) => hash,
+                        Err(e) => {
+                            eprintln!("Error con la transacción: {:?}", e);
+                            return;
                         }
-                    }
-                    Err(e) => {
-                        eprintln!("Error al formatear la publicación: {}", e);
-                        return;
-                    }
-                } 
+                    };
+                    
+
+                    println!("Transacción enviada con hash: {:?}", tx_hash);
+                }
+            }
+            Err(e) => {
+                eprintln!("Error al registrar la publicación: {}", e);
+                return;
+            }
+        }
+    }
+    Err(e) => {
+        eprintln!("Error al formatear la publicación: {}", e);
+        return;
+    }
+} 
+
+
+
+
+       
+               
 
 }
+
+                        }
+                        Err(err) => {
+                            eprintln!("Error al parsear el JSON desde IPFS: {}", err);
+                            return;
+                        }
+                    };
+            
+            
+
+
+
             } else {
                 eprintln!("Error al parsear los datos JSON");
                 return;
