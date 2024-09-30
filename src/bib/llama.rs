@@ -23,6 +23,9 @@ impl Llama {
         imagenes: Option<String>,
         opciones: LlamaOpciones,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
+        if eleccion == LensType::Mirror {
+            return Ok(());
+        }
         let ollama_clave = env::var("OLLAMA_KEY").expect("OLLAMA_KEY no está configurada en .env");
 
         let url_iniciar = "https://glorious-eft-deeply.ngrok-free.app/run_llama";
