@@ -685,7 +685,6 @@ pub async fn hacer_cita(
 
     if respuesta.status().is_success() {
         let json: serde_json::Value = respuesta.json().await?;
-
         if let Some(datos) = json["data"]["createOnchainQuoteTypedData"].as_object() {
             let datos_escritos = datos.get("typedData").and_then(|v| v.as_object()).unwrap();
             let domain = serde_json::from_value::<EIP712Domain>(
@@ -960,7 +959,6 @@ async fn propogar(
         if let Some(_) = json["data"]["broadcastOnchain"]["txId"].as_str() {
             return Ok("RelaySuccess".to_string());
         } else {
- 
             return Ok("RelayError".to_string());
         }
     } else {

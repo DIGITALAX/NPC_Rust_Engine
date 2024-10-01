@@ -62,13 +62,6 @@ impl NPCAleatorio {
         self.elegir_direccion_aleatoria();
         self.limpiar_caminos();
 
-        // if self.ultimo_tiempo_comprobacion > 0 {
-        //     self.ultimo_tiempo_comprobacion -= delta_time;
-        // }
-
-        // if self.ultimo_tiempo_mencion > 0 {
-        //     self.ultimo_tiempo_mencion -= delta_time;
-        // }
 
         if self.ultimo_tiempo_comprobacion < self.npc.publicacion_reloj {
             self.ultimo_tiempo_comprobacion += delta_time;
@@ -80,6 +73,10 @@ impl NPCAleatorio {
             self.comprobar_conversacion();
         }
 
+        //    if self.ultimo_tiempo_comprobacion > 0 {
+        //     self.ultimo_tiempo_comprobacion -= delta_time;
+        // }
+
         // if self.ultimo_tiempo_comprobacion <= 0 && self.llama_recibido.is_none() {
         //     self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
         //     self.comprobar_conversacion();
@@ -88,8 +85,12 @@ impl NPCAleatorio {
         if let Some(datos) = self.llama_recibido.take() {
             self.procesar_llama(&datos); 
         }
-        
 
+
+        // if self.ultimo_tiempo_mencion > 0 {
+        //     self.ultimo_tiempo_mencion -= delta_time;
+        // }
+    
         // if self.ultimo_tiempo_mencion <= 0 {
         //     self.ultimo_tiempo_mencion = 36000000;
         //     self.comprobar_menciones();
@@ -656,14 +657,14 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
 
                    match resultado {
                        Ok(idiomas) => idiomas_para_prompt = idiomas,
-                       Err(e) => {println!("Error al llamar los idiomas {}", e);}
+                       Err(e) => {eprintln!("Error al llamar los idiomas {}", e);}
 
            
                    }
               
 
                },
-               Err(e) => {println!("Error al llamar los idiomas {}", e);}
+               Err(e) => {eprintln!("Error al llamar los idiomas {}", e);}
            }
 
 
@@ -957,10 +958,10 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
                 attributes:  vec![ 
                     MetadataAttribute {
                         key: "llm_info".to_string(),
-                        tipo: "STRING".to_string(),
+                        tipo: "String".to_string(),
                         value: mensaje.json,
                     }
-                ].into()
+                ].into(),
             },
         };
 
@@ -987,8 +988,6 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
        }
         }
 
-        print!("{}", contenido);
-
         match self.enviar_mensaje(contenido, metadata_uri, lens_tipo, comentario_perfil, comentario_pub).await {
             Ok(resultado) => {
                return Ok(resultado)
@@ -1013,7 +1012,9 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
     ) -> Result<U256, Box<dyn Error + Send + Sync>> {
         let method;
         let res: Result<String, Box<dyn Error + std::marker::Send + Sync>>;
+
        if lens_tipo == LensType::Comment || lens_tipo == LensType::Quote {
+
 
 
         let mensaje = Comment {
@@ -1038,6 +1039,7 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
 
         if lens_tipo == LensType::Quote {
             funcion = "quote";
+
             res = lens::hacer_cita(&self.npc.etiqueta, &format!("0x0{:x}-0x{:02x}", comentario_perfil, comentario_pub)
                 
                 
@@ -1047,9 +1049,12 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
             });
         } else {
 
+   
          res = lens::hacer_comentario(&self.npc.etiqueta, &format!("0x0{:x}-0x{:02x}", comentario_perfil, comentario_pub), String::from("ipfs://") + &contenido, &self.tokens.as_ref().unwrap().tokens.access_token).await.map_err(|e| {
             Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
         });
+
+
 
         }
 
@@ -1089,6 +1094,7 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
        
        
        else {
+
         let mensaje = Pub {
             profileId:
             self.npc.perfil_id,
@@ -1269,7 +1275,7 @@ match tokens {
         Arc::get_mut(&mut npc_clone).unwrap().actualizar_tokens(nuevos_tokens.clone()); 
     
             if let Ok(parsed) = from_str::<Value>(&datos_clone) {
-
+      
                 let ipfs = parsed.get("json").and_then(Value::as_str).unwrap_or("").strip_prefix("ipfs://").unwrap_or("");
                 if ipfs.is_empty() {
                     eprintln!("Error: No se encontró un hash IPFS válido en el JSON.");
@@ -1286,6 +1292,8 @@ match tokens {
                     }
                 };
 
+
+
                 if !respuesta.status().is_success() {
                     eprintln!("Error: la solicitud a IPFS falló con el estado {}", respuesta.status());
                     return;
@@ -1298,13 +1306,15 @@ match tokens {
                             return;
                         }
                     };
+
           
                     match serde_json::from_str::<Value>(&contenido) {
                         Ok(ipfs_json) => {
                      
 
                             let locale = ipfs_json.get("locale").and_then(Value::as_str).unwrap_or("");
-    
+
+
                             let metadata_uri = ipfs_json
                                 .get("metadata_uri")
                                 .and_then(Value::as_str)
@@ -1370,8 +1380,6 @@ match tokens {
                         };
                         
 
-
-
 if mensaje.response == "" || mensaje.json  == "" {
     eprintln!("Mensaje es null {:?}", mensaje);
 return;
@@ -1392,20 +1400,13 @@ return;
     .await
 {
     Ok(publicacion_id) => {
-        let tensores = match subir_ipfs(serde_json::to_string(&mensaje.json).unwrap()).await {
-            Ok(con) => con.Hash,
-            Err(e) => {
-                eprintln!("Error al subir los tensores al IPFS: {}", e);
-                return;
-            }
-        };
 
         let method = npc_clone
             .npc_publication_contrato
             .method::<_, H256>(
                 "registerPublication",
                 RegisterPub {
-                    _tensors: format!("ipfs://{}", tensores),
+                    _tensors: mensaje.json,
                     _locale: ISO_CODES.get(locale).unwrap().to_string(),
                     _collection: U256::from(coleccion_id),  
                     _profileId: U256::from(perfil_id),      
