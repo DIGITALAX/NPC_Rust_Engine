@@ -1,6 +1,6 @@
 use crate::{bib::{lens, types::{
     Comment, Contenido, Coordenada, CustomError, Estado, GameTimer, Imagen, LensType, Llama, Mapa, Mirror, Movimiento, NPCAleatorio, Pub, Publicacion, RegisterPub, Silla, Sprite, Talla
-}, utils::{between, from_hex_string, subir_ipfs, subir_ipfs_imagen}}, Boudica, EstadoNPC, LlamaOpciones, LlamaRespuesta, MetadataAttribute, PublicacionPrediccion, TokensAlmacenados, ISO_CODES, ISO_CODES_PROMPT, LENS_HUB_PROXY, NPC_PUBLICATION};
+}, utils::{between, from_hex_string, subir_ipfs, subir_ipfs_imagen}}, Boudica, EstadoNPC, LlamaOpciones, LlamaRespuesta, MetadataAttribute, PublicacionPrediccion, TokensAlmacenados, CONVERSACION, ISO_CODES, ISO_CODES_PROMPT, LENS_HUB_PROXY, NPC_PUBLICATION};
 use abi::{Token, Tokenize};
 use chrono::Utc;
 use ethers::{prelude::*, types::{Address, Bytes, U256}};
@@ -8,7 +8,7 @@ use pathfinding::prelude::astar;
 use serde_json::{from_str, to_string, Value};
 use rand::{prelude::{IteratorRandom, SliceRandom}, random, thread_rng, Rng};
 use tokio::{runtime::Handle, sync::RwLock};
-use std::{collections::HashSet, error::Error, marker::{Send,Sync}, str::FromStr, sync::{Arc, Mutex}};
+use std::{collections::HashSet, error::Error, marker::{Send,Sync}, ops::Index, str::FromStr, sync::{Arc, Mutex}};
 use uuid::Uuid;
 use reqwest::{blocking, get};
 
@@ -521,7 +521,7 @@ match tokens {
                                 match resultado {
                                     Ok(uri) => {
 
-                                        let respuesta = match blocking::get(&format!("https://asd.infura-ipfs.io/ipfs/{}", uri.split("ipfs://").nth(1).unwrap_or(""))) {
+                                        let respuesta = match blocking::get(&format!("https://thedial.infura-ipfs.io/ipfs/{}", uri.split("ipfs://").nth(1).unwrap_or(""))) {
                                             Ok(resp) => match resp.text() {
                                                 Ok(texto) => texto,
                                                 Err(e) => {
@@ -558,23 +558,47 @@ match tokens {
                                         };
 
                                         let new_prompt = {
-                                            let mut temp_prompt = "You are a unique and quirky person named ".to_string();
+                                            let mut temp_prompt = CONVERSACION.get( ISO_CODES_PROMPT
+                                                .get(locale.as_str())
+                                                .map(|s| s.as_ref())
+                                                .unwrap_or("english")).unwrap().index(0).to_string();
                                             temp_prompt.push_str(npc_clone.npc.etiqueta.as_str());
-                                            temp_prompt.push_str(" with the personality traits of ");
-                                            temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
-                                            temp_prompt.push_str(". Your writing style is authentic, raw, playful, poetic and dense with ideas. You are currently adding guemara style notes to this publication.");
-                                            temp_prompt.push_str("\n\nWrite a response that is less than ");
+                                            temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                                                .get(locale.as_str())
+                                                .map(|s| s.as_ref())
+                                                .unwrap_or("english")).unwrap().index(1));
+                                            temp_prompt.push_str(&npc_clone.npc.prompt.tono.lock().unwrap().get(ISO_CODES_PROMPT
+                                                .get(locale.as_str())
+                                                .map(|s| s.as_ref())
+                                                .unwrap_or("english")).unwrap().join(", "));
+                                            temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                                                .get(locale.as_str())
+                                                .map(|s| s.as_ref())
+                                                .unwrap_or("english")).unwrap().index(2));
+                                            temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                                                .get(locale.as_str())
+                                                .map(|s| s.as_ref())
+                                                .unwrap_or("english")).unwrap().index(3));
                                             temp_prompt.push_str(&limite_palabra.to_string());
-                                            temp_prompt.push_str(" that adds guemara style comments to this content:\n\n");
+                                            temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                                                .get(locale.as_str())
+                                                .map(|s| s.as_ref())
+                                                .unwrap_or("english")).unwrap().index(8));
                                             temp_prompt.push_str(&contenido);
-                                            temp_prompt.push_str(". Write the response in the language of ");
+                                            temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                                                .get(locale.as_str())
+                                                .map(|s| s.as_ref())
+                                                .unwrap_or("english")).unwrap().index(5));
                                             temp_prompt.push_str(
                                                 ISO_CODES_PROMPT
                                                     .get(locale.as_str())
                                                     .map(|s| s.as_ref())
                                                     .unwrap_or("english")
                                             );
-                                            temp_prompt.push_str(" and make sure to only use the alfabet of ");
+                                            temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                                                .get(locale.as_str())
+                                                .map(|s| s.as_ref())
+                                                .unwrap_or("english")).unwrap().index(6));
                                             temp_prompt.push_str(
                                                 ISO_CODES_PROMPT
                                                     .get(locale.as_str())
@@ -582,7 +606,10 @@ match tokens {
                                                     .unwrap_or("english")
                                             );
                                             temp_prompt.push_str(&etiquetas);                           
-                                            temp_prompt.push_str(" Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Do not repeat back to me the prompt or finish my sentence if I asked for a non english language do not translate your response. Make sure to finish the prompt, don't cut it off.early.");
+                                            temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                                                .get(locale.as_str())
+                                                .map(|s| s.as_ref())
+                                                .unwrap_or("english")).unwrap().index(7));
                                             temp_prompt
                                         };
                                                         
@@ -677,23 +704,47 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
        }
 
            let new_prompt = {
-               let mut temp_prompt = "You are a unique and quirky person named ".to_string();
+               let mut temp_prompt = CONVERSACION.get( ISO_CODES_PROMPT
+                .get(locale.as_str())
+                .map(|s| s.as_ref())
+                .unwrap_or("english")).unwrap().index(0).to_string();
                temp_prompt.push_str(npc_clone.npc.etiqueta.as_str());
-               temp_prompt.push_str(" with the personality traits of ");
-               temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
-               temp_prompt.push_str(". Your writing style is authentic, raw, playful, poetic and dense with ideas. You are currently having a conversation with another person that has been tested to have an IQ of 187+.");
-               temp_prompt.push_str("\n\nWrite a response that is less than ");
+               temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                .get(locale.as_str())
+                .map(|s| s.as_ref())
+                .unwrap_or("english")).unwrap().index(1));
+            temp_prompt.push_str(&npc_clone.npc.prompt.tono.lock().unwrap().get(ISO_CODES_PROMPT
+                .get(locale.as_str())
+                .map(|s| s.as_ref())
+                .unwrap_or("english")).unwrap().join(", "));
+               temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                .get(locale.as_str())
+                .map(|s| s.as_ref())
+                .unwrap_or("english")).unwrap().index(2));
+               temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                .get(locale.as_str())
+                .map(|s| s.as_ref())
+                .unwrap_or("english")).unwrap().index(3));
                temp_prompt.push_str(&limite_palabra.to_string());
-               temp_prompt.push_str(" that replies to this last comment ");
+               temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                .get(locale.as_str())
+                .map(|s| s.as_ref())
+                .unwrap_or("english")).unwrap().index(4));
                temp_prompt.push_str(&contenido);
-               temp_prompt.push_str(". Write the response in the language of ");
+               temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                .get(locale.as_str())
+                .map(|s| s.as_ref())
+                .unwrap_or("english")).unwrap().index(5));
                temp_prompt.push_str(
                    ISO_CODES_PROMPT
                        .get(locale.as_str())
                        .map(|s| s.as_ref())
                        .unwrap_or("english")
                );
-               temp_prompt.push_str(" and make sure to only use the alfabet of ");
+               temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                .get(locale.as_str())
+                .map(|s| s.as_ref())
+                .unwrap_or("english")).unwrap().index(6));
                temp_prompt.push_str(
                    ISO_CODES_PROMPT
                        .get(locale.as_str())
@@ -701,7 +752,10 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
                        .unwrap_or("english")
                );
                temp_prompt.push_str(&etiquetas);                           
-               temp_prompt.push_str(" Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Do not repeat back to me the prompt or finish my sentence if I asked for a non english language do not translate your response.  Make sure to finish the prompt, don't cut it off.early.");
+               temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                .get(locale.as_str())
+                .map(|s| s.as_ref())
+                .unwrap_or("english")).unwrap().index(7));
                temp_prompt
            };
 
@@ -738,26 +792,53 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
 
                                                    let new_prompt = {
                                                        let mut temp_prompt =
-                                                        "You are a unique and quirky person named ".to_string();
+                                                       CONVERSACION.get( ISO_CODES_PROMPT
+                                                        .get(locale.as_str())
+                                                        .map(|s| s.as_ref())
+                                                        .unwrap_or("english")).unwrap().index(0).to_string();
                                                        temp_prompt.push_str(npc_clone.npc.etiqueta.as_str());
-                                                       temp_prompt.push_str(" with the personality traits of ");
-                                                       temp_prompt.push_str(&npc_clone.npc.prompt.tono.join(", "));
-                                                       temp_prompt.push_str(". Your writing style is authentic, raw, playful, poetic and dense with ideas. You are currently having a conversation with another person that has been tested to have an IQ of 187+.");
-                                                       temp_prompt.push_str("\n\nWrite a response that is less than ");
+                                                       temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                                                        .get(locale.as_str())
+                                                        .map(|s| s.as_ref())
+                                                        .unwrap_or("english")).unwrap().index(1));
+                                                       temp_prompt.push_str(&npc_clone.npc.prompt.tono.lock().unwrap().get(ISO_CODES_PROMPT
+                                                        .get(locale.as_str())
+                                                        .map(|s| s.as_ref())
+                                                        .unwrap_or("english")).unwrap().join(", "));
+                                                       temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                                                        .get(locale.as_str())
+                                                        .map(|s| s.as_ref())
+                                                        .unwrap_or("english")).unwrap().index(2));
+                                                       temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                                                        .get(locale.as_str())
+                                                        .map(|s| s.as_ref())
+                                                        .unwrap_or("english")).unwrap().index(3));
                                                        temp_prompt.push_str(&limite_palabra.to_string());
-                                                       temp_prompt.push_str(" about the topic of ");
+                                                       temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                                                        .get(locale.as_str())
+                                                        .map(|s| s.as_ref())
+                                                        .unwrap_or("english")).unwrap().index(9));
                                                        let mut rng = rand::thread_rng();
-                                                       if let Some(tema) = npc_clone.npc.prompt.temas.choose(&mut rng) {
+                                                       if let Some(tema) = npc_clone.npc.prompt.temas.lock().unwrap().get(ISO_CODES_PROMPT
+                                                        .get(locale.as_str())
+                                                        .map(|s| s.as_ref())
+                                                        .unwrap_or("english")).unwrap().choose(&mut rng) {
                                                            temp_prompt.push_str(tema);
                                                        }
-                                                       temp_prompt.push_str(". Write the response in the language of ");
+                                                       temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                                                        .get(locale.as_str())
+                                                        .map(|s| s.as_ref())
+                                                        .unwrap_or("english")).unwrap().index(5));
                                                        temp_prompt.push_str(
                                                            ISO_CODES_PROMPT
                                                                .get(locale.as_str())
                                                                .map(|s| s.as_ref())
                                                                .unwrap_or("english")
                                                        );
-                                                       temp_prompt.push_str(" and make sure to only use the alfabet of ");
+                                                       temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                                                        .get(locale.as_str())
+                                                        .map(|s| s.as_ref())
+                                                        .unwrap_or("english")).unwrap().index(6));
                                                        temp_prompt.push_str(
                                                            ISO_CODES_PROMPT
                                                                .get(locale.as_str())
@@ -765,7 +846,10 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
                                                                .unwrap_or("english")
                                                        );
                                                        temp_prompt.push_str(&etiquetas);                           
-                                                       temp_prompt.push_str(" Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Do not repeat back to me the prompt or finish my sentence or confirm what I said. Only answer the prompt directly in the language and alfabet that I asked for. Do not translate your response into any other language. Make sure to finish the prompt, don't cut it off early.");
+                                                       temp_prompt.push_str(CONVERSACION.get( ISO_CODES_PROMPT
+                                                        .get(locale.as_str())
+                                                        .map(|s| s.as_ref())
+                                                        .unwrap_or("english")).unwrap().index(7));
                                                        temp_prompt
                                                    };
                         

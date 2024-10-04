@@ -33,8 +33,8 @@ pub struct Escala {
 pub struct Prompt {
     pub personalidad: String,
     pub idiomas: Vec<String>,
-    pub temas: Vec<String>,
-    pub tono: Vec<String>,
+    pub temas: Arc<Mutex<HashMap<String, Vec<String>>>>,
+    pub tono: Arc<Mutex<HashMap<String, Vec<String>>>>,
     pub imagenes: Arc<Mutex<Vec<String>>>,
     pub amigos: Vec<U256>,
 }
@@ -45,8 +45,8 @@ struct PromptHelper {
     idiomas: Vec<String>,
     imagenes: Vec<String>,
     amigos: Vec<U256>,
-    temas: Vec<String>,
-    tono: Vec<String>,
+    temas: HashMap<String, Vec<String>>,
+    tono: HashMap<String, Vec<String>>,
 }
 
 impl Serialize for Prompt {
@@ -54,13 +54,16 @@ impl Serialize for Prompt {
     where
         S: serde::Serializer,
     {
+        let temas = self.temas.lock().unwrap().clone();
+        let tono = self.tono.lock().unwrap().clone();
+
         let helper = PromptHelper {
             personalidad: self.personalidad.clone(),
             idiomas: self.idiomas.clone(),
             imagenes: self.imagenes.lock().unwrap().clone(),
             amigos: self.amigos.clone(),
-            tono: self.tono.clone(),
-            temas: self.temas.clone(),
+            tono,
+            temas,
         };
         helper.serialize(serializer)
     }
@@ -72,13 +75,15 @@ impl<'de> Deserialize<'de> for Prompt {
         D: serde::Deserializer<'de>,
     {
         let helper = PromptHelper::deserialize(deserializer)?;
+        let temas = Arc::new(Mutex::new(helper.temas.clone()));
+        let tono = Arc::new(Mutex::new(helper.tono.clone()));
         Ok(Prompt {
             personalidad: helper.personalidad,
             idiomas: helper.idiomas,
             imagenes: Arc::new(Mutex::new(helper.imagenes)),
             amigos: helper.amigos,
-            temas: helper.temas,
-            tono: helper.tono,
+            tono,
+            temas,
         })
     }
 }
