@@ -722,6 +722,7 @@ pub struct LlamaOpciones {
     pub top_k: i32,
     pub top_p: f32,
     pub min_p: f32,
+    pub ctx: i32,
     pub tfs_z: f32,
     pub typical_p: f32,
     pub repeat_last_n: i32,

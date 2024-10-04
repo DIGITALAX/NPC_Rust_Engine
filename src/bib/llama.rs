@@ -48,7 +48,7 @@ impl Llama {
         let payload_inicial = serde_json::json!({
             "api_key": ollama_clave,
             "prompt": prompt.trim(),
-            "model": "E:\\dev\\llama.cpp\\models\\8B\\Meta-Llama-3.1-8B-Instruct-Q8_0.gguf",
+            "model": "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf",
             "images": imagenes,
             "options": opciones,
             "id": nombre,
