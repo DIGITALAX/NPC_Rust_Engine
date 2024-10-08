@@ -967,13 +967,12 @@ async fn propogar(
     }
 }
 
-pub async fn meGusta(
-    clave_privada: &str,
+pub async fn me_gusta(
     gusta_on: &str,
     token_autorizado: &str,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let cliente = inicializar_api();
-    let billetera = inicializar_billetera(&clave_privada);
+
 
     let consulta = json!({
         "query": r#"

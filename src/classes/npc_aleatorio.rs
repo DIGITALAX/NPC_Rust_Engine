@@ -63,24 +63,24 @@ impl NPCAleatorio {
         self.limpiar_caminos();
 
 
-        if self.ultimo_tiempo_comprobacion < self.npc.publicacion_reloj {
-            self.ultimo_tiempo_comprobacion += delta_time;
-        }
+        // if self.ultimo_tiempo_comprobacion < self.npc.publicacion_reloj {
+        //     self.ultimo_tiempo_comprobacion += delta_time;
+        // }
         
 
-        if self.ultimo_tiempo_comprobacion >= self.npc.publicacion_reloj && self.llama_recibido.is_none() {
-            self.ultimo_tiempo_comprobacion = 0;
-            self.comprobar_conversacion();
-        }
-
-        //    if self.ultimo_tiempo_comprobacion > 0 {
-        //     self.ultimo_tiempo_comprobacion -= delta_time;
-        // }
-
-        // if self.ultimo_tiempo_comprobacion <= 0 && self.llama_recibido.is_none() {
-        //     self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
+        // if self.ultimo_tiempo_comprobacion >= self.npc.publicacion_reloj && self.llama_recibido.is_none() {
+        //     self.ultimo_tiempo_comprobacion = 0;
         //     self.comprobar_conversacion();
         // }
+
+           if self.ultimo_tiempo_comprobacion > 0 {
+            self.ultimo_tiempo_comprobacion -= delta_time;
+        }
+
+        if self.ultimo_tiempo_comprobacion <= 0 && self.llama_recibido.is_none() {
+            self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
+            self.comprobar_conversacion();
+        }
 
         if let Some(datos) = self.llama_recibido.take() {
             self.procesar_llama(&datos); 
@@ -1064,7 +1064,7 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
 
 
         if lens_tipo == LensType::Mirror ||  lens_tipo == LensType::Quote || lens_tipo == LensType::Comment {
-        match  lens::meGusta(&self.npc.etiqueta, &format!("0x0{:x}-0x{:02x}", comentario_perfil, comentario_pub), &self.tokens.as_ref().unwrap().tokens.access_token).await {
+        match  lens::me_gusta(&format!("0x0{:x}-0x{:02x}", comentario_perfil, comentario_pub), &self.tokens.as_ref().unwrap().tokens.access_token).await {
         Ok(_) => {},
         Err(e) => {       eprintln!("Error al gustar la publicacion al IPFS: {}", e);
         return Err(Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >);}
