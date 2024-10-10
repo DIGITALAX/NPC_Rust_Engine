@@ -27,8 +27,8 @@ impl Llama {
             return Ok(());
         }
         let ollama_clave = env::var("OLLAMA_KEY").expect("OLLAMA_KEY no está configurada en .env");
-
         let url_iniciar = "https://glorious-eft-deeply.ngrok-free.app/run_llama";
+
 
         let cliente = Client::builder()
             .danger_accept_invalid_certs(true)
@@ -44,7 +44,6 @@ impl Llama {
             .no_deflate()
             .no_proxy()
             .build()?;
-
         let payload_inicial = serde_json::json!({
             "api_key": ollama_clave,
             "prompt": prompt.trim(),
@@ -63,12 +62,14 @@ impl Llama {
             "pagina": pagina,
         });
 
+
         let res_inicial = cliente
             .post(url_iniciar)
             .header("Content-Type", "application/json; charset=UTF-8")
             .json(&payload_inicial)
             .send()
             .await?;
+
 
         if res_inicial.status() == 200 {
             println!("Solicitud exitosa, servidor respondió con 200.");

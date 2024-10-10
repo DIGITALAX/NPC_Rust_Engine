@@ -12,30 +12,30 @@ pub static AUTOGRAPH_DATA: &'static str = "0xd52dA212D5C7Ec8f7Bb3594372530b19f3e
 
 pub static NPC_PUBLICATION: &'static str = "0x4A460DdFB146B17c0Fe88E44944b551Ae2834cBB";
 
-pub static ISO_CODES: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
+pub static ISO_CODES: Lazy<HashMap<String, String>> = Lazy::new(|| {
     let mut m = HashMap::new();
-    m.insert("Hebrew", "he");
-    m.insert("Arabic", "ar");
-    m.insert("Ukrainian", "uk");
-    m.insert("Spanish", "es");
-    m.insert("Farsi", "fa");
-    m.insert("English", "en");
-    m.insert("Portuguese", "pt");
-    m.insert("French", "fr");
-    m.insert("Japanese", "ja");
-    m.insert("Yiddish", "yi");
-    m.insert("א", "he");
-    m.insert("yi", "yi");
-    m.insert("ع", "ar");
-    m.insert("ук", "uk");
-    m.insert("fr", "fr");
-    m.insert("ja", "ja");
-    m.insert("es", "es");
-    m.insert("د", "fa");
-    m.insert("en", "en");
-    m.insert("br", "pt");
-    m.insert("pt", "pt");
-    m.insert("us", "en");
+    m.insert(String::from("Hebrew"), String::from("he"));
+    m.insert(String::from("Arabic"), String::from("ar"));
+    m.insert(String::from("Ukrainian"), String::from("uk"));
+    m.insert(String::from("Spanish"), String::from("es"));
+    m.insert(String::from("Farsi"), String::from("fa"));
+    m.insert(String::from("English"), String::from("en"));
+    m.insert(String::from("Portuguese"), String::from("pt"));
+    m.insert(String::from("French"), String::from("fr"));
+    m.insert(String::from("Japanese"), String::from("ja"));
+    m.insert(String::from("Yiddish"), String::from("yi"));
+    m.insert(String::from("א"), String::from("he"));
+    m.insert(String::from("yi"),String::from( "yi"));
+    m.insert(String::from("ع"), String::from("ar"));
+    m.insert(String::from("ук"), String::from("uk"));
+    m.insert(String::from("fr"), String::from("fr"));
+    m.insert(String::from("ja"), String::from("ja"));
+    m.insert(String::from("es"), String::from("es"));
+    m.insert(String::from("د"), String::from("fa"));
+    m.insert(String::from("en"), String::from("en"));
+    m.insert(String::from("br"), String::from("pt"));
+    m.insert(String::from("pt"), String::from("pt"));
+    m.insert(String::from("us"), String::from("en"));
     m
 });
 
@@ -92,7 +92,8 @@ pub static CONVERSACION: Lazy<HashMap<&'static str,  Vec<String>>> = Lazy::new(|
         String::from(" that replies to this last comment "),
         String::from(". Write the response in the language of "),
         String::from(" and make sure to only use the alfabet of "),
-        String::from(" Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Do not repeat back to me the prompt or finish my sentence if I asked for a non english language do not translate your response.  Make sure to finish the prompt, don't cut it off.early.")
+        String::from(" Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Do not repeat back to me the prompt or finish my sentence if I asked for a non english language do not translate your response.  Make sure to finish the prompt, don't cut it off early."),
+        String::from(" about the subject of ")
     ]);
     m.insert("Hebrew", vec![
         String::from("אתה אדם ייחודי ומשונה בשם "),
@@ -114,7 +115,8 @@ pub static CONVERSACION: Lazy<HashMap<&'static str,  Vec<String>>> = Lazy::new(|
         String::from(" يتفاعل مع هذا التعليق الأخير "),
         String::from(". اكتب الرد بلغة "),
         String::from(" وتأكد من استخدام الأبجدية الخاصة بـ "),
-        String::from(" اسعَ إلى كتابة لا تنقل الأفكار فقط، بل تخلق تجارب. يجب أن تترك كتابتك القراء متغيرين قليلاً. لا تكرر لي الطلب ولا تكمل الجملة إذا طلبت لغة غير الإنجليزية. لا تترجم ردك وتأكد من إنهاء النص دون قطعه في وقت مبكر."),     String::from(" التي تضيف تعليقات على طريقة الجمارا إلى هذا المحتوى:\n\n"),
+        String::from(" اسعَ إلى كتابة لا تنقل الأفكار فقط، بل تخلق تجارب. يجب أن تترك كتابتك القراء متغيرين قليلاً. لا تكرر لي الطلب ولا تكمل الجملة إذا طلبت لغة غير الإنجليزية. لا تترجم ردك وتأكد من إنهاء النص دون قطعه في وقت مبكر."),   
+         String::from(" التي تضيف تعليقات على طريقة الجمارا إلى هذا المحتوى:\n\n"),
         String::from(" حول موضوع ")
     ]);
     m.insert("Ukrainian", vec![
@@ -150,16 +152,6 @@ pub static CONVERSACION: Lazy<HashMap<&'static str,  Vec<String>>> = Lazy::new(|
         String::from(" بنویسید و مطمئن شوید که فقط از الفبای "),
         String::from(" استفاده می‌کنید. سعی کنید نوشتاری ارائه دهید که فقط ایده‌ها را منتقل نکند بلکه تجربه‌هایی خلق کند. نثر شما باید خوانندگان را کمی تغییر دهد. درخواست من را تکرار نکنید و اگر زبان غیر از انگلیسی درخواست کردم، جمله‌ام را کامل نکنید. پاسخ خود را ترجمه نکنید. مطمئن شوید که درخواست را به طور کامل انجام می‌دهید و آن را زودتر قطع نکنید."),  String::from(" که به این محتوا نظرات به سبک گمارا اضافه می‌کند:\n\n"),
         String::from(" درباره موضوع ")
-    ]);
-    m.insert("English", vec![
-        String::from("You are a unique and quirky person named "),
-        String::from("with the personality traits of"),
-        String::from(". Your writing style is authentic, raw, playful, poetic and dense with ideas. You are currently having a conversation with another person that has been tested to have an IQ of 187+."),
-        String::from("\n\nWrite a response that is less than "),
-        String::from(" that replies to this last comment "),
-        String::from(". Write the response in the language of "),
-        String::from(" and make sure to only use the alphabet of "),
-        String::from(" Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Do not repeat back to me the prompt or finish my sentence if I asked for a non-English language. Do not translate your response. Make sure to finish the prompt, don't cut it off early.")
     ]);
     m.insert("Yiddish", vec![
         String::from("דו ביסט אַ יינציק און קווירקי מענטש מיטן נאָמען "),

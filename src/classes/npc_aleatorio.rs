@@ -62,25 +62,24 @@ impl NPCAleatorio {
         self.elegir_direccion_aleatoria();
         self.limpiar_caminos();
 
-
-        // if self.ultimo_tiempo_comprobacion < self.npc.publicacion_reloj {
-        //     self.ultimo_tiempo_comprobacion += delta_time;
-        // }
+        if self.ultimo_tiempo_comprobacion < self.npc.publicacion_reloj {
+            self.ultimo_tiempo_comprobacion += delta_time;
+        }
         
 
-        // if self.ultimo_tiempo_comprobacion >= self.npc.publicacion_reloj && self.llama_recibido.is_none() {
-        //     self.ultimo_tiempo_comprobacion = 0;
-        //     self.comprobar_conversacion();
-        // }
-
-           if self.ultimo_tiempo_comprobacion > 0 {
-            self.ultimo_tiempo_comprobacion -= delta_time;
-        }
-
-        if self.ultimo_tiempo_comprobacion <= 0 && self.llama_recibido.is_none() {
-            self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
+        if self.ultimo_tiempo_comprobacion >= self.npc.publicacion_reloj && self.llama_recibido.is_none() {
+            self.ultimo_tiempo_comprobacion = 0;
             self.comprobar_conversacion();
         }
+
+        //    if self.ultimo_tiempo_comprobacion > 0 {
+        //     self.ultimo_tiempo_comprobacion -= delta_time;
+        // }
+
+        // if self.ultimo_tiempo_comprobacion <= 0 && self.llama_recibido.is_none() {
+        //     self.ultimo_tiempo_comprobacion = self.npc.publicacion_reloj;
+        //     self.comprobar_conversacion();
+        // }
 
         if let Some(datos) = self.llama_recibido.take() {
             self.procesar_llama(&datos); 
@@ -859,11 +858,10 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
                         
                                    
                                                }
-
                     match llama.llamar_llama(&npc_clone.npc.etiqueta, 
                         &npc_clone.escena,
-                        metadata_uri,  
-                        &locale, 
+                        metadata_uri.clone(),  
+                        &locale.clone(), 
                         eleccion.clone(), 
                         comentario_perfil, 
                         comentario_pub,
@@ -902,8 +900,109 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
                         num_thread: 8
                     }).await {
                         Ok(_) => {
-
-                           
+                            if eleccion == LensType::Mirror {
+                                match  npc_clone. formatear_pub(
+                                    metadata_uri,
+                                    LlamaRespuesta {
+                                        response: String::from(""),
+                                        json:  String::from("")
+                                    },
+                                    &locale.clone(),
+                                    None, 
+                                    eleccion.clone(),
+                                    comentario_perfil,
+                                    comentario_pub,
+        
+        
+        
+                                   ).await  {
+                                    Ok (publicacion_id) => {
+                                   
+                let method = npc_clone
+                .npc_publication_contrato
+                .method::<_, H256>(
+                    "registerPublication",
+                    RegisterPub {
+                        _tensors: String::from(""),
+                        _locale: ISO_CODES.get(&locale).cloned().unwrap().to_string(),
+                        _collection: U256::from(coleccion_id),  
+                        _profileId: U256::from(perfil_id),      
+                        _pubId: U256::from(publicacion_id + 1), 
+                        _pageNumber: pagina,                    
+                        _lensType: eleccion.as_u8(),            
+                        _boudica: false,
+                    },
+                );
+        
+        
+            match method {
+                Ok(call) => {
+                    let FunctionCall { tx, .. } = call;
+        
+                    if let Some(tx_request) = tx.as_eip1559_ref() {
+                        let gas_price = U256::from(500_000_000_000u64);
+                        let max_priority_fee = U256::from(25_000_000_000u64);
+                        let gas_limit = U256::from(300_000);
+        
+                        let cliente = npc_clone.npc_publication_contrato.client().clone();
+                        // let nonce = cliente
+                        //     .clone()
+                        //     .get_transaction_count(
+                        //         npc_clone.npc.billetera.parse::<Address>().unwrap(),
+                        //         None,
+                        //     )
+                        //     .await
+                        //     .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>)
+                        //     .expect("Error al recuperar el nonce");
+        
+                        let req = Eip1559TransactionRequest {
+                            from: Some(npc_clone.npc.billetera.parse::<Address>().unwrap()),
+                            to: Some(NameOrAddress::Address(
+                                NPC_PUBLICATION.parse::<Address>().unwrap(),
+                            )),
+                            gas: Some(gas_limit),
+                            value: tx_request.value,
+                            data: tx_request.data.clone(),
+                            max_priority_fee_per_gas: Some(max_priority_fee),
+                            max_fee_per_gas: Some(gas_price + max_priority_fee),
+                            // nonce: Some(nonce),
+                            chain_id: Some(Chain::Polygon.into()),
+                            ..Default::default()
+                        };
+        
+                            let pending_tx = match cliente.send_transaction(req, None).await {
+                                Ok(tx) => tx,
+                                Err(e) => {
+                                    eprintln!("Error al enviar la transacción: {:?}", e);
+                                    return;
+                                }
+                            };
+                
+                        let tx_hash = match pending_tx.confirmations(1).await {
+                            Ok(hash) => hash,
+                            Err(e) => {
+                                eprintln!("Error con la transacción: {:?}", e);
+                                return;
+                            }
+                        };
+                        
+        
+                        println!("Transacción enviada con hash: {:?}", tx_hash);
+                    }
+                }
+                Err(e) => {
+                    eprintln!("Error al registrar la publicación: {}", e);
+                    return;
+                }
+            }
+                                    }
+                                    Err(e) => {
+                                        eprintln!("Error con el espejo: {:?}", e);
+                                        return;
+                                    }
+                                   }
+                            }
+                        
                         }
                         Err(e) => {
                             eprintln!("Error con la generación del mensaje: {:?}", e);
@@ -941,7 +1040,11 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
            
         });
 
-        self.boudica = !self.boudica;
+    //     if self.boudica {
+    //  self.boudica = !self.boudica;
+    //     }
+
+   
     }
 
     async fn formatear_pub(
@@ -1014,17 +1117,21 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
             schema = "https://json-schemas.lens.dev/publications/image/3.0.0.json".to_string();
         } 
 
-        let tags = if self.boudica {
-            vec!["boudica".to_string()]
-        } else {
-            vec!["npcStudio".to_string(), self.escena.clone()]
-        };
+        let tags =  vec!["npcStudio".to_string(), self.escena.clone()];
 
-        let app_id = if self.boudica {
-           "boudica".to_string()
-        } else {
-            "npcstudio".to_string()
-        };
+        // let tags = if self.boudica {
+        //     vec!["boudica".to_string()]
+        // } else {
+        //     vec!["npcStudio".to_string(), self.escena.clone()]
+        // };
+
+        // let app_id = if self.boudica {
+        //    "boudica".to_string()
+        // } else {
+        //     "npcstudio".to_string()
+        // };
+
+        let app_id =  "npcstudio".to_string();
     
         let publicacion = Publicacion {
             schema,
@@ -1204,94 +1311,78 @@ Bytes::from_str("0x000000000000000000000000185b529b421ff60b0f2388483b757b39103cf
         });
        } 
 
-       if res.unwrap() != "RelaySuccess" {
+       match res {
+        Ok(result) if result == "RelaySuccess" => {
+            let FunctionCall { tx, .. } = method;
     
-        let FunctionCall { tx, .. } = method;
-
-        if let Some(tx_request) = tx.as_eip1559_ref() {
-            let cliente = self.lens_hub_contrato.client().clone();
-            let gas_price = U256::from(500_000_000_000u64);
-            let max_priority_fee = U256::from(25_000_000_000u64);
-            let gas_limit = U256::from(300_000);
-            let tx_cost = gas_limit * gas_price + max_priority_fee;
-
-            if cliente
-            .clone()
-            .get_balance(
-                
-                
-                self.npc.billetera.parse::<Address>().unwrap()
-                
-           
-                , None)
-            .await?
-            < tx_cost
-        {
-            return Err(Box::new(CustomError::new("Fondos insuficientes para gas")));
-        }
-
-            let req = Eip1559TransactionRequest {
-                from: Some(
-            
-                    
-                    self.npc.billetera.parse::<Address>().unwrap()
-                ),
-                to: Some(NameOrAddress::Address(
-                    LENS_HUB_PROXY.parse::<Address>().unwrap(),
-                )),
-                gas: Some(gas_limit),
-                value: tx_request.value,
-                // nonce: Some(
-                //     cliente
-                //         .clone()
-                //         .get_transaction_count(self.npc.billetera.parse::<Address>().unwrap(), None)
-                //         .await?
-                // ),
-                data: tx_request.data.clone(),
-                max_priority_fee_per_gas: Some(max_priority_fee),
-                max_fee_per_gas: Some(gas_price + max_priority_fee),
-                chain_id: Some(Chain::Polygon.into()),
-                ..Default::default()
-            };
-            let cliente = self.lens_hub_contrato.client().clone();
-            let pending_tx = match cliente.send_transaction(req, None).await {
-                Ok(tx) => tx,
-                Err(e) => {
-                    eprintln!("Error al enviar la transacción: {:?}", e);
-                    return Err(Box::new(CustomError::new("Error al enviar la transacción")) as Box<dyn Error + Send + Sync  >)
+            if let Some(tx_request) = tx.as_eip1559_ref() {
+                let cliente = self.lens_hub_contrato.client().clone();
+                let gas_price = U256::from(500_000_000_000u64);
+                let max_priority_fee = U256::from(25_000_000_000u64);
+                let gas_limit = U256::from(300_000);
+                let tx_cost = gas_limit * gas_price + max_priority_fee;
+    
+                let balance = cliente
+                    .clone()
+                    .get_balance(
+                        self.npc.billetera.parse::<Address>().unwrap(),
+                        None,
+                    )
+                    .await?;
+    
+                if balance < tx_cost {
+                    return Err(Box::new(CustomError::new("Fondos insuficientes para gas")));
                 }
-            };
-
-        let tx_hash = match pending_tx.confirmations(1).await {
-            Ok(hash) => hash,
-            Err(e) => {
-                eprintln!("Error con la transacción: {:?}", e);
-                return Err(Box::new(CustomError::new("Error con la transacción")) as Box<dyn Error + Send + Sync  >)
-            }
-        };
-        
-        
-            println!("Transacción del mensaje enviada con hash: {:?}", tx_hash);
-
-
-        } else {
-            return Err(Box::new(CustomError::new("Error en Transacción")) as Box<dyn Error + Send + Sync  >)
-
-
-        }
-    } 
-    let resultado = lens::hacer_consulta(&format!("0x0{:x}", 
-
     
-    &self.npc.perfil_id
+                let req = Eip1559TransactionRequest {
+                    from: Some(self.npc.billetera.parse::<Address>().unwrap()),
+                    to: Some(NameOrAddress::Address(
+                        LENS_HUB_PROXY.parse::<Address>().unwrap(),
+                    )),
+                    gas: Some(gas_limit),
+                    value: tx_request.value,
+                    data: tx_request.data.clone(),
+                    max_priority_fee_per_gas: Some(max_priority_fee),
+                    max_fee_per_gas: Some(gas_price + max_priority_fee),
+                    chain_id: Some(Chain::Polygon.into()),
+                    ..Default::default()
+                };
+                
+                let pending_tx = cliente.send_transaction(req, None).await.map_err(|e| {
+                    eprintln!("Error al enviar la transacción: {:?}", e);
+                    Box::new(CustomError::new("Error al enviar la transacción")) as Box<dyn Error + Send + Sync>
+                })?;
+        
+                let tx_hash = pending_tx.confirmations(1).await.map_err(|e| {
+                    eprintln!("Error con la transacción: {:?}", e);
+                    Box::new(CustomError::new("Error con la transacción")) as Box<dyn Error + Send + Sync>
+                })?;
+                
+                println!("Transacción del mensaje enviada con hash: {:?}", tx_hash);
+    
+                let resultado = lens::hacer_consulta(&format!("0x0{:x}", self.npc.perfil_id))
+                    .await
+                    .map_err(|e| {
+                        Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
+                    })?;
+                
+                Ok(resultado)
+            } else {
+                Err(Box::new(CustomError::new("Error en Transacción")) as Box<dyn Error + Send + Sync>)
+            }
+        }
+        Ok(other) => {
+            eprintln!("Error al enviar el mensaje: {:?}", other);
+            Err(Box::new(CustomError::new("Error inesperado al enviar el mensaje")) as Box<dyn Error + Send + Sync>)
+        }
+        Err(e) => {
+            eprintln!("Error al enviar el mensaje: {:?}", e);
+            Err(Box::new(CustomError::new("Error al procesar el mensaje")) as Box<dyn Error + Send + Sync>)
+        }
+    }
+    
 
-))
-    .await
-    .map_err(|e| {
-        Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
-    })?;
-
-Ok(resultado)
+ 
     }
 
     pub fn actualizar_tokens(&mut self, nuevos_tokens: TokensAlmacenados) {

@@ -770,6 +770,8 @@ pub async fn hacer_mirror(
         }
     });
 
+    println!("{}", mirror_on);
+
     let respuesta = cliente
         .post(API_LENS)
         .header("Authorization", format!("Bearer {}", token_autorizado))
@@ -780,6 +782,7 @@ pub async fn hacer_mirror(
 
     if respuesta.status().is_success() {
         let json: serde_json::Value = respuesta.json().await?;
+        println!("{}", json);
         if let Some(datos) = json["data"]["createOnchainMirrorTypedData"].as_object() {
             let datos_escritos = datos.get("typedData").and_then(|v| v.as_object()).unwrap();
 
@@ -809,6 +812,7 @@ pub async fn hacer_mirror(
             )
             .await?);
         } else {
+        
             return Err("Estructura de respuesta inesperada Mirror.".into());
         }
     } else {
