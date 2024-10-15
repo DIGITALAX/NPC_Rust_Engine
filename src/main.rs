@@ -1,5 +1,7 @@
+use chrono::Utc;
 use dotenv::dotenv;
-use futures_util::{future::try_join_all, SinkExt, StreamExt};
+use futures_util::{future::try_join_all, lock::Mutex, SinkExt, StreamExt};
+use rand::{rngs::StdRng, Rng, SeedableRng};
 use serde_json::{from_str, json, to_string, Value};
 use std::{collections::HashMap, env, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{
@@ -322,19 +324,43 @@ async fn manejar_conexion(
 }
 
 async fn bucle_juego(escenas: Arc<RwLock<HashMap<String, EscenaEstudio>>>) {
+    let conteo_alquiler: Arc<Mutex<HashMap<usize, u32>>> = Arc::new(Mutex::new(HashMap::new()));
+    let mut ultima_seleccion: chrono::DateTime<Utc> = Utc::now();
     loop {
         let escenas_clonadas: HashMap<_, _>;
         {
             let escenas_guard = escenas.read().await;
             escenas_clonadas = escenas_guard.clone();
         }
+        let mut npc_seleccionado = None;
 
-        let mut escenas_actualizadas = HashMap::new();
-        for (clave, mut escena) in escenas_clonadas {
-            escena.ejecutar_bucle(1000);
-            escenas_actualizadas.insert(clave, escena);
+        if Utc::now() - ultima_seleccion >= chrono::Duration::weeks(1) {
+            let mut todos_npcs: Vec<NPCAleatorio> = Vec::new();
+
+            for escena in escenas_clonadas.values() {
+                todos_npcs.extend(escena.npcs.clone());
+            }
+
+            npc_seleccionado = seleccionar_npc(Arc::clone(&conteo_alquiler), &todos_npcs).await;
+
+            if let Some(npc_nombre) = &npc_seleccionado {
+                if let Some((indice_npc, _)) = todos_npcs
+                    .iter()
+                    .enumerate()
+                    .find(|(_, npc)| &npc.npc.etiqueta == npc_nombre)
+                {
+                    incrementar_conteo_alquiler(Arc::clone(&conteo_alquiler), indice_npc).await;
+                }
+            }
+            ultima_seleccion = Utc::now();
         }
 
+        let mut escenas_actualizadas = HashMap::new();
+
+        for (clave, mut escena) in escenas_clonadas {
+            escena.ejecutar_bucle(1000, npc_seleccionado.clone());
+            escenas_actualizadas.insert(clave, escena);
+        }
         {
             let mut escenas_guard = escenas.write().await;
             *escenas_guard = escenas_actualizadas;
@@ -342,4 +368,43 @@ async fn bucle_juego(escenas: Arc<RwLock<HashMap<String, EscenaEstudio>>>) {
 
         time::sleep(Duration::from_secs(1)).await;
     }
+}
+
+async fn seleccionar_npc(
+    conteo_alquiler: Arc<Mutex<HashMap<usize, u32>>>,
+    npcs: &[NPCAleatorio],
+) -> Option<String> {
+    let mut rng = StdRng::from_entropy();
+
+    let conteo_guard = conteo_alquiler.lock().await;
+
+    let total_peso: f32 = npcs
+        .iter()
+        .enumerate()
+        .map(|(i, _)| {
+            let conteo = *conteo_guard.get(&i).unwrap_or(&0);
+            1.0 / (conteo as f32 + 1.0)
+        })
+        .sum();
+
+    let mut seleccion = rng.gen_range(0.0..total_peso);
+
+    for (i, npc) in npcs.iter().enumerate() {
+        let peso_actual = 1.0 / (*conteo_guard.get(&i).unwrap_or(&0) as f32 + 1.0);
+        if seleccion < peso_actual {
+            return Some(npc.npc.etiqueta.clone());
+        }
+        seleccion -= peso_actual;
+    }
+
+    None
+}
+
+async fn incrementar_conteo_alquiler(
+    conteo_alquiler: Arc<Mutex<HashMap<usize, u32>>>,
+    index: usize,
+) {
+    let mut conteo_guard = conteo_alquiler.lock().await;
+    let contador = conteo_guard.entry(index).or_insert(0);
+    *contador += 1;
 }

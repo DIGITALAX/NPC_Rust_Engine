@@ -310,6 +310,9 @@ pub struct EscenaEstudio {
 #[derive(Clone)]
 pub struct NPCAleatorio {
     pub sillas: Vec<Silla>,
+    pub reloj_semanal: chrono::DateTime<Utc>,
+    pub pesos_manejados: Arc<Mutex<bool>>,
+    pub alquiler_pagado: Arc<Mutex<i32>>,
     pub mundo: Talla,
     pub movimientos_max: f32,
     pub caminos: Vec<Estado>,
@@ -335,6 +338,12 @@ pub struct NPCAleatorio {
         >,
     >,
     pub npc_publication_contrato: Arc<
+        ContractInstance<
+            Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
+            SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
+        >,
+    >,
+    pub npc_rent_contrato: Arc<
         ContractInstance<
             Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
             SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,

@@ -12,6 +12,8 @@ pub static AUTOGRAPH_DATA: &'static str = "0xd52dA212D5C7Ec8f7Bb3594372530b19f3e
 
 pub static NPC_PUBLICATION: &'static str = "0x4A460DdFB146B17c0Fe88E44944b551Ae2834cBB";
 
+pub static NPC_RENT: &'static str = "0x7fb6f7EF8dfFb0bB8d82b64E6b90BcC5162621F6";
+
 pub static ISO_CODES: Lazy<HashMap<String, String>> = Lazy::new(|| {
     let mut m = HashMap::new();
     m.insert(String::from("Hebrew"), String::from("he"));

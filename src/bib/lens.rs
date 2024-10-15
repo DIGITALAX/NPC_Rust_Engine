@@ -2,7 +2,7 @@ use crate::bib::{
     types::TokensAlmacenados,
     utils::{autenticar, refrescar},
 };
-use crate::{API_LENS, AUTOGRAPH_DATA, LENS_HUB_PROXY, NPC_PUBLICATION};
+use crate::{API_LENS, AUTOGRAPH_DATA, LENS_HUB_PROXY, NPC_PUBLICATION, NPC_RENT};
 use dotenv::dotenv;
 use ethers::{
     abi::{Abi, Address},
@@ -37,6 +37,9 @@ static mut AUTOGRAPH_DATA_CONTRATO: Option<
     Arc<Contract<SignerMiddleware<Arc<Provider<Http>>, LocalWallet>>>,
 > = None;
 static mut NPC_PUBLICATION_CONTRATO: Option<
+    Arc<Contract<SignerMiddleware<Arc<Provider<Http>>, LocalWallet>>>,
+> = None;
+static mut NPC_RENT_CONTRATO: Option<
     Arc<Contract<SignerMiddleware<Arc<Provider<Http>>, LocalWallet>>>,
 > = None;
 static mut PROVEEDOR: Option<Arc<Provider<Http>>> = None;
@@ -426,6 +429,7 @@ pub fn inicializar_contrato(
     Arc<Contract<SignerMiddleware<Arc<Provider<Http>>, LocalWallet>>>,
     Arc<Contract<SignerMiddleware<Arc<Provider<Http>>, LocalWallet>>>,
     Arc<Contract<SignerMiddleware<Arc<Provider<Http>>, LocalWallet>>>,
+    Arc<Contract<SignerMiddleware<Arc<Provider<Http>>, LocalWallet>>>,
 ) {
     unsafe {
         let proveedor = inicializar_proveedor();
@@ -483,9 +487,27 @@ pub fn inicializar_contrato(
             }
         };
 
-        let contrato = Contract::new(direccion, abi, Arc::new(cliente));
+        let contrato = Contract::new(direccion, abi, Arc::new(cliente.clone()));
 
         NPC_PUBLICATION_CONTRATO = Some(Arc::new(contrato));
+
+        let direccion = match NPC_RENT.parse::<Address>() {
+            Ok(addr) => addr,
+            Err(e) => {
+                panic!("Error al parsear NPC_RENT: {:?}", e);
+            }
+        };
+
+        let abi: Abi = match from_str(include_str!("./../../abis/NPCRent.json")) {
+            Ok(a) => a,
+            Err(e) => {
+                panic!("Error al cargar NPCRent ABI: {:?}", e);
+            }
+        };
+
+        let contrato = Contract::new(direccion, abi, Arc::new(cliente));
+
+        NPC_RENT_CONTRATO = Some(Arc::new(contrato));
 
         let lens_hub_contrato = LENS_HUB_PROXY_CONTRATO
             .clone()
@@ -496,11 +518,15 @@ pub fn inicializar_contrato(
         let npc_publication_contrato = NPC_PUBLICATION_CONTRATO
             .clone()
             .expect("NPC_PUBLICATION_CONTRATO not initialized");
+        let npc_rent_contrato = NPC_RENT_CONTRATO
+            .clone()
+            .expect("NPC_PUBLICATION_CONTRATO not initialized");
 
         (
             lens_hub_contrato,
             autograph_data_contrato,
             npc_publication_contrato,
+            npc_rent_contrato,
         )
     }
 }
@@ -812,7 +838,6 @@ pub async fn hacer_mirror(
             )
             .await?);
         } else {
-        
             return Err("Estructura de respuesta inesperada Mirror.".into());
         }
     } else {
@@ -882,7 +907,6 @@ pub async fn hacer_publicacion(
         .json(&consulta)
         .send()
         .await?;
-
 
     if respuesta.status().is_success() {
         let json: serde_json::Value = respuesta.json().await?;
@@ -966,7 +990,6 @@ async fn propogar(
             return Ok("RelayError".to_string());
         }
     } else {
- 
         return Err(format!("Error: {}", respuesta.status()).into());
     }
 }
@@ -976,7 +999,6 @@ pub async fn me_gusta(
     token_autorizado: &str,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let cliente = inicializar_api();
-
 
     let consulta = json!({
         "query": r#"

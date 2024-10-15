@@ -17,6 +17,8 @@ impl EscenaEstudio {
 
         let mapa = Mapa::new(anchura as usize, altura as usize, prohibidos);
         let sillas_ocupadas = Arc::new(Mutex::new(Vec::new()));
+        let pesos_manejados: Arc<Mutex<bool>> = Arc::new(Mutex::new(false));
+        let alquiler_pagado: Arc<Mutex<i32>> = Arc::new(Mutex::new(0));
 
         let npcs: Vec<NPCAleatorio> = sprites
             .iter()
@@ -30,6 +32,8 @@ impl EscenaEstudio {
                     mapa.clone(),
                     escena.clave.to_string(),
                     manija.clone(),
+                    Arc::clone(&pesos_manejados),
+                    Arc::clone(&alquiler_pagado),
                 );
                 npc
             })
@@ -42,9 +46,9 @@ impl EscenaEstudio {
         }
     }
 
-    pub fn ejecutar_bucle(&mut self, delta: u64) {
+    pub fn ejecutar_bucle(&mut self, delta: u64, npc_seleccionado: Option<String>) {
         self.npcs.par_iter_mut().for_each(|npc| {
-            npc.actualizar(delta);
+            npc.actualizar(delta, npc_seleccionado.clone());
         });
     }
 
