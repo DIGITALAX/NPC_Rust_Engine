@@ -1730,7 +1730,7 @@ return;
                         data: tx_request.data.clone(),
                         max_priority_fee_per_gas: Some(max_priority_fee),
                         max_fee_per_gas: Some(gas_price + max_priority_fee),
-                        chain_id: Some(Chain::PolygonAmoy.into()),
+                        chain_id: Some(Chain::Polygon.into()),
                         ..Default::default()
                     };
 
@@ -1799,7 +1799,7 @@ return;
                         data: tx_request.data.clone(),
                         max_priority_fee_per_gas: Some(max_priority_fee),
                         max_fee_per_gas: Some(gas_price + max_priority_fee),
-                        chain_id: Some(Chain::PolygonAmoy.into()),
+                        chain_id: Some(Chain::Polygon.into()),
                         ..Default::default()
                     };
 
