@@ -33,17 +33,26 @@
   },
   {
     "type": "function",
-    "name": "calculateWeeklyNPCWeights",
-    "inputs": [],
+    "name": "calculateClockWeights",
+    "inputs": [
+      { "name": "_allowance", "type": "uint256", "internalType": "uint256" }
+    ],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
   {
     "type": "function",
-    "name": "calculateWeeklySpectatorWeights",
+    "name": "clockAUAmount",
     "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "clockCounter",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -56,9 +65,9 @@
   },
   {
     "type": "function",
-    "name": "getActiveWeeklyNPCs",
+    "name": "getActiveClockNPCs",
     "inputs": [
-      { "name": "_week", "type": "uint256", "internalType": "uint256" }
+      { "name": "_clock", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [
       { "name": "", "type": "address[]", "internalType": "address[]" }
@@ -76,7 +85,7 @@
   },
   {
     "type": "function",
-    "name": "getNPCActiveWeeks",
+    "name": "getNPCActiveClocks",
     "inputs": [
       { "name": "_npc", "type": "address", "internalType": "address" }
     ],
@@ -85,56 +94,20 @@
   },
   {
     "type": "function",
-    "name": "getNPCAuClaimedByWeek",
+    "name": "getNPCAuClaimedByClock",
     "inputs": [
       { "name": "_npc", "type": "address", "internalType": "address" },
-      { "name": "_week", "type": "uint256", "internalType": "uint256" }
+      { "name": "_clock", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "getNPCAuRentByWeek",
+    "name": "getNPCAuRentByClock",
     "inputs": [
       { "name": "_npc", "type": "address", "internalType": "address" },
-      { "name": "_week", "type": "uint256", "internalType": "uint256" }
-    ],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getNPCCurrentUnnormalizedWeightedScoreTotal",
-    "inputs": [
-      { "name": "_npc", "type": "address", "internalType": "address" }
-    ],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getNPCCurrentUnnormalizedWeightedScoreWeekly",
-    "inputs": [
-      { "name": "_npc", "type": "address", "internalType": "address" }
-    ],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getNPCCurrentWeightedScoreTotal",
-    "inputs": [
-      { "name": "_npc", "type": "address", "internalType": "address" }
-    ],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getNPCCurrentWeightedScoreWeekly",
-    "inputs": [
-      { "name": "_npc", "type": "address", "internalType": "address" }
+      { "name": "_clock", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
@@ -161,15 +134,15 @@
     "type": "function",
     "name": "getNPCPortion",
     "inputs": [
-      { "name": "_spectator", "type": "address", "internalType": "address" },
-      { "name": "_week", "type": "uint256", "internalType": "uint256" }
+      { "name": "_npc", "type": "address", "internalType": "address" },
+      { "name": "_clock", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "getNPCUnnormalizedWeightByWeekTotal",
+    "name": "getNPCUnnormalizedWeightByClock",
     "inputs": [
       { "name": "_npc", "type": "address", "internalType": "address" },
       { "name": "_indice", "type": "uint256", "internalType": "uint256" }
@@ -179,7 +152,7 @@
   },
   {
     "type": "function",
-    "name": "getNPCUnnormalizedWeightByWeekWeekly",
+    "name": "getNPCUnnormalizedWeightByClockTotal",
     "inputs": [
       { "name": "_npc", "type": "address", "internalType": "address" },
       { "name": "_indice", "type": "uint256", "internalType": "uint256" }
@@ -189,7 +162,7 @@
   },
   {
     "type": "function",
-    "name": "getNPCWeightByWeekTotal",
+    "name": "getNPCWeightByClock",
     "inputs": [
       { "name": "_npc", "type": "address", "internalType": "address" },
       { "name": "_indice", "type": "uint256", "internalType": "uint256" }
@@ -199,7 +172,7 @@
   },
   {
     "type": "function",
-    "name": "getNPCWeightByWeekWeekly",
+    "name": "getNPCWeightByClockTotal",
     "inputs": [
       { "name": "_npc", "type": "address", "internalType": "address" },
       { "name": "_indice", "type": "uint256", "internalType": "uint256" }
@@ -236,30 +209,21 @@
   },
   {
     "type": "function",
-    "name": "getSpectatorClaimedAUByWeek",
+    "name": "getSpectatorClaimedAUByClock",
     "inputs": [
       { "name": "_spectator", "type": "address", "internalType": "address" },
-      { "name": "_week", "type": "uint256", "internalType": "uint256" }
+      { "name": "_clock", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "getSpectatorCurrentWeekWeight",
-    "inputs": [
-      { "name": "_spectator", "type": "address", "internalType": "address" }
-    ],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getSpectatorHasClaimedAUByWeek",
+    "name": "getSpectatorHasClaimedAUByClock",
     "inputs": [
       { "name": "_spectator", "type": "address", "internalType": "address" },
       { "name": "_npc", "type": "address", "internalType": "address" },
-      { "name": "_week", "type": "uint256", "internalType": "uint256" }
+      { "name": "_clock", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
     "stateMutability": "view"
@@ -269,23 +233,14 @@
     "name": "getSpectatorPortion",
     "inputs": [
       { "name": "_spectator", "type": "address", "internalType": "address" },
-      { "name": "_week", "type": "uint256", "internalType": "uint256" }
+      { "name": "_clock", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "getSpectatorUnnormalizedCurrentWeekWeight",
-    "inputs": [
-      { "name": "_spectator", "type": "address", "internalType": "address" }
-    ],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getSpectatorUnnormalizedWeightByWeek",
+    "name": "getSpectatorUnnormalizedWeightByClock",
     "inputs": [
       { "name": "_spectator", "type": "address", "internalType": "address" },
       { "name": "_indice", "type": "uint256", "internalType": "uint256" }
@@ -295,7 +250,7 @@
   },
   {
     "type": "function",
-    "name": "getSpectatorWeightByWeek",
+    "name": "getSpectatorWeightByClock",
     "inputs": [
       { "name": "_spectator", "type": "address", "internalType": "address" },
       { "name": "_indice", "type": "uint256", "internalType": "uint256" }
@@ -305,26 +260,19 @@
   },
   {
     "type": "function",
-    "name": "getTotalAUAllowanceByWeek",
+    "name": "getTotalAUAllowanceByClock",
     "inputs": [
-      { "name": "_week", "type": "uint256", "internalType": "uint256" }
+      { "name": "_clock", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
   {
     "type": "function",
-    "name": "getTotalAUPaidByWeek",
+    "name": "getTotalAUPaidByClock",
     "inputs": [
-      { "name": "_week", "type": "uint256", "internalType": "uint256" }
+      { "name": "_clock", "type": "uint256", "internalType": "uint256" }
     ],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "lastWeekTimestamp",
-    "inputs": [],
     "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
     "stateMutability": "view"
   },
@@ -375,20 +323,11 @@
   },
   {
     "type": "function",
-    "name": "setWeeklyAUAllowance",
-    "inputs": [
-      { "name": "_allowance", "type": "uint256", "internalType": "uint256" }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "spectatorClaimAU",
     "inputs": [
       { "name": "_npc", "type": "address", "internalType": "address" },
       { "name": "_all", "type": "bool", "internalType": "bool" },
-      { "name": "_week", "type": "uint256", "internalType": "uint256" }
+      { "name": "_clock", "type": "uint256", "internalType": "uint256" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -409,20 +348,6 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "weekCounter",
-    "inputs": [],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "weeklyAUAmount",
-    "inputs": [],
-    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
-    "stateMutability": "view"
   },
   {
     "type": "event",

@@ -12,7 +12,9 @@ pub static AUTOGRAPH_DATA: &'static str = "0xd52dA212D5C7Ec8f7Bb3594372530b19f3e
 
 pub static NPC_PUBLICATION: &'static str = "0x4A460DdFB146B17c0Fe88E44944b551Ae2834cBB";
 
-pub static NPC_RENT: &'static str = "0x7fb6f7EF8dfFb0bB8d82b64E6b90BcC5162621F6";
+pub static NPC_RENT: &'static str = "0x5B28b8A5C20C0C8f7A8B3b024aF7EF239c960CFC";
+
+pub static NPC_ACCESS_CONTROL: &'static str = "0xFB174C6587Db57AA6c56F79188bab614dAEbbb8a";
 
 pub static ISO_CODES: Lazy<HashMap<String, String>> = Lazy::new(|| {
     let mut m = HashMap::new();
@@ -4649,9 +4651,9 @@ String::from("QmPHvaiMJgssTtQg2tmvs6TQxRULpqxVAJaUX7Dncci738"),
                 },
                 Prohibido {
                   x: 1750.0,
-                    y: 900.0,
+                    y: 750.0,
                     anchura: 550.0,
-                    altura: 300.0,
+                    altura: 450.0,
                 },
                 Prohibido {
                   x: 0.0,

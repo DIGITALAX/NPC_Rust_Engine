@@ -1,6 +1,6 @@
 use crate::{bib::{lens, types::{
     Comment, Contenido, Coordenada, CustomError, Estado, GameTimer, Imagen, LensType, Llama, Mapa, Mirror, Movimiento, NPCAleatorio, Pub, Publicacion, RegisterPub, Silla, Sprite, Talla
-}, utils::{between, from_hex_string, subir_ipfs, subir_ipfs_imagen}}, Boudica, EstadoNPC, LlamaOpciones, LlamaRespuesta, MetadataAttribute, PublicacionPrediccion, TokensAlmacenados, CONVERSACION, ISO_CODES, ISO_CODES_PROMPT, LENS_HUB_PROXY, NPC_PUBLICATION};
+}, utils::{between, from_hex_string, subir_ipfs, subir_ipfs_imagen}}, Boudica, EstadoNPC, LlamaOpciones, LlamaRespuesta, MetadataAttribute, PublicacionPrediccion, TokensAlmacenados, CONVERSACION, ISO_CODES, ISO_CODES_PROMPT, LENS_HUB_PROXY, NPC_PUBLICATION, NPC_RENT, NPC_ACCESS_CONTROL};
 use abi::{Token, Tokenize};
 use chrono::Utc;
 use ethers::{prelude::*, types::{Address, Bytes, U256}};
@@ -22,7 +22,7 @@ impl NPCAleatorio {
         mapa: Mapa,
         escena: String,
         manija: Handle, pesos_manejados: Arc<Mutex<bool>>, alquiler_pagado: Arc<Mutex<i32>>) -> Self {
-        let (lens_hub_contrato, autograph_data_contrato, npc_publication_contrato, npc_rent_contrato) =
+        let (lens_hub_contrato, autograph_data_contrato, npc_publication_contrato, npc_rent_contrato, npc_access_contrato) =
             lens::inicializar_contrato(&sprite.etiqueta.to_string());
             lens::inicializar_api();
 
@@ -46,6 +46,7 @@ impl NPCAleatorio {
             autograph_data_contrato,
             npc_publication_contrato,
             npc_rent_contrato,
+            npc_access_contrato,
             escena,
             manija,
             tokens: None,
@@ -88,33 +89,31 @@ impl NPCAleatorio {
             }
         }
 
-        if Utc::now() - self.reloj_semanal >= chrono::Duration::weeks(1) && *self.pesos_manejados.lock().unwrap() { 
 
-            self.pagar_alquiler();
+        // if Utc::now() - self.reloj_semanal >= chrono::Duration::weeks(1) && *self.pesos_manejados.lock().unwrap() { 
 
-            {
-                let mut alquiler_pagado = self.alquiler_pagado.lock().unwrap();
-                *alquiler_pagado += 1;
-            }
 
-            if *self.alquiler_pagado.lock().unwrap() >= 35 {
-                let mut manejado = self.pesos_manejados.lock().unwrap();
-                *manejado = false;
+        //     if self.llama_recibido.is_none() && self.npc.etiqueta == "Gabriel" {
+        //         self.llama_recibido = Some(String::from("()"));
+        //         println!("estoy aqui");
 
-                let mut alquiler_pagado = self.alquiler_pagado.lock().unwrap();
-                *alquiler_pagado = 0;
-            }
+        //     self.pagar_alquiler();
 
-        }
+        //     {
+        //         let mut alquiler_pagado = self.alquiler_pagado.lock().unwrap();
+        //         *alquiler_pagado += 1;
+        //     }
 
-        // if self.ultimo_tiempo_mencion > 0 {
-        //     self.ultimo_tiempo_mencion -= delta_time;
+        //     if *self.alquiler_pagado.lock().unwrap() >= 35 {
+        //         let mut manejado = self.pesos_manejados.lock().unwrap();
+        //         *manejado = false;
+
+        //         let mut alquiler_pagado = self.alquiler_pagado.lock().unwrap();
+        //         *alquiler_pagado = 0;
+        //     }
+
         // }
-    
-        // if self.ultimo_tiempo_mencion <= 0 {
-        //     self.ultimo_tiempo_mencion = 36000000;
-        //     self.comprobar_menciones();
-        // }
+
     }
 
     fn elegir_direccion_aleatoria(&mut self) {
@@ -1333,7 +1332,7 @@ Bytes::from_str("0x000000000000000000000000185b529b421ff60b0f2388483b757b39103cf
        } 
 
        match res {
-        Ok(result) if result == "RelaySuccess" => {
+        Ok(result) if result != "RelaySuccess" => {
             let FunctionCall { tx, .. } = method;
     
             if let Some(tx_request) = tx.as_eip1559_ref() {
@@ -1409,37 +1408,6 @@ Bytes::from_str("0x000000000000000000000000185b529b421ff60b0f2388483b757b39103cf
     pub fn actualizar_tokens(&mut self, nuevos_tokens: TokensAlmacenados) {
         self.tokens = Some(nuevos_tokens);
     }
-
-
-    // async fn comprobar_menciones(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
-    //     let mut npc_clone = Arc::new(self.clone());
-       
-    //     self.manija.spawn(async move {
-
-    //         let tokens = lens::obtener_o_refrescar_tokens(&npc_clone.npc.etiqueta.to_string(), 
-    //         npc_clone.npc.perfil_id
-    //         , npc_clone.tokens.clone()
-        
-    //     )
-    //         .await 
-    //         .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >); 
-        
-               
-    //         let ultima_fecha = *self.ultima_mencion_procesada.read().await;
-    //         let nuevas_menciones = buscar_menciones(&self.npc.etiqueta, &tokens.tokens.access_token, ultima_fecha).await?;
-    
-    //         for mencion in nuevas_menciones {
-    //             self.procesar_mencion(mencion).await?;
-    //         }
-    
-        
-        
-    //     });
-       
-       
-
-    //     Ok(())
-    // }
 
     pub fn llama_recibido(&mut self, datos_json: &String) {
         if self.llama_recibido.is_none() {
@@ -1733,10 +1701,12 @@ return;
 
 
             let method = npc_clone
-            .npc_rent_contrato
+            .npc_access_contrato
             .method::<_, H256>(
-                "calculateWeeklySpectatorWeights",
-               {}
+                "timerReset",
+               {
+                100000000000000000000u128
+               }
             );
 
 
@@ -1749,25 +1719,25 @@ return;
                     let max_priority_fee = U256::from(25_000_000_000u64);
                     let gas_limit = U256::from(300_000);
 
-                    let cliente = npc_clone.npc_publication_contrato.client().clone();
+                    let cliente = npc_clone.npc_access_contrato.client().clone();
                     let req = Eip1559TransactionRequest {
                         from: Some(npc_clone.npc.billetera.parse::<Address>().unwrap()),
                         to: Some(NameOrAddress::Address(
-                            NPC_PUBLICATION.parse::<Address>().unwrap(),
+                            NPC_ACCESS_CONTROL.parse::<Address>().unwrap(),
                         )),
                         gas: Some(gas_limit),
                         value: tx_request.value,
                         data: tx_request.data.clone(),
                         max_priority_fee_per_gas: Some(max_priority_fee),
                         max_fee_per_gas: Some(gas_price + max_priority_fee),
-                        chain_id: Some(Chain::Polygon.into()),
+                        chain_id: Some(Chain::PolygonAmoy.into()),
                         ..Default::default()
                     };
 
                         let pending_tx = match cliente.send_transaction(req, None).await {
                             Ok(tx) => tx,
                             Err(e) => {
-                                eprintln!("Error al enviar la transacción de los pesos de los espectadores: {:?}", e);
+                                eprintln!("Error al enviar la transacción de los pesos: {:?}", e);
                                 return;
                             }
                         };
@@ -1775,81 +1745,23 @@ return;
                     let tx_hash = match pending_tx.confirmations(1).await {
                         Ok(hash) => hash,
                         Err(e) => {
-                            eprintln!("Error con la transacción de los pesos de los espectadores: {:?}", e);
+                            eprintln!("Error con la transacción de los pesos: {:?}", e);
                             return;
                         }
                     };
                     
 
-                    println!("Transacción de los pesos de los espectadores enviada con hash: {:?}", tx_hash);
+                    println!("Transacción de los pesos enviada con hash: {:?}", tx_hash);
                 }
             }
             Err(e) => {
-                eprintln!("Error al calificar los pesos semanalas de los espectadores: {}", e);
+                eprintln!("Error al calificar los pesos: {}", e);
                 return;
             }
         }
 
 
-        let method = npc_clone
-        .npc_rent_contrato
-        .method::<_, H256>(
-            "calculateWeeklyNPCWeights",
-           {}
-        );
-
-
-
-        match method {
-            Ok(call) => {
-                let FunctionCall { tx, .. } = call;
-
-                if let Some(tx_request) = tx.as_eip1559_ref() {
-                    let gas_price = U256::from(500_000_000_000u64);
-                    let max_priority_fee = U256::from(25_000_000_000u64);
-                    let gas_limit = U256::from(300_000);
-
-                    let cliente = npc_clone.npc_publication_contrato.client().clone();
-                    let req = Eip1559TransactionRequest {
-                        from: Some(npc_clone.npc.billetera.parse::<Address>().unwrap()),
-                        to: Some(NameOrAddress::Address(
-                            NPC_PUBLICATION.parse::<Address>().unwrap(),
-                        )),
-                        gas: Some(gas_limit),
-                        value: tx_request.value,
-                        data: tx_request.data.clone(),
-                        max_priority_fee_per_gas: Some(max_priority_fee),
-                        max_fee_per_gas: Some(gas_price + max_priority_fee),
-                        chain_id: Some(Chain::Polygon.into()),
-                        ..Default::default()
-                    };
-
-                        let pending_tx = match cliente.send_transaction(req, None).await {
-                            Ok(tx) => tx,
-                            Err(e) => {
-                                eprintln!("Error al enviar la transacción de los pesos de los npcs: {:?}", e);
-                                return;
-                            }
-                        };
-            
-                    let tx_hash = match pending_tx.confirmations(1).await {
-                        Ok(hash) => hash,
-                        Err(e) => {
-                            eprintln!("Error con la transacción de los pesos de los npcs: {:?}", e);
-                            return;
-                        }
-                    };
-                    
-
-                    println!("Transacción de los pesos de los npcs enviada con hash: {:?}", tx_hash);
-                }
-            }
-            Err(e) => {
-                eprintln!("Error al calificar los pesos semanalas de los npcs: {}", e);
-                return;
-            }
-        }
-
+        
         });
      }                 
 
@@ -1876,18 +1788,18 @@ return;
                     let max_priority_fee = U256::from(25_000_000_000u64);
                     let gas_limit = U256::from(300_000);
 
-                    let cliente = npc_clone.npc_publication_contrato.client().clone();
+                    let cliente = npc_clone.npc_rent_contrato.client().clone();
                     let req = Eip1559TransactionRequest {
                         from: Some(npc_clone.npc.billetera.parse::<Address>().unwrap()),
                         to: Some(NameOrAddress::Address(
-                            NPC_PUBLICATION.parse::<Address>().unwrap(),
+                            NPC_RENT.parse::<Address>().unwrap(),
                         )),
                         gas: Some(gas_limit),
                         value: tx_request.value,
                         data: tx_request.data.clone(),
                         max_priority_fee_per_gas: Some(max_priority_fee),
                         max_fee_per_gas: Some(gas_price + max_priority_fee),
-                        chain_id: Some(Chain::Polygon.into()),
+                        chain_id: Some(Chain::PolygonAmoy.into()),
                         ..Default::default()
                     };
 

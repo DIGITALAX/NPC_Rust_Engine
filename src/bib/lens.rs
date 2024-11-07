@@ -1,6 +1,9 @@
-use crate::bib::{
-    types::TokensAlmacenados,
-    utils::{autenticar, refrescar},
+use crate::{
+    bib::{
+        types::TokensAlmacenados,
+        utils::{autenticar, refrescar},
+    },
+    NPC_ACCESS_CONTROL,
 };
 use crate::{API_LENS, AUTOGRAPH_DATA, LENS_HUB_PROXY, NPC_PUBLICATION, NPC_RENT};
 use dotenv::dotenv;
@@ -42,6 +45,9 @@ static mut NPC_PUBLICATION_CONTRATO: Option<
 static mut NPC_RENT_CONTRATO: Option<
     Arc<Contract<SignerMiddleware<Arc<Provider<Http>>, LocalWallet>>>,
 > = None;
+static mut NPC_ACCESS_CONTRATO: Option<
+    Arc<Contract<SignerMiddleware<Arc<Provider<Http>>, LocalWallet>>>,
+> = None;
 static mut PROVEEDOR: Option<Arc<Provider<Http>>> = None;
 static mut CLIENTE_LENS: Option<Arc<Client>> = None;
 static mut BILLETERA: Option<LocalWallet> = None;
@@ -51,12 +57,12 @@ pub fn inicializar_proveedor() -> Arc<Provider<Http>> {
         INIT_PROVEEDOR.call_once(|| {
             dotenv().ok();
             let proveedor_url = format!(
-                "https://polygon-mainnet.g.alchemy.com/v2/{}",
+                "https://polygon-amoy.g.alchemy.com/v2/{}",
                 var("ALCHEMY_API_KEY").expect("ALCHEMY_API_KEY not found")
             );
             let mut proveedor =
                 Provider::<Http>::try_from(&proveedor_url).expect("Error al crear proveedor");
-            PROVEEDOR = Some(Arc::new(proveedor.set_chain(Chain::Polygon).clone()));
+            PROVEEDOR = Some(Arc::new(proveedor.set_chain(Chain::PolygonAmoy).clone()));
         });
         PROVEEDOR.clone().expect("Proveedor no es inicializado")
     }
@@ -76,7 +82,7 @@ pub fn inicializar_billetera(clave_privada: &str) -> LocalWallet {
         let billetera = match var(clave_privada) {
             Ok(key) => match key.parse::<LocalWallet>() {
                 Ok(mut wallet) => {
-                    wallet = wallet.with_chain_id(Chain::Polygon);
+                    wallet = wallet.with_chain_id(Chain::PolygonAmoy);
                     wallet
                 }
                 Err(e) => panic!("Error al parsear la clave privada: {:?}", e),
@@ -430,6 +436,7 @@ pub fn inicializar_contrato(
     Arc<Contract<SignerMiddleware<Arc<Provider<Http>>, LocalWallet>>>,
     Arc<Contract<SignerMiddleware<Arc<Provider<Http>>, LocalWallet>>>,
     Arc<Contract<SignerMiddleware<Arc<Provider<Http>>, LocalWallet>>>,
+    Arc<Contract<SignerMiddleware<Arc<Provider<Http>>, LocalWallet>>>,
 ) {
     unsafe {
         let proveedor = inicializar_proveedor();
@@ -505,9 +512,27 @@ pub fn inicializar_contrato(
             }
         };
 
-        let contrato = Contract::new(direccion, abi, Arc::new(cliente));
+        let contrato = Contract::new(direccion, abi, Arc::new(cliente.clone()));
 
         NPC_RENT_CONTRATO = Some(Arc::new(contrato));
+
+        let direccion = match NPC_ACCESS_CONTROL.parse::<Address>() {
+            Ok(addr) => addr,
+            Err(e) => {
+                panic!("Error al parsear NPC_ACCESS_CONTROLS: {:?}", e);
+            }
+        };
+
+        let abi: Abi = match from_str(include_str!("./../../abis/NPCAccessControls.json")) {
+            Ok(a) => a,
+            Err(e) => {
+                panic!("Error al cargar NPCAccessControls ABI: {:?}", e);
+            }
+        };
+
+        let contrato = Contract::new(direccion, abi, Arc::new(cliente));
+
+        NPC_ACCESS_CONTRATO = Some(Arc::new(contrato));
 
         let lens_hub_contrato = LENS_HUB_PROXY_CONTRATO
             .clone()
@@ -521,12 +546,16 @@ pub fn inicializar_contrato(
         let npc_rent_contrato = NPC_RENT_CONTRATO
             .clone()
             .expect("NPC_PUBLICATION_CONTRATO not initialized");
+        let npc_access_contrato = NPC_ACCESS_CONTRATO
+            .clone()
+            .expect("NPC_ACCESS_CONTRATO not initialized");
 
         (
             lens_hub_contrato,
             autograph_data_contrato,
             npc_publication_contrato,
             npc_rent_contrato,
+            npc_access_contrato,
         )
     }
 }

@@ -106,6 +106,7 @@ async fn manejar_conexion(
                                         || origen_str == "https://npc.digitalax.xyz"
                                         || origen_str
                                             == "https://glorious-eft-deeply.ngrok-free.app"
+                                        || origen_str == "https://npcstudio.xyz"
                                     {
                                         return Ok(respuesta);
                                     } else {

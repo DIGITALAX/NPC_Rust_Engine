@@ -349,6 +349,12 @@ pub struct NPCAleatorio {
             SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
         >,
     >,
+    pub npc_access_contrato: Arc<
+        ContractInstance<
+            Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
+            SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
+        >,
+    >,
     pub manija: Handle,
     pub tokens: Option<TokensAlmacenados>,
     pub estado: Arc<RwLock<EstadoNPC>>,
