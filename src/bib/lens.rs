@@ -57,7 +57,7 @@ pub fn inicializar_proveedor() -> Arc<Provider<Http>> {
         INIT_PROVEEDOR.call_once(|| {
             dotenv().ok();
             let proveedor_url = format!(
-                "https://polygon.g.alchemy.com/v2/{}",
+                "https://polygon-mainnet.g.alchemy.com/v2/{}",
                 var("ALCHEMY_API_KEY").expect("ALCHEMY_API_KEY not found")
             );
             let mut proveedor =
