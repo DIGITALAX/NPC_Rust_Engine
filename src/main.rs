@@ -107,6 +107,7 @@ async fn manejar_conexion(
                                         || origen_str
                                             == "https://glorious-eft-deeply.ngrok-free.app"
                                         || origen_str == "https://npcstudio.xyz"
+                                        || origen_str == "https://skyhunters.agentmeme.xyz"
                                     {
                                         return Ok(respuesta);
                                     } else {
