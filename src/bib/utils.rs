@@ -16,7 +16,7 @@ use reqwest::{
     Client,
 };
 use serde_json::{from_str, json};
-use std::{error::Error, num::ParseIntError, sync::Arc};
+use std::{error::Error, sync::Arc};
 
 pub fn between(min: f32, max: f32) -> f32 {
     let mut rng = rand::thread_rng();
@@ -223,9 +223,4 @@ pub async fn autenticar(
     } else {
         return Err(format!("Error: {}", respuesta.status()).into());
     }
-}
-
-
-pub fn from_hex_string(hex_str: &str) -> Result<u64, ParseIntError> {
-    u64::from_str_radix(hex_str.trim_start_matches("0x"), 16)
 }

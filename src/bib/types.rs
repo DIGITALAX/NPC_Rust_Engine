@@ -1,4 +1,3 @@
-use chrono::{DateTime, Utc};
 use core::fmt;
 use ethers::{
     abi::{Token, Tokenizable, Tokenize},
@@ -11,11 +10,12 @@ use ethers::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     error::Error,
     sync::{Arc, Mutex},
 };
-use tokio::{runtime::Handle, sync::RwLock};
+use strum::EnumIter;
+use tokio::runtime::Handle;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Coordenada {
@@ -29,63 +29,13 @@ pub struct Escala {
     pub y: f32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Prompt {
     pub personalidad: String,
     pub idiomas: Vec<String>,
-    pub temas: Arc<Mutex<HashMap<String, Vec<String>>>>,
-    pub tono: Arc<Mutex<HashMap<String, Vec<String>>>>,
-    pub imagenes: Arc<Mutex<Vec<String>>>,
+    pub temas:  Vec<String>,
+    pub tono: Vec<String>,
     pub amigos: Vec<U256>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-struct PromptHelper {
-    personalidad: String,
-    idiomas: Vec<String>,
-    imagenes: Vec<String>,
-    amigos: Vec<U256>,
-    temas: HashMap<String, Vec<String>>,
-    tono: HashMap<String, Vec<String>>,
-}
-
-impl Serialize for Prompt {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        let temas = self.temas.lock().unwrap().clone();
-        let tono = self.tono.lock().unwrap().clone();
-
-        let helper = PromptHelper {
-            personalidad: self.personalidad.clone(),
-            idiomas: self.idiomas.clone(),
-            imagenes: self.imagenes.lock().unwrap().clone(),
-            amigos: self.amigos.clone(),
-            tono,
-            temas,
-        };
-        helper.serialize(serializer)
-    }
-}
-
-impl<'de> Deserialize<'de> for Prompt {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let helper = PromptHelper::deserialize(deserializer)?;
-        let temas = Arc::new(Mutex::new(helper.temas.clone()));
-        let tono = Arc::new(Mutex::new(helper.tono.clone()));
-        Ok(Prompt {
-            personalidad: helper.personalidad,
-            idiomas: helper.idiomas,
-            imagenes: Arc::new(Mutex::new(helper.imagenes)),
-            amigos: helper.amigos,
-            tono,
-            temas,
-        })
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -310,9 +260,6 @@ pub struct EscenaEstudio {
 #[derive(Clone)]
 pub struct NPCAleatorio {
     pub sillas: Vec<Silla>,
-    pub reloj_semanal: chrono::DateTime<Utc>,
-    pub pesos_manejados: Arc<Mutex<bool>>,
-    pub alquiler_pagado: Arc<Mutex<i32>>,
     pub mundo: Talla,
     pub movimientos_max: f32,
     pub caminos: Vec<Estado>,
@@ -324,7 +271,6 @@ pub struct NPCAleatorio {
     pub mapa: Mapa,
     pub escena: String,
     pub ultimo_tiempo_comprobacion: u64,
-    pub ultimo_tiempo_mencion: u64,
     pub lens_hub_contrato: Arc<
         ContractInstance<
             Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
@@ -337,37 +283,8 @@ pub struct NPCAleatorio {
             SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
         >,
     >,
-    pub npc_publication_contrato: Arc<
-        ContractInstance<
-            Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
-            SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
-        >,
-    >,
-    pub npc_rent_contrato: Arc<
-        ContractInstance<
-            Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
-            SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
-        >,
-    >,
-    pub npc_access_contrato: Arc<
-        ContractInstance<
-            Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
-            SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
-        >,
-    >,
     pub manija: Handle,
     pub tokens: Option<TokensAlmacenados>,
-    pub estado: Arc<RwLock<EstadoNPC>>,
-    pub ultima_mencion_procesada: Arc<RwLock<DateTime<Utc>>>,
-    pub menciones_procesadas: Arc<RwLock<HashSet<String>>>,
-    pub boudica: bool,
-    pub llama_recibido: Option<String>,
-}
-
-#[derive(Clone, Copy, PartialEq)]
-pub enum EstadoNPC {
-    Activo,
-    Inactivo,
 }
 
 #[derive(Clone)]
@@ -557,10 +474,7 @@ pub struct Imagen {
     pub item: String,
 }
 
-#[derive(Clone)]
-pub struct Llama;
-
-#[derive(PartialEq, Clone, Deserialize, Debug)]
+#[derive(Copy,PartialEq, EnumIter, Clone, Deserialize, Debug)]
 pub enum LensType {
     Catalog,
     Comment,
@@ -626,78 +540,6 @@ impl Tokenizable for LensType {
     }
 }
 
-pub struct Boudica {
-    pub _language: String,
-    pub _pageNumber: u8,
-}
-
-impl Tokenize for Boudica {
-    fn into_tokens(self) -> Vec<Token> {
-        vec![
-            Token::String(self._language).into_token(),
-            Token::Uint(U256::from(self._pageNumber)).into_token(),
-        ]
-    }
-}
-
-pub struct PublicacionPrediccion {
-    pub _locale: String,
-    pub _npcWallet: Address,
-    pub _boudica: bool,
-}
-
-impl Tokenize for PublicacionPrediccion {
-    fn into_tokens(self) -> Vec<Token> {
-        vec![
-            Token::String(self._locale).into_token(),
-            Token::Address(self._npcWallet).into_token(),
-            Token::Bool(self._boudica).into_token(),
-        ]
-    }
-}
-
-#[derive(Debug)]
-pub struct RegisterPub {
-    pub _tensors: String,
-    pub _locale: String,
-    pub _collection: U256,
-    pub _profileId: U256,
-    pub _pubId: U256,
-    pub _pageNumber: u8,
-    pub _lensType: u8,
-    pub _boudica: bool,
-}
-
-// impl Tokenize for RegisterPub {
-//     fn into_tokens(self) -> Vec<Token> {
-//         vec![
-//             Token::String(self._tensors).into_token(),
-//             Token::String(self._locale).into_token(),
-//             Token::Uint(self._collection).into_token(),
-//             Token::Uint(self._profileId).into_token(),
-//             Token::Uint(self._pubId).into_token(),
-//             Token::Uint(U256::from(self._pageNumber)).into_token(),
-//             Token::Bool(self._boudica).into_token(),
-//             self._lensType.into_token(),
-//         ]
-//     }
-// }
-
-impl Tokenize for RegisterPub {
-    fn into_tokens(self) -> Vec<Token> {
-        vec![
-            Token::String(self._tensors),
-            Token::String(self._locale),
-            Token::Uint(self._collection),
-            Token::Uint(self._profileId),
-            Token::Uint(self._pubId),
-            Token::Uint(U256::from(self._pageNumber)),
-            Token::Uint(U256::from(self._lensType)),
-            Token::Bool(self._boudica),
-        ]
-    }
-}
-
 #[derive(Debug)]
 pub struct CustomError {
     details: String,
@@ -734,49 +576,32 @@ pub struct TokensAlmacenados {
     pub expira_en: i64,
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct LlamaOpciones {
-    pub num_keep: i32,
-    pub seed: i32,
-    pub num_predict: i32,
-    pub top_k: i32,
-    pub top_p: f32,
-    pub min_p: f32,
-    pub ctx: i32,
-    pub tfs_z: f32,
-    pub typical_p: f32,
-    pub repeat_last_n: i32,
-    pub temperature: f32,
-    pub repeat_penalty: f32,
-    pub presence_penalty: f32,
-    pub frequency_penalty: f32,
-    pub mirostat: i32,
-    pub mirostat_tau: f32,
-    pub mirostat_eta: f32,
-    pub penalize_newline: bool,
-    pub numa: bool,
-    pub num_tokens: i32,
-    pub num_batch: i32,
-    pub num_gpu: i32,
-    pub main_gpu: i32,
-    pub low_vram: bool,
-    pub f16_kv: bool,
-    pub vocab_only: bool,
-    pub use_mmap: bool,
-    pub use_mlock: bool,
-    pub num_thread: i32,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct LlamaRespuesta {
-    pub response: String,
-    pub json: String,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MetadataAttribute {
     pub key: String,
     #[serde(rename = "type")]
     pub tipo: String,
     pub value: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenAIRespuesta {
+    pub complecion: String,
+    pub modelo: String,
+    pub uso: OpenAIUso,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct OpenAIUso {
+    pub prompt_tokens: i64,
+    pub completion_tokens: i64,
+    pub total_tokens: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Coleccion {
+    pub imagen: String,
+    pub descripcion: String,
+    pub titulo: String,
+    pub coleccion_id: String,
 }

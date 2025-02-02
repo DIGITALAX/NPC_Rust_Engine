@@ -3,4 +3,5 @@ pub mod types;
 pub mod utils;
 pub mod ipfs;
 pub mod lens;
-pub mod llama;
+pub mod ai;
+pub mod graph;

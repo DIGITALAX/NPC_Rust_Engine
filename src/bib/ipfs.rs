@@ -3,21 +3,18 @@ use dotenv::dotenv;
 use reqwest::Client;
 use std::{
     env,
-    sync::{Arc, Once},
+    sync::{Arc, OnceLock},
 };
 
-static INIT: Once = Once::new();
-static mut CLIENTE: Option<Arc<Client>> = None;
+static CLIENTE: OnceLock<Arc<Client>> = OnceLock::new();
 
 pub fn cliente() -> Arc<Client> {
-    unsafe {
-        INIT.call_once(|| {
+    CLIENTE
+        .get_or_init(|| {
             dotenv().ok();
-            let client = Client::new();
-            CLIENTE = Some(Arc::new(client));
-        });
-        CLIENTE.clone().expect("Cliente no es inicializado")
-    }
+            Arc::new(Client::new())
+        })
+        .clone()
 }
 
 pub fn autenticacion() -> String {
