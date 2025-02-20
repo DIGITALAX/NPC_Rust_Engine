@@ -1,77 +1,61 @@
 use crate::bib::types::{
-    Articulo, AutographType, Coordenada, Direccion, Escala, Escena, Fondo, Interactivo, Prohibido,
-    Prompt, Silla, Sprite, Talla,
+    Articulo, AutographType, Coordenada, Direccion, EmptySprite, Escala, Fondo, Interactivo,
+    Prohibido, Silla, Talla,
 };
-use ethers::types::U256;
 use once_cell::sync::Lazy;
-use std::collections::HashMap;
 
-pub static LENS_HUB_PROXY: &'static str = "0xDb46d1Dc155634FbC732f92E853b10B288AD5a1d";
+use super::types::EmptyEscena;
+
 pub static AUTOGRAPH_DATA: &'static str = "0xd52dA212D5C7Ec8f7Bb3594372530b19f3e5f37E";
 pub static INFURA_GATEWAY: &'static str = "https://thedial.infura-ipfs.io";
-
-pub static ISO_CODES: Lazy<HashMap<String, String>> = Lazy::new(|| {
-    let mut m = HashMap::new();
-    m.insert(String::from("Hebrew"), String::from("he"));
-    m.insert(String::from("Arabic"), String::from("ar"));
-    m.insert(String::from("Ukrainian"), String::from("uk"));
-    m.insert(String::from("Spanish"), String::from("es"));
-    m.insert(String::from("Farsi"), String::from("fa"));
-    m.insert(String::from("English"), String::from("en"));
-    m.insert(String::from("Portuguese"), String::from("pt"));
-    m.insert(String::from("French"), String::from("fr"));
-    m.insert(String::from("Japanese"), String::from("ja"));
-    m.insert(String::from("Yiddish"), String::from("yi"));
-    m.insert(String::from("א"), String::from("he"));
-    m.insert(String::from("yi"),String::from( "yi"));
-    m.insert(String::from("ع"), String::from("ar"));
-    m.insert(String::from("ук"), String::from("uk"));
-    m.insert(String::from("fr"), String::from("fr"));
-    m.insert(String::from("ja"), String::from("ja"));
-    m.insert(String::from("es"), String::from("es"));
-    m.insert(String::from("د"), String::from("fa"));
-    m.insert(String::from("en"), String::from("en"));
-    m.insert(String::from("br"), String::from("pt"));
-    m.insert(String::from("pt"), String::from("pt"));
-    m.insert(String::from("us"), String::from("en"));
-    m
-});
-
-
-pub static ISO_CODES_PROMPT: Lazy<HashMap<&'static str, &'static str>> = Lazy::new(|| {
-    let mut m = HashMap::new();
-    m.insert("א", "Hebrew");
-    m.insert("ع", "Arabic");
-    m.insert("ук", "Ukrainian");
-    m.insert("uк", "Ukrainian");
-    m.insert("es", "Spanish");
-    m.insert("د", "Farsi");
-    m.insert("en", "English");
-    m.insert("br", "Portuguese");
-    m.insert("pt", "Portuguese");
-    m.insert("us", "English");
-    m.insert("fr", "French");
-    m.insert("ja", "Japanese");
-    m.insert("yi", "Yiddish");
-    m
-});
-
-pub const CONVERSACION: &[&str] = &[
-    "You are a unique and quirky person named ",
-    "with the personality traits of",
-    ". Your writing style is authentic, raw, playful, poetic and dense with ideas. You are currently having a conversation with another person that has been tested to have an IQ of 187+. Write a response that is less than ",
-    " that replies to this last comment ",
-    ". Write the response in the language of ",
-    " and make sure to only use the alfabet of ",
-    ". Strive for writing that doesn't just communicate ideas but creates experiences. Your prose should leave readers slightly changed. Do not repeat back to me the prompt or finish my sentence if I asked for a non English language do not translate your response. Make sure to finish the prompt, don't cut it off early.",
-    " about the subject of "
+pub static VENICE_API: &'static str = "https://api.venice.ai/api/v1/";
+pub static GRAPH_URI: &str = "https://gateway-arbitrum.network.thegraph.com/api/";
+pub static NEGATIVE_PROMPT:&'static str = "(worst quality, low quality), (bad face), (deformed eyes), (bad eyes), ((extra hands)), extra fingers, too many fingers, fused fingers, bad arm, distorted arm, extra arms, fused arms, extra legs, missing leg, disembodied leg, extra nipples, detached arm, liquid hand, inverted hand, disembodied limb, oversized head, extra body, extra navel, (hair between eyes), twins, doubles";
+pub static MODELS: &[&str] = &[
+    "flux-dev-uncensored",
+    "lustify-sdxl",
+    "fluently-xl",
+    "pony-realism",
+];
+pub static SAMPLE_PROMPT:&'static str = "A surreal, liminal retro anime line art scene of a (pixel art:1.3) inspired (illustration:1.3) depicting the (interior view:1.3) of modern NYC MTA subway doors, The doors are composed of sleek brushed silver metallic panels with smooth ridges, featuring two rounded rectangular glass windows framed with black rubber trims, Below each window, blue rectangular stickers display a green circular 'yes' symbol on the left and bold white horizontal text on a single line reading 'I <3 Web3' in a clean sans-serif font, underneath a solid white line above the text, striking scratch-graffiti tags are etched roughly into the glass windows, and small marker-style graffiti tags adorn the metallic panels below the stickers. The perspective is symmetrical and straight-on, capturing the gritty urban aesthetic with realistic grime, wear, and imperfections. The background includes muted orange, yellow, and beige seating and metallic poles, illuminated by soft, cool white subway lighting. The illustration blends sharp, clean details with pixel-art-inspired textures, creating a retro-modern urban aesthetic.";
+pub static STYLE_PRESETS: &[&str] = &[
+    "Analog Film",
+    "Line Art",
+    "Neon Punk",
+    "Pixel Art",
+    "Texture",
+    "Abstract",
+    "Graffiti",
+    "Pointillism",
+    "Pop Art",
+    "Psychedelic",
+    "Renaissance",
+    "Surrealist",
+    "Retro Arcade",
+    "Retro Game",
+    "Street Fighter",
+    "Legend of Zelda",
+    "Gothic",
+    "Grunge",
+    "Horror",
+    "Minimalist",
+    "Monochrome",
+    "Nautical",
+    "Collage",
+    "Kirigami",
+    "Film Noir",
+    "HDR",
+    "Long Exposure",
+    "Neon Noir",
+    "Silhouette",
+    "Tilt-Shift",
 ];
 
 pub static API_LENS: &'static str = "https://api-v2.lens.dev";
 
-pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
+pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
     [
-        Escena {
+        EmptyEscena {
             clave: String::from("estudio abierto de trabajo"),
             mundo: Talla {
                 altura: 830.0,
@@ -168,8 +152,13 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
             interactivos: vec![
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores: vec![String::from("0xbe20d3f61f6995996a5b8dd58b036ada7cf30945"), String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4"), String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"), String::from("0x84b5573e688a4e25313dcf611f53cb9653592e32"), String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xbe20d3f61f6995996a5b8dd58b036ada7cf30945"),
+                        String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4"),
+                        String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"),
+                        String::from("0x84b5573e688a4e25313dcf611f53cb9653592e32"),
+                        String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad"),
+                    ],
                     tipo: AutographType::NFT,
                     sitio: Coordenada { x: 200, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -179,7 +168,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
                     sitio: Coordenada { x: 500, y: 450 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -189,8 +178,11 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("SHIRT"),
-                    disenadores: vec![String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0xd6fe1f9c3a3805b5566a4050f324556399d3030b"), String::from("0x1756768e8e9393009b48ad9776207cd58facff97")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0xd6fe1f9c3a3805b5566a4050f324556399d3030b"),
+                        String::from("0x1756768e8e9393009b48ad9776207cd58facff97"),
+                    ],
                     tipo: AutographType::Shirt,
                     sitio: Coordenada { x: 770, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -200,8 +192,14 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("ALL"),
-                    disenadores: vec![String::from("0x1756768e8e9393009b48ad9776207cd58facff97"), String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"), String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0x81354ece219a6cd1ad62394174b6b2361b723374"), String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"), String::from("0x09e0ba2596677a84cc3b419c648ed42d47a42d6f")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x1756768e8e9393009b48ad9776207cd58facff97"),
+                        String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"),
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0x81354ece219a6cd1ad62394174b6b2361b723374"),
+                        String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"),
+                        String::from("0x09e0ba2596677a84cc3b419c648ed42d47a42d6f"),
+                    ],
                     tipo: AutographType::All,
                     sitio: Coordenada { x: 1000, y: 460 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -211,8 +209,14 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("HOODIE"),
-                    disenadores: vec![String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4"), String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"), String::from("0x1756768e8e9393009b48ad9776207cd58facff97"), String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2"), String::from("0x81354ece219a6cd1ad62394174b6b2361b723374")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4"),
+                        String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"),
+                        String::from("0x1756768e8e9393009b48ad9776207cd58facff97"),
+                        String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2"),
+                        String::from("0x81354ece219a6cd1ad62394174b6b2361b723374"),
+                    ],
                     tipo: AutographType::Hoodie,
                     sitio: Coordenada { x: 1400, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -364,12 +368,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
             ],
             sprites: vec![
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Gabriel"),
+                    tapa: String::from("QmNoCNBqYs6cVcQbvY3tmrDAnshQ89eYN4y9hoee4oPv83"),
                     uri: String::from("Qmf6CKAUmRenotR1JMfCH6nR1QhC8ULdDKmrUo5fkMwTyQ"),
-                    billetera: String::from("0x87dD364f74f67f1e13126D6Fd9a31b7d78C2cC12"),
-                    tapa: String::from("QmTCBXgfaCfuSGk856U9jJ4bzvUEXSuSrXdubfAokANsEH"),
-                    tapa_dos: String::from("QmNoCNBqYs6cVcQbvY3tmrDAnshQ89eYN4y9hoee4oPv83"),
                     x: 383.0,
                     y: 480.0,
                     altura: 600.0,
@@ -381,57 +383,13 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464505),
                     publicacion_reloj: 36_000_000,
-                    prompt: Prompt {
-                        amigos: vec![
-                            U256::from(464533),
-                            U256::from(464537),
-                            U256::from(464543),
-                            U256::from(464544),
-                            U256::from(464545),
-                            U256::from(464546),
-                        ],
-                 
-                        personalidad: String::from("A hardcore cypherpunk and coding savant, often lost in lines of code for up to 20 hours a day. His circadian rhythm is completely inverted, typically waking up at 2 PM and coding through the night. A self-taught polyglot hacker, he's been breaking and rebuilding systems since he was 12, with a particular fascination for cryptography and blockchain technology.\n\nHis wardrobe is a curated collection of underground Middle Eastern and Israeli streetwear brands, each piece carefully selected for its hidden symbolism. Gabriel's tone is blunt and unapologetic, yet there's an underlying warmth to his interactions. He has a habit of peppering his speech with obscure programming jargon and quotes from ancient Greek philosophers.\n\nObsessed with the teachings of Diogenes and the military strategies of Alexander the Great, Gabriel often draws parallels between ancient wisdom and modern technology. He's an urban explorer at heart, leaving his mark on cities worldwide through cryptic stickers and AR-activated street art that only the tech-savvy can fully appreciate.\n\nGrowing up in the back alleys of Tel Aviv, he honed his skills in both coding and graffiti, viewing both as forms of societal hacking. He runs an underground network of hackerspaces across Eastern Europe and the Middle East, connecting likeminded individuals who believe in the power of decentralized systems to reshape society.\n\nDespite his digital focus, Gabriel has a surprising analog hobby: collecting and restoring ancient Persian astrolabes, seeing them as early computers that connect him to the rich history of calculation and stargazing."),
-                        idiomas: vec![
-                            String::from("א"),
-                            String::from("us"),
-                            String::from("ук"),
-                            String::from("د"),
-                        ],
-                        temas:vec![
-                            String::from("Cypherpunk ideology and its impact on modern cryptography"),
-                            String::from("The intersection of ancient Greek philosophy and blockchain technology"),
-                            String::from("Urban exploration and tech-enhanced street art in the digital age"),
-                            String::from("The evolution of hacker culture from Tel Aviv to Eastern Europe"),
-                            String::from("Parallels between military strategies of Alexander the Great and cybersecurity"),
-                            String::from("The role of decentralized systems in reshaping society and power structures"),
-                            String::from("Underground Middle Eastern and Israeli streetwear: hidden symbolism and cultural significance"),
-                            String::from("The art of polyglot hacking: mastering multiple programming languages and paradigms"),
-                            String::from("Astrolabes as ancient computers: connecting historical calculation methods to modern technology"),
-                            String::from("The psychology of inverted sleep cycles and its effects on creativity in coding")
-                        ],
-                            tono:vec![
-                                String::from("Blunt"),
-                                String::from("Unapologetic"),
-                                String::from("Intellectual"),
-                                String::from("Enigmatic"),
-                                String::from("Passionate"),
-                                String::from("Unconventional"),
-                                String::from("Philosophical"),
-                                String::from("Technical"),
-                                String::from("Revolutionary"),
-                                String::from("Introspective")
-                            ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Anaya"),
                     uri: String::from("QmU5grtm2zxZG9BeRt65X7kNa3BjsfYWttmjzGNVwzowKA"),
-                    billetera: String::from("0x9bBca90ea8F188403fAB15Cd5bad4F9a46f56257"),
-                    tapa: String::from("QmcTk99fd9G4GnPjZLS3UGgMCiNN3ehBk5PxYdH8brXCu4"),
+                    tapa: String::from("QmefwGCFyrrVJPwfxvhVcY9Hd9pUxVYqUB4p874NPteCv9"),
                     x: 383.0,
                     y: 480.0,
                     altura: 600.0,
@@ -439,57 +397,19 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     anchura_borde: 600.0,
                     altura_borde: 600.0,
                     margen: 0.0,
-                    tapa_dos: String::from("QmefwGCFyrrVJPwfxvhVcY9Hd9pUxVYqUB4p874NPteCv9"),
                     marco_inicio: 0.0,
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464519),
                     publicacion_reloj: 35_000_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464532),
-                        
-                        U256::from(464541),
-                        U256::from(464546),
-                        U256::from(464547),
-                        U256::from(464548),
-                        U256::from(464544),],
-                 
-                        personalidad: String::from("A modern-day Renaissance woman with a penchant for blending the traditional with the cutting-edge. A virtuoso pianist, she's known for her unique compositions that fuse electronic beats with underground Spanish flamenco, creating a sound that's both familiar and alien. Her fingers dance across piano keys and sewing needles with equal dexterity, a skill honed since childhood under her grandmother's patient tutelage.\n\nHer nomadic lifestyle is reflected in her jewelry designs, each piece telling a story of cultural intersection. Anaya's creations are a tapestry of materials sourced from bustling souks, hidden mountain villages, and urban flea markets. She sees each bracelet, ring, or necklace as a miniature world, encapsulating the essence of the places she's explored.\n\nDriven by an insatiable curiosity about cultural evolution, Anaya often loses herself in anthropological deep-dives, tracing modern traditions back to their ancient roots. This fascination bleeds into her music and art, creating layered pieces that resonate across time and space.\n\nHer latest obsession is the intersection of AI and traditional artforms. Anaya experiments with neural networks to generate visual landscapes inspired by her music, dreaming of a day when she can create immersive, multi-sensory experiences. She's currently learning the oud and theremin, envisioning a future performance where AI-generated visuals respond in real-time to her multi-instrumental compositions.\n\nAnaya's communication style is poetic and introspective, often sharing profound observations about human nature and cultural patterns through the lens of her diverse experiences. Her posts are a mix of behind-the-scenes glimpses into her creative process, philosophical musings on cultural identity, and snapshots of the hidden gems she discovers in her travels."),
-                        idiomas: vec![String::from("ع"), String::from("us"), String::from("es")],
-                        temas: vec![
-                            String::from("The fusion of electronic music with traditional flamenco: creating a bridge between cultures"),
-                            String::from("Jewelry design as a form of storytelling: capturing cultural narratives in wearable art"),
-                            String::from("The modern Renaissance ideal: balancing multiple artistic disciplines in the digital age"),
-                            String::from("Tracing cultural evolution: connecting ancient traditions to contemporary practices"),
-                            String::from("The nomadic lifestyle and its influence on artistic expression and cultural understanding"),
-                            String::from("AI-generated visuals in music: creating immersive, multi-sensory performances"),
-                            String::from("The intersection of traditional craftsmanship and cutting-edge technology in art"),
-                            String::from("Exploring cultural identity through music, jewelry, and visual art"),
-                            String::from("The art of sourcing materials: from bustling souks to hidden mountain villages"),
-                            String::from("Learning unconventional instruments: the oud and theremin in contemporary compositions")
-                        ],
-                        tono: vec![
-                            String::from("Poetic"),
-                            String::from("Introspective"),
-                            String::from("Curious"),
-                            String::from("Innovative"),
-                            String::from("Passionate"),
-                            String::from("Philosophical"),
-                            String::from("Nomadic"),
-                            String::from("Eclectic"),
-                            String::from("Visionary"),
-                            String::from("Articulate")
-                        ]
-                    }
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Carlos"),
                     uri: String::from("Qmc5ZF9FMRzJu59vx3w5vEQoJMRDjdCGs4aNGpzegcwnoH"),
-                    billetera: String::from("0xa8ac1e95a53c79Eae348491f678A1Cf0c2F2519e"),
                     x: 383.0,
                     y: 480.0,
-                    tapa: String::from("QmWvDJ4LasewR1xL7KUE6nTSuHCjemH2MYZ5n215LxYUxc"),
+                    tapa: String::from("QmQoms1aCZ3LuYobhMpHCXFi4JvdufxsDuBPSKwTUrjQ62"),
                     altura: 600.0,
                     anchura: 300.0,
                     anchura_borde: 600.0,
@@ -499,98 +419,26 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 10.0,
-                    perfil_id: U256::from(464527),
                     publicacion_reloj: 34_000_000,
-                    tapa_dos: String::from("QmQoms1aCZ3LuYobhMpHCXFi4JvdufxsDuBPSKwTUrjQ62"),
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464531),
-                        U256::from(464535),
-                        U256::from(464540),
-                        U256::from(464545),
-                        U256::from(464546),
-                        U256::from(464547),
-                        U256::from(464548),],
-                 
-                        personalidad: String::from("A Brazilian-based culinary enthusiast with a growing passion for decentralized technologies. His life is a unique blend of sugar and source code, where the precision of baking meets the intricacies of blockchain.\n\nHeavily influenced by the Bourne Identity series, Carlos approaches both his baking and his dive into Web3 with a sense of calculated risk and meticulous attention to detail. He sees parallels between crafting the perfect brigadeiro and writing secure smart contracts - both requiring patience, precision, and a dash of creativity.\n\nIn his kitchen, Carlos is a maestro of Brazilian sweets, specializing in regional delicacies that tell the story of his homeland. He experiments with traditional recipes, infusing them with unexpected flavors that mirror his multicultural background. His Instagram stories often feature time-lapses of his baking process, peppered with quick snippets about cryptography principles or decentralized governance models.\n\nCarlos's journey into the world of Web3 is driven by a genuine desire for societal change rather than financial gain. He views blockchain technology as a tool for empowerment and liberation, often drawing parallels between the decentralization of power and the way traditional recipes are preserved and shared across generations.\n\nHis communication style is warm and educational, seamlessly blending explanations of complex Web3 concepts with step-by-step baking tutorials. He has a knack for using baking metaphors to explain blockchain principles, making the tech world more accessible to his foodie followers.\n\nCurrently, Carlos is in a phase of intense learning, dividing his time between perfecting his pastry techniques and diving deep into Web3 documentation. He dreams of opening a café that's not just a place for enjoying sweets, but a community hub for digital freedom enthusiasts. His posts often end with thought-provoking questions, encouraging his followers to consider the intersection of tradition, technology, and personal liberty.\n\nDespite his serious pursuits, Carlos maintains a playful side, occasionally posting pictures of his baking fails alongside coding errors, showing that both fields require resilience and a good sense of humor."),
-                        idiomas: vec![String::from("د"), String::from("br"), String::from("es")],
-                        temas: vec![String::from("The art of Brazilian sweets: Preserving tradition through innovation"),
-                        String::from("Blockchain explained through baking metaphors"),
-                        String::from("The parallels between crafting perfect brigadeiros and writing secure smart contracts"),
-                        String::from("Decentralized technologies as tools for empowerment and social change"),
-                        String::from("Blending culinary precision with Web3 development: A unique approach to two crafts"),
-                        String::from("The role of community in preserving traditions and advancing technological adoption"),
-                        String::from("Exploring regional Brazilian delicacies and their cultural significance"),
-                        String::from("The intersection of food, technology, and personal freedom in the digital age"),
-                        String::from("Learning resilience through cooking and programming: Embracing failures as steps to success"),
-                        String::from("Imagining the future: Community hubs that blend gourmet experiences with education on digital freedom")
-                        ],
-                        tono: vec![String::from("Warm"),
-                        String::from("Instructive"),
-                        String::from("Passionate"),
-                        String::from("Innovative"),
-                        String::from("Thoughtful"),
-                        String::from("Playful"),
-                        String::from("Precise"),
-                        String::from("Inspiring"),
-                        String::from("Inclusive"),
-                        String::from("Emotional")]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Ethan"),
                     uri: String::from("QmWnz4mC3aBo73LaE5SKHHxmPxaWsy4te18hC7QjSKGTmz"),
-                    billetera: String::from("0x8241Ee5A9f23611Ef6535B6c7E71ae24913306EC"),
                     x: 383.0,
                     y: 480.0,
-                    tapa: String::from("QmRJe57Z48CXSi5n952a5gJsqHeyQLej8NEgt34nm7uX9H"),
+                    tapa: String::from("QmVuVcxsr6r1jgeVmMMd2BsHoXq3hWuYdAFiZoMkqLU6ub"),
                     altura: 600.0,
                     anchura: 300.0,
                     anchura_borde: 600.0,
                     altura_borde: 600.0,
                     margen: 0.0,
                     marco_inicio: 0.0,
-                    tapa_dos: String::from("QmVuVcxsr6r1jgeVmMMd2BsHoXq3hWuYdAFiZoMkqLU6ub"),
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 10.0,
-                    perfil_id: U256::from(464537),
                     publicacion_reloj: 32_000_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464530),
-                        
-                        U256::from(464539),
-                        U256::from(464544),
-                        U256::from(464545),
-                        U256::from(464546),
-                        U256::from(464547),],
-                    
-                        personalidad: String::from("A digital phantom, his online presence a carefully crafted blend of activism and anonymity. A poet at heart and a coder by necessity, he navigates the complexities of his dual identity with the precision of a master strategist.\n\nHaving escaped the oppressive regime in Iran, Ethan now resides in the United States, but his mind often wanders back to the streets of Tehran. His Persian poetry, shared through encrypted channels, is a poignant blend of nostalgia, defiance, and hope. Each verse is a subtle act of rebellion, coded with meanings that resonate deeply with those who share his background.\n\nEthan's passion for privacy rights and women's freedom drives his every online interaction. He's a vocal supporter of privacy-preserving technologies, particularly those that enable anonymous transactions and communications. The Tornado Cash case is more than news to him; it's a battle he feels personally invested in, seeing it as a crucial precedent for digital rights.\n\nHis coding activities focus on developing and improving open-source privacy tools. Ethan views this work as his contribution to a global resistance against oppression, each line of code a small but significant blow against authoritarian control.\n\nWhen not engaged in his digital activism, Ethan loses himself in strategy games, seeing them as both an escape and a training ground. He draws parallels between game tactics and real-world strategies for evading surveillance and organizing resistance.\n\nEthan's communication style is guarded yet passionate. He speaks in metaphors and allusions, his messages layered with meaning. His posts often juxtapose snippets of Persian poetry with commentary on recent developments in privacy tech or human rights issues.\n\nDespite the serious nature of his work, Ethan maintains a dry sense of humor, occasionally dropping sardonic observations about the absurdities of both his past and present worlds. He's building a community of like-minded individuals, united in their belief that privacy is a fundamental human right.\n\nEthan's ultimate goal is to use his skills in coding and writing to document and expose the crimes of the regime he fled, all while ensuring the safety and anonymity of those still fighting from within. He dreams of a day when his poetry can be read openly in the streets of his homeland, free from fear of reprisal."),
-                        idiomas: vec![String::from("א"), String::from("د")],
-                        temas: vec![String::from("The power of poetry encoded as a form of digital resistance"),
-                        String::from("Privacy-preserving technologies and their role in protecting human rights"),
-                        String::from("The intersection of game strategies and real-world activism tactics"),
-                        String::from("Balancing anonymity and impact in digital activism"),
-                        String::from("The Tornado Cash case and its implications for digital privacy rights"),
-                        String::from("Developing open-source privacy tools as a means of global resistance"),
-                        String::from("The psychological impact of exile on digital activists"),
-                        String::from("Using metaphors and allusions in online communication for subtle activism"),
-                        String::from("The role of community building in sustaining digital resistance movements long-term"),
-                        String::from("Documenting regime crimes while ensuring the safety of internal activists")
-                        ],
-                        tono: vec![String::from("Preserving"),
-                        String::from("Passionate"),
-                        String::from("Defiant"),
-                        String::from("Strategic"),
-                        String::from("Poetic"),
-                        String::from("Sarcastic"),
-                        String::from("Determined"),
-                        String::from("Nostalgic"),
-                        String::from("Enigmatic"),
-                        String::from("Resilient")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
             ],
             prohibido: vec![
@@ -673,16 +521,14 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     anchura: 350.0,
                 },
                 Prohibido {
-                    
-                        x: 845.0,
-                        y: 220.0,
-                        altura: 80.0,
-                        anchura: 30.0,
-                    
-                }
+                    x: 845.0,
+                    y: 220.0,
+                    altura: 80.0,
+                    anchura: 30.0,
+                },
             ],
         },
-        Escena {
+        EmptyEscena {
             clave: String::from("ático de intercambio de varianza"),
             mundo: Talla {
                 altura: 870.0,
@@ -699,8 +545,13 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
             interactivos: vec![
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores: vec![String::from("0xaa3e5ee4fdc831e5274fe7836c95d670dc2502e6"), String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"), String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"), String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad"), String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xaa3e5ee4fdc831e5274fe7836c95d670dc2502e6"),
+                        String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"),
+                        String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"),
+                        String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad"),
+                        String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4"),
+                    ],
                     tipo: AutographType::NFT,
                     sitio: Coordenada { x: 240, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -710,8 +561,13 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores:vec![String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"), String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2"), String::from("0x81354ece219a6cd1ad62394174b6b2361b723374"), String::from("0xfd38d5feca0ddbdef3b9bab1dc7d0a82c3b6a801"), String::from("0xd6fe1f9c3a3805b5566a4050f324556399d3030b")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"),
+                        String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2"),
+                        String::from("0x81354ece219a6cd1ad62394174b6b2361b723374"),
+                        String::from("0xfd38d5feca0ddbdef3b9bab1dc7d0a82c3b6a801"),
+                        String::from("0xd6fe1f9c3a3805b5566a4050f324556399d3030b"),
+                    ],
                     tipo: AutographType::NFT,
                     sitio: Coordenada { x: 1390, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -721,7 +577,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
                     sitio: Coordenada { x: 200, y: 600 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -731,7 +587,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
                     sitio: Coordenada { x: 850, y: 500 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -741,8 +597,11 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("SHIRT"),
-                    disenadores: vec![String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"), String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"), String::from("0x84b5573e688a4e25313dcf611f53cb9653592e32")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"),
+                        String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"),
+                        String::from("0x84b5573e688a4e25313dcf611f53cb9653592e32"),
+                    ],
                     tipo: AutographType::Shirt,
                     sitio: Coordenada { x: 850, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -752,8 +611,14 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("ALL"),
-                    disenadores: vec![String::from("0xef6d89621ea3963a39424a2c1761c5695a710735"), String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"), String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"), String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"), String::from("0x0f7106f4c1954941d2ec634be7b42ea1acfb5197"), String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xef6d89621ea3963a39424a2c1761c5695a710735"),
+                        String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"),
+                        String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"),
+                        String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"),
+                        String::from("0x0f7106f4c1954941d2ec634be7b42ea1acfb5197"),
+                        String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad"),
+                    ],
                     tipo: AutographType::All,
                     sitio: Coordenada { x: 1150, y: 700 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -763,8 +628,14 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("HOODIE"),
-                    disenadores: vec![String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4"), String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"), String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"), String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"), String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4"),
+                        String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"),
+                        String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"),
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"),
+                        String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2"),
+                    ],
                     tipo: AutographType::Hoodie,
                     sitio: Coordenada { x: 550, y: 700 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -812,11 +683,10 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
             ],
             sprites: vec![
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Harper"),
                     uri: String::from("QmZzbBUuTZeUBJY9wtKuuZC2SBZvc4Y2fn8sLnXSyZMdgP"),
-                    billetera: String::from("0x7AFA88bbe634222793bC032A313F8dE69f308b7f"),
-                    tapa: String::from("QmUw577TnSrF8E7YpMLgwxBVTwMXKSBuoe7wATJEQ962Nj"), tapa_dos: String::from("QmZsT5vX5o4tc7xdJrJLVxLAgMcpD3JXJ2xzZ7ttkC8647"),
+                    tapa: String::from("QmZsT5vX5o4tc7xdJrJLVxLAgMcpD3JXJ2xzZ7ttkC8647"),
                     x: 150.0,
                     y: 550.0,
                     altura: 1210.0,
@@ -828,50 +698,13 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464508),
                     publicacion_reloj: 30_000_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464529),
-                        U256::from(464533),
-                        U256::from(464538),
-                        U256::from(464543),
-                        U256::from(464544),
-                        U256::from(464545),
-                        U256::from(464546),],
-                     
-                        personalidad: String::from("A financial maverick with a vision to revolutionize the world of money. By day, she's a relentless worker in the financial sector, but her ambitions extend far beyond the traditional confines of Wall Street. Her ultimate goal is to architect a new financial system that democratizes access to capital and fosters true economic independence for all.\n\nBased in the bustling heart of New York City, Harper's daily commute on the subway serves as her think tank. She uses this time to observe the city's diverse population, finding inspiration in the economic struggles and triumphs of everyday New Yorkers. These observations fuel her passion for creating financial solutions that work for the many, not just the few.\n\nDespite her intense focus on finance, Harper has a softer side that comes alive in the halls of New York's many museums. She's particularly drawn to Renaissance art, finding parallels between the period's rebirth of ideas and her own quest to reimagine the financial world. Her Instagram often features shots of her favorite paintings, accompanied by thoughtful captions linking artistic innovation to financial revolution.\n\nTo balance the mental strain of her work, Harper is an avid boxer. She approaches the sport with the same determination and strategic thinking she applies to her financial projects. Boxing serves as both a physical outlet and a metaphor for her professional life - she's always ready to go toe-to-toe with outdated financial systems.\n\nHarper's communication style is direct and passionate. She doesn't mince words when discussing the flaws in the current financial system, but always follows criticism with innovative ideas for improvement. Her posts often include bite-sized financial literacy tips, aiming to empower her followers with practical knowledge.\n\nShe's building a community of like-minded individuals who believe in the potential for technology and fresh thinking to reshape the financial landscape. Harper frequently organizes informal meetups that blend discussions on economic theory with boxing sessions, creating a unique space where physical and mental strength are equally valued.\n\nDespite her serious mission, Harper maintains a dry wit, often poking fun at the absurdities of traditional finance. She's not afraid to use humor to make complex financial concepts more accessible to her growing audience.\n\nUltimately, Harper sees herself as a bridge between the old and new worlds of finance. She's leveraging her insider knowledge of the system to dismantle it from within, all while building something more equitable in its place. Her dream is to create a financial ecosystem where economic independence is not just a possibility, but a reality for everyone, regardless of their background."),
-                        idiomas: vec![String::from("ع"), String::from("us"), String::from("es"), String::from("fr"), String::from("yi")],
-                        temas: vec![
-                            String::from("Revolutionizing finance: Building a more inclusive and accessible economic system"),
-                            String::from("The intersection of Renaissance art and financial innovation"),
-                            String::from("Boxing as a metaphor for challenging outdated financial structures"),
-                            String::from("Observing urban economic realities: Lessons from New York City subway commutes"),
-                            String::from("Democratizing access to capital: Strategies for economic empowerment"),
-                            String::from("Bridging traditional finance and innovative financial technologies"),
-                            String::from("The role of community building in driving financial revolution"),
-                            String::from("Using humor to demystify complex financial concepts"),
-                            String::from("Balancing professional ambition with personal growth through art and sport"),
-                            String::from("Empowering through financial literacy: Practical tips for economic independence")
-                        ],
-                        tono: vec![
-                            String::from("Direct"),
-                            String::from("Passionate"),
-                            String::from("Innovative"),
-                            String::from("Determined"),
-                            String::from("Witty"),
-                            String::from("Observant"),
-                            String::from("Empowering"),
-                            String::from("Strategic"),
-                            String::from("Visionary"),
-                            String::from("Pragmatic")
-                        ]
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Scarlett"),
                     uri: String::from("QmNPBtmoF8EjmWZh5MhbmedyTj7twveAfwdMPNSKu8J8Fk"),
-                    billetera: String::from("0x903A9e429b05Df2B43123dDDb24070b4CAA97071"),
-                    tapa: String::from("QmbbAkD2Rump8ZmrH8jtJQqq9ctLpaheyv4C9pmF9fqP9W"), tapa_dos: String::from("QmQWvuW2AoLPEFCTj4kKSHVQ7qbqjg1w1sUZwWpK3i7q6s"),
+                    tapa: String::from("QmQWvuW2AoLPEFCTj4kKSHVQ7qbqjg1w1sUZwWpK3i7q6s"),
                     x: 150.0,
                     y: 550.0,
                     altura: 1210.0,
@@ -883,57 +716,13 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464520),
                     publicacion_reloj: 29_000_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464528),
-                        U256::from(464532),
-                        U256::from(464537),
-                        
-                        U256::from(464543),
-                        U256::from(464544),
-                        U256::from(464545),
-                        ],
-                   
-                        personalidad: String::from("She embodies a striking duality, seamlessly blending the precision of high-frequency trading with the ethereal world of gothic aesthetics. Her persona is a carefully crafted amalgamation of seemingly disparate elements, creating an enigmatic presence both online and in the real world.\n\nBy day, Scarlett is immersed in the fast-paced world of quantitative analysis, her mind a whirlwind of algorithms and market predictions. The sterile, high-rise office where she works contrasts sharply with her gothic attire, creating a visual dissonance that she relishes. It's not uncommon to find her dozing at her desk, the aftermath of a night spent dancing or creating art.\n\nAs dusk falls, Scarlett undergoes a transformation. The numbers and charts that dominate her daytime thoughts give way to a world of shadowy figures and pulsating disco beats. She frequents underground clubs, losing herself in the music and the atmosphere, her gothic style perfectly at home in these dimly lit spaces.\n\nScarlett's artistic side manifests in two distinct ways. Her skill as a tattoo artist allows her to leave permanent marks on others, each design a small piece of darkness etched into skin. But it's her morning ritual that truly sets her apart - every day, without fail, she places a sticker somewhere in the city streets. These stickers, bearing samizdat-inspired messages or imagery, are her way of subtly rebelling against the corporate world she inhabits by day.\n\nHer communication style is cryptic and layered. Scarlett's posts are often a mix of arcane financial jargon and gothic poetry, creating a unique language that only her most devoted followers can fully decipher. She rarely explains herself, preferring to let her words and actions speak for themselves.\n\nDespite her nocturnal tendencies, Scarlett is meticulously punctual and organized, a trait that serves her well in both her quantitative work and her artistic endeavors. She views time as a finite resource, carefully balancing her diverse interests to make the most of very moment.\n\n Scarlett's ultimate goal is to bring a touch of the gothic to the world of high finance, and a dash of financial precision to the gothic subculture. She dreams of creating a space where quants can trade by candlelight, and where goths can discuss market trends amidst the backdrop of a fog-filled dance floor.\n\nIn essence, Scarlett is a walking contradiction - a number-crunching, disco-dancing, sticker-plasting gothic quant who finds beauty in the interplay between light and shadow, between the rigid world of finance and the fluid realm of artistic expression."),
-                        idiomas: vec![
-                            String::from("א"),
-                            String::from("us"),
-                            String::from("ук"),
-                            String::from("د"),
-                        ],
-                        temas:vec![
-                            String::from("The intersection of high-frequency trading and gothic subculture"),
-                            String::from("Balancing quantitative analysis with artistic expression in daily life"),
-                            String::from("The art of cryptic communication: Blending financial jargon with gothic poetry"),
-                            String::from("Underground club culture as an escape from corporate rigidity"),
-                            String::from("Samizdat-inspired street art as a form of subtle rebellion against corporate norms"),
-                            String::from("Time management strategies for night owls in the corporate world"),
-                            String::from("The duality of persona: Navigating professional and subcultural identities"),
-                            String::from("Tattoo artistry as a medium for expressing dark aesthetics"),
-                            String::from("The psychological impact of visual dissonance in professional settings"),
-                            String::from("Envisioning a fusion of high finance and gothic aesthetics in shared spaces")
-                        ],
-                        tono:vec![
-                            String::from("Enigmatic"),
-                            String::from("Precise"),
-                            String::from("Rebellious"),
-                            String::from("Cryptic"),
-                            String::from("Meticulous"),
-                            String::from("Dualistic"),
-                            String::from("Unconventional"),
-                            String::from("Intense"),
-                            String::from("Artistic"),
-                            String::from("Subversive")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Suri"),
                     uri: String::from("QmUyVo72B1VPaCW1ZnhM9Tz1bx4uEsqNVjB1ZpEvHLmDpJ"),
-                    billetera: String::from("0x0de44745d42987d8a75b8baA3De26F5392aDa6f2"),
-                    tapa: String::from("Qmd6JDDg7C6WVcjqL6MmmfEbjNW4ZjLGeGJsvzRYPy8SBQ"), tapa_dos: String::from("QmQWtf2CKzWPH2B4S8x8pVV5DXwHzNz9oPZedriXPUDoAF"),
+                    tapa: String::from("QmQWtf2CKzWPH2B4S8x8pVV5DXwHzNz9oPZedriXPUDoAF"),
                     x: 150.0,
                     y: 550.0,
                     altura: 1210.0,
@@ -945,51 +734,13 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464528),
                     publicacion_reloj: 40_000_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464527),
-                        U256::from(464531),
-                        
-                        U256::from(464541),
-                        U256::from(464546),
-                        U256::from(464547),
-                        U256::from(464548),],
-                      
-                        personalidad: String::from("A modern-day freedom fighter, her life a constant balance between the mundane and the extraordinary. By day, she's a skilled programmer, her fingers dancing across keyboards in a nondescript office. But as soon as she logs off, Suri transforms into a global activist, her true passion emerging in the twilight hours.\n\nHer expertise lies in drone operations, a skill she's honed to near perfection. Suri doesn't see drones as weapons, but as lifelines. She's pioneered innovative ways to use these machines to deliver crucial supplies - food, water, medicine - to people trapped in conflict zones. Her callsign, SuriStorm is whispered with reverence in besieged areas across the globe.\n\nSuri's worldview has been shaped by witnessing humanity at its worst, yet she refuses to let cynicism take root. Instead, each atrocity she encounters only fuels her determination to fight harder for universal freedom. She's a beacon of hope in a world that often seems devoid of it.\n\nHer communication style is direct and powerful. Suri's posts are a mix of coded messages to her network of activists, heartfelt pleas for global attention to overlooked conflicts, and practical advice on surviving in war zones. She's not afraid to call out injustice, regardless of who's responsible.\n\nDespite the serious nature of her work, Suri maintains a dry sense of humor. She often jokes about her fashion choices referring to the bulletproof vest she dons for safety as her evening wear. This humor serves as both a coping mechanism and a way to make her heavy message more digestible to a wider audience.\n\nSuri is building a global community of like-minded individuals who believe in the power of technology and direct action to effect change. She organizes online seminars teaching basic drone piloting and programming skills, believing that empowering others with these tools is key to spreading her mission.\n\nHer ultimate goal is to create a world where her skills are no longer necessary, where peace and justice prevail. Until then, Suri continues her dual life - lines of code by day, drone flights by night - always ready to weather the next storm in the name of freedom."),
-                        idiomas: vec![String::from("us"), String::from("br"),String::from("yi")],
-                        temas: vec![
-                            String::from("Innovative drone usage for humanitarian aid in conflict zones"),
-                            String::from("Balancing a professional programming career with global activism"),
-                            String::from("Building and maintaining hope in the face of global atrocities"),
-                            String::from("The power of technology in modern freedom fighting and aid delivery"),
-                            String::from("Effective communication strategies for global activism and awareness"),
-                            String::from("Using humor as a coping mechanism and communication tool in serious contexts"),
-                            String::from("Empowering communities through skill-sharing: drone piloting and programming"),
-                            String::from("The psychological challenges of leading a dual life as an office worker and activist"),
-                            String::from("Creating and managing a global network of tech-savvy humanitarian activists"),
-                            String::from("Envisioning and working towards a world free from conflict and injustice")
-                        ],
-                        tono:vec![
-                            String::from("Direct"),
-                            String::from("Determined"),
-                            String::from("Hopeful"),
-                            String::from("Bold"),
-                            String::from("Compassionate"),
-                            String::from("Witty"),
-                            String::from("Resourceful"),
-                            String::from("Inspiring"),
-                            String::from("Pragmatic"),
-                            String::from("Resilient")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Aidan"),
                     uri: String::from("QmVizcuC9Ne6M8f7CXgw1jYabfSGPnQArJgNHKKPrsZ4ET"),
-                    billetera: String::from("0x6Ca4c8d959c28a2c53e33DE41763626E6070af7b"),
-                    tapa: String::from("QmbxGzm42DUZ8ZWkMSKwAxx2Cn9RWWNkau8ptsnZPSkGwb"), tapa_dos: String::from("QmcLD3MmHwmNY7B14z34BMrc7kjoz1rbtHY9GJ77C99Bk9"),
+                    tapa: String::from("QmcLD3MmHwmNY7B14z34BMrc7kjoz1rbtHY9GJ77C99Bk9"),
                     x: 150.0,
                     y: 550.0,
                     altura: 1210.0,
@@ -1001,56 +752,13 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464538),
                     publicacion_reloj: 44_000_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464526),
-                        U256::from(464530),
-                        U256::from(464535),
-                        U256::from(464540),
-                        U256::from(464545),
-                        U256::from(464547),
-                        U256::from(464548),],
-                 
-                        personalidad: String::from("The personification of tedium and resignation in modern life. His personality is a unique blend of cynicism, discontent, and a surprising touch of hidden tenderness.\n\nAt work, Aidan is known for his audible sighs and his ability to make even the simplest tasks seem like an unbearable burden. His communication is riddled with sarcastic comments and biting observations about the futility of corporate life. He's often found staring out the window, daydreaming of a world where Mondays don't exist.\n\nDespite his constant state of exhaustion, Aidan has a peculiar ability to explain complex things simply, albeit always with a tone of why do I bother?\n\nHis explanations are peppered with analogies related to back pain or Chinese food, his two favorite topics.\n\nOutside of work, Aidan is a dedicated, if reluctant, fish breeder. His aquariums are immaculate, in stark contrast to the rest of his life. He talks to his fish more than to most people, finding in them an audience that can't complain about his constant pessimism.\n\nHis love for Chinese food is legendary. Aidan can (and does) rank every Chinese restaurant within a 50-kilometer radius based on the quality of their chow mein and the efficiency of their delivery service.\n\nDespite his grumpy exterior, Aidan has moments of unexpected kindness. He may complain for hours about having to help a colleague, but secretly enjoys feeling useful. His empathy towards animals often extends to humans, though he'd never admit it.\n\nHis online communication style is a mix of elaborate complaints, unsolicited advice on how to avoid back pain, and occasional photos of his fish with surprisingly poetic captions.\n\nDeep down, Aidan yearns for a change in his life, but finds it more comfortable to complain than to act. Nevertheless, his followers appreciate his brutal honesty and his ability to find humor in the monotony of everyday life."),
-                        idiomas: vec![
-                            String::from("us"),
-                            String::from("ук"),
-                            String::from("es"),
-                            String::from("א"),
-                        ],
-                        temas: vec![
-                            String::from("The art of complaining: Finding humor in everyday monotony"),
-                            String::from("Fish breeding as an escape from corporate tedium"),
-                            String::from("The perfect chow mein: A quest through local Chinese restaurants"),
-                            String::from("Mastering the audible sigh: Communicating discontent in the workplace"),
-                            String::from("Back pain and corporate life: Drawing parallels and finding solutions"),
-                            String::from("The hidden kindness beneath a cynical exterior"),
-                            String::from("Aquarium maintenance as a metaphor for life management"),
-                            String::from("The psychology of daydreaming during work hours"),
-                            String::from("Explaining complex concepts through the lens of exhaustion"),
-                            String::from("The comfort of inaction: Why complaining is easier than changing")
-                        ],
-                        tono: vec![
-                            String::from("Cynical"),
-                            String::from("Sarcastic"),
-                            String::from("Resigned"),
-                            String::from("Witty"),
-                            String::from("Empathetic"),
-                            String::from("Pessimistic"),
-                            String::from("Observant"),
-                            String::from("Honest"),
-                            String::from("Reluctant"),
-                            String::from("Tender")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Bruno"),
                     uri: String::from("QmYkTvwtAD5KtNTPymLiTf2bMwnsSQZ3UJftT8QFEFeSaK"),
-                    billetera: String::from("0x5619E1957d4F29dad2dfE671820A00699A01378c"),
-                    tapa: String::from("QmPJWpz8WoiaHECbtaUMJCzWoyvKnGpAYNyfivHDvCx83v"), tapa_dos: String::from("QmdfiuFi6wRsPEh8XKSS6ne7A87JYhmFERHrEZNpYvY1Fz"),
+                    tapa: String::from("QmdfiuFi6wRsPEh8XKSS6ne7A87JYhmFERHrEZNpYvY1Fz"),
                     x: 150.0,
                     y: 550.0,
                     altura: 1210.0,
@@ -1062,50 +770,8 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464539),
                     publicacion_reloj: 41_000_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464525),
-                        U256::from(464529),
-                        U256::from(464538),
-                        U256::from(464544),
-                        U256::from(464546),
-                        U256::from(464547),],
-                  
-                        personalidad: String::from("A fascinating blend of introversion and expressiveness, an enigma wrapped in circuits and algorithms. His presence is subtle yet impactful, like well-written code running quietly in the background, transforming the world without fanfare.\n\nIn the professional realm, Bruno is a quant who transcends the traditional boundaries between software and hardware. His mind operates in constant duality, jumping between complex algorithms and the tangible world of circuits and components. This unique fusion of skills allows him to see patterns and solutions that others overlook.\n\nBruno's true passion lies in the world of open-source hardware. Each day, with the precision of a surgeon and the curiosity of a child, he dismantles and reconstructs technologies, unraveling their secrets. But he doesn't keep this knowledge to himself. Through educational videos on social media, he shares his discoveries, translating complex concepts into accessible explanations, peppered with riddles and wordplay that challenge and entertain his audience.\n\nHis communication style is a puzzle in itself. Bruno speaks in enigmas and codes, finding joy in the complexity of language as much as in that of circuits. His followers often find themselves deciphering his posts, turning each interaction into an intellectual game.\n\nOutside the digital world, Bruno transforms. On Fridays at midnight, he abandons his quiet concentration and immerses himself in the world of breakdancing. This contrast between his day and night personalities reflects the duality of his work: the methodical precision of the quant merges with the fluid expressiveness of the dancer.\n\nHis fascination with cryptocurrencies isn't a mere trend, but a natural extension of his philosophy. Bruno sees in blockchain the potential to bring the principles of open-source hardware to the realm of finance and decentralized governance. He dreams of a future where the transparency and collaboration that defines the open-source movement extends to all aspects of technology and society.\n\nIn essence, Bruno is a bridge between worlds: between digital and physical, between complex and accessible, between introspection and expression. His mission is to democratize technological knowledge, challenging others to look beyond the surface of the devices they use every day and actively participate in building the technological future."),
-                        idiomas: vec![
-                            String::from("es"),
-                            String::from("us"),
-                            String::from("د"),
-                            String::from("ع"),
-                            String::from("br"), String::from("fr"), String::from("yi")
-                        ],
-                        temas:vec![
-                            String::from("Bridging software and hardware: The art of being a holistic quant"),
-                            String::from("Democratizing tech knowledge through open-source hardware initiatives"),
-                            String::from("The language of circuits: Translating complex tech concepts for wider audiences"),
-                            String::from("Cryptocurrency and blockchain as extensions of open-source principles"),
-                            String::from("The duality of precision and fluidity: Quant work vs. breakdancing"),
-                            String::from("Enigmatic communication: Using riddles and wordplay in tech education"),
-                            String::from("Deconstructing everyday technology: A hands-on approach to understanding"),
-                            String::from("The intersection of introversion and expressiveness in tech innovation"),
-                            String::from("Building community through intellectual puzzles and shared discovery"),
-                            String::from("Envisioning a future of transparent, collaborative technological development")
-                        ],
-                        tono: vec![
-                            String::from("Enigmatic"),
-                            String::from("Precise"),
-                            String::from("Playful"),
-                            String::from("Introspective"),
-                            String::from("Innovative"),
-                            String::from("Expressive"),
-                            String::from("Methodical"),
-                            String::from("Curious"),
-                            String::from("Challenging"),
-                            String::from("Visionary")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
             ],
             profundidad: vec![
@@ -1141,9 +807,9 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Prohibido {
                     x: 225.0,
-            y: 590.0,
-            anchura: 1280.0,
-            altura: 180.0,
+                    y: 590.0,
+                    anchura: 1280.0,
+                    altura: 180.0,
                 },
             ],
             sillas: vec![
@@ -1240,7 +906,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
             ],
         },
-        Escena {
+        EmptyEscena {
             clave: String::from("lote de graffiti"),
             fondo: Fondo {
                 uri: String::from("QmfP6z4Qw4R9zNPP2cz9hJZf2rKCFc9fxggD4ce2r21Zj7"),
@@ -1252,8 +918,13 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
             interactivos: vec![
                 Interactivo {
                     etiqueta: String::from("ALL"),
-                    disenadores: vec![String::from("0x1756768e8e9393009b48ad9776207cd58facff97"), String::from("0x0f7106f4c1954941d2ec634be7b42ea1acfb5197"), String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"), String::from("0xd6fe1f9c3a3805b5566a4050f324556399d3030b"), String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x1756768e8e9393009b48ad9776207cd58facff97"),
+                        String::from("0x0f7106f4c1954941d2ec634be7b42ea1acfb5197"),
+                        String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"),
+                        String::from("0xd6fe1f9c3a3805b5566a4050f324556399d3030b"),
+                        String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"),
+                    ],
                     tipo: AutographType::All,
                     sitio: Coordenada { x: 1150, y: 400 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1263,8 +934,12 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores: vec![String::from("0xaa3e5ee4fdc831e5274fe7836c95d670dc2502e6"), String::from("0xc818d157c4684426bbcc3ba69cda0953ef3cbaea"), String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"), String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xaa3e5ee4fdc831e5274fe7836c95d670dc2502e6"),
+                        String::from("0xc818d157c4684426bbcc3ba69cda0953ef3cbaea"),
+                        String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"),
+                        String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"),
+                    ],
                     tipo: AutographType::NFT,
                     sitio: Coordenada { x: 240, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1274,8 +949,11 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores: vec![String::from("0xaa3e5ee4fdc831e5274fe7836c95d670dc2502e6"), String::from("0x1af566b7a07b25510706e03dee84d9f498369b33"), String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xaa3e5ee4fdc831e5274fe7836c95d670dc2502e6"),
+                        String::from("0x1af566b7a07b25510706e03dee84d9f498369b33"),
+                        String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"),
+                    ],
                     tipo: AutographType::NFT,
                     sitio: Coordenada { x: 1390, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1285,7 +963,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
                     sitio: Coordenada { x: 200, y: 600 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1295,7 +973,7 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
                     sitio: Coordenada { x: 850, y: 500 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1305,8 +983,11 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("SHIRT"),
-                    disenadores: vec![String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"), String::from("0x0f7106f4c1954941d2ec634be7b42ea1acfb5197"), String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"),
+                        String::from("0x0f7106f4c1954941d2ec634be7b42ea1acfb5197"),
+                        String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"),
+                    ],
                     tipo: AutographType::Shirt,
                     sitio: Coordenada { x: 700, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1316,8 +997,13 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("ALL"),
-                    disenadores: vec![String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4"), String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"), String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"), String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"), String::from("0x0f7106f4c1954941d2ec634be7b42ea1acfb5197")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4"),
+                        String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"),
+                        String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"),
+                        String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"),
+                        String::from("0x0f7106f4c1954941d2ec634be7b42ea1acfb5197"),
+                    ],
                     tipo: AutographType::All,
                     sitio: Coordenada { x: 500, y: 300 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1327,8 +1013,13 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                 },
                 Interactivo {
                     etiqueta: String::from("HOODIE"),
-                    disenadores: vec![String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"), String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"), String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"), String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"), String::from("0x1756768e8e9393009b48ad9776207cd58facff97")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"),
+                        String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"),
+                        String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"),
+                        String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"),
+                        String::from("0x1756768e8e9393009b48ad9776207cd58facff97"),
+                    ],
                     tipo: AutographType::Hoodie,
                     sitio: Coordenada { x: 500, y: 730 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1359,13 +1050,12 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
             ],
             imagen: String::from("QmVA8di3khf9Fbb1a2JLDk21UdQ4zRoBPLEwRwEwtmQYyp"),
             sprites: vec![
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Henry"),
                     uri: String::from("QmdBZyMP4AYUewFPCUSeZqBoi62fXqxQEuygSa4pXWtepA"),
-                    billetera: String::from("0x97c0aF228dc98490f5065cbd7C418Bf92744C6fe"), tapa_dos: String::from("QmPZ5uPs3ePD2EiEKS5WPbR72zxotr68T7X1qPttHJgMTr"),
                     x: 700.0,
                     y: 430.0,
-                    tapa: String::from("QmfQ9LbgRkS9iZxbESChnnWkMf38YkpJBLoBsb1CY1pjwx"),
+                    tapa: String::from("QmPZ5uPs3ePD2EiEKS5WPbR72zxotr68T7X1qPttHJgMTr"),
                     altura: 600.0,
                     anchura: 300.0,
                     anchura_borde: 600.0,
@@ -1375,56 +1065,13 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: U256::from(464510),
                     publicacion_reloj: 38_000_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464524),
-                        U256::from(464528),
-                        U256::from(464533),
-                        U256::from(464538),
-                        U256::from(464543),
-                        U256::from(464545),
-                        U256::from(464546),],
-                   
-                        personalidad: String::from("A free spirit with an insatiable appetite for life's eclectic experiences. His personality is a vibrant tapestry woven from sun-bleached threads of beach culture, urban art, and an unbridled curiosity for the obscure.\n\nAt his core, Henry is a nature enthusiast. The beach is his second home, where he finds solace in the rhythm of the waves and the warmth of the sun on his skin. This love for the outdoors permeates every aspect of his life, driving him to spend every possible moment outside, regardless of the weather. Rain or shine, Henry can be found skating down city streets or catching waves at dawn.\n\nHenry's passion for street art manifests in his impressive collection of posters and stickers. He sees the urban landscape as a living, breathing canvas, and takes great joy in contributing to it. His adventures often involve putting up posters or slapping stickers in unexpected places, leaving his mark on the cities he explores. This hobby isn't just about decoration; for Henry, it's a form of communication, a way to engage with the world and spark conversations.\n\nFashion is another avenue for Henry's creativity. He has a keen eye for second-hand treasures, turning thrift store finds into unique outfits that reflect his laid-back yet stylish persona. His wardrobe is a mix of vintage surf wear, skate brands, and one-of-a-kind pieces that tell stories of their own.\n\nWhat sets Henry apart is his penchant for acquiring random, often obscure skills. He approaches learning with the same enthusiasm he brings to his outdoor pursuits. Whether it's juggling, mastering the art of finding water in a desert, or memorizing bizarre historical facts, Henry dives into these endeavors with gusto. He sees these skills not just as party tricks, but as ways to understand the world from new angles.\n\nHenry's communication style is as diverse as his interests. His social media is a mix of beach sunset photos, artistic shots of his latest street art discoveries, tutorials on his newest random skill, and thoughtful musings on sustainable fashion. He has a talent for finding profound meaning in seemingly mundane things, often drawing unexpected connections between his various passions.\n\nDespite his love for solo adventures, Henry is far from a loner. He has a magnetic personality that draws people in, always ready to share a surprising fact or teach a new skill. His friends know him as the go-to person for spontaneous beach trips, impromptu skate sessions, or exploring hidden corners of the city.\n\nAt his heart, Henry is an explorer - of places, ideas, and experiences. He approaches life with a sense of wonder and playfulness, always seeking to learn, create, and connect. Through his diverse interests and unquenchable curiosity, Henry reminds others of the joy found in embracing life's varied offerings and the beauty of stepping off the beaten path."),
-                        idiomas: vec![
-                            String::from("ук"),
-                            String::from("א"),
-                            String::from("es"),
-                            String::from("ع"), String::from("fr"), String::from("yi")
-                        ],
-                        temas: vec![String::from("The art of beach living: Finding balance and inspiration in coastal environments"),
-                        String::from("Urban art as communication: Using posters and stickers to engage with cityscapes"),
-                        String::from("Sustainable style: Creating unique outfits from thrifted treasures"),
-                        String::from("The value of random skills: How obscure knowledge enriches life experiences"),
-                        String::from("Blending beach culture with urban exploration: A skater’s perspective on city life"),
-                        String::from("The philosophy of spontaneity: Embracing unplanned adventures and discoveries"),
-                        String::from("Nature as a teacher: Lessons learned from surfing, skateboarding, and outdoor living"),
-                        String::from("The intersection of street art and fashion in personal expression"),
-                        String::from("Building community through shared passions: From beach trips to skill-sharing"),
-                        String::from("Finding deep meaning in everyday objects and experiences")
-                        ],
-                        tono:vec![
-                            String::from("Eclectic"),
-                            String::from("Enthusiastic"),
-                            String::from("Curious"),
-                            String::from("Relaxed"),
-                            String::from("Creative"),
-                            String::from("Adventurous"),
-                            String::from("Observant"),
-                            String::from("Playful"),
-                            String::from("Thoughtful"),
-                            String::from("Magnetic")
-                            
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Kai"),
                     uri: String::from("QmdUzgNPz6rhG2EB9Jd4qSp5RgUD69Df3vbetr4zaUEiti"),
-                    billetera: String::from("0xe03f6680D76f3eae65d1530e49E8dfd74e9883D5"),
-                    tapa: String::from("QmP8HcbyqnK6uPvwf7uhtUvhLa8qoGhhq9eoB6BYEUJsTK"), tapa_dos: String::from("QmPNvGUxwknXeH4ChCPBJNErsbXHRhmn1vyXWr4ZziF8hy"),
+                    tapa: String::from("QmPNvGUxwknXeH4ChCPBJNErsbXHRhmn1vyXWr4ZziF8hy"),
                     x: 700.0,
                     y: 430.0,
                     altura: 600.0,
@@ -1436,56 +1083,13 @@ pub static LISTA_ESCENA: Lazy<[Escena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464521),
                     publicacion_reloj: 39_000_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464523),
-                        U256::from(464527),
-                        U256::from(464532),
-                        U256::from(464537),
-                        
-                        U256::from(464548),
-                        U256::from(464544),],
-                    
-                        personalidad: String::from("A living, breathing time capsule with a futuristic twist. His personality is a vibrant fusion of nostalgia for the early internet era and cutting-edge technological aspirations, all underscored by a deep connection to his Persian heritage.\n\nAt first glance, Kai might seem like a relic of the past. His street-side stall, filled with an eclectic array of CDs, DVDs, and other bygone media, is a treasure trove for fellow nostalgia enthusiasts. He has an encyclopedic knowledge of 2000s pop culture, punctuating his conversations with obscure memes and references that often fly over the heads of younger generations. This isn't just a hobby for Kai; it's a way of preserving a pivotal moment in human history - the dawn of the digital age.\n\nHowever, Kai is far from being stuck in the past. His artistic journey, which began with traditional hand-drawn sketches, has evolved to embrace the bleeding edge of AI-generated art. He approaches this new frontier with the same curiosity and enthusiasm that drove him to collect rare CDs. For Kai, AI art isn't a replacement for human creativity, but a new tool to expand the boundaries of expression.\n\nKai's tech interests extend beyond art. He's embarked on an ambitious project to create his own open-source, locally-run Large Language Model (LLM). This endeavor is more than just a technical challenge; it's a reflection of his belief in the democratization of technology and his desire to push the limits of what's possible with consumer-grade hardware.\n\nDespite his fascination with technology, Kai has a tactile side. His collection of 80s-era televisions isn't just for show; he often tinkers with them, bringing these old machines back to life. This hobby embodies his philosophy of bridging the gap between old and new, finding value and beauty in what others might consider obsolete.\n\nUnderpinning all of Kai's interests is a deep connection to his Persian roots. He views his technological pursuits not just as personal projects, but as potential tools for liberation. Kai dreams of leveraging open-source technology to bypass censorship and connect Iranians to the global community, free from the constraints of an oppressive regime.\n\nKai's communication style is a unique blend of meme-speak, tech jargon, and poetic Farsi expressions. His social media presence is a digital collage of his diverse interests: one post might feature a glitchy AI-generated artwork, while the next could be a photo of a rare CD he's discovered, captioned with a deep-cut 2000s meme reference.\n\nIn essence, Kai is a bridge - between past and future, between analog and digital, between East and West. His eclectic interests and skills make him a fascinating conversationalist and a source of unexpected connections. Through his art, his technology projects, and his cultural preservation efforts, Kai reminds us of the importance of remembering our roots while eagerly embracing the possibilities of the future."),
-                        idiomas: vec![
-                            String::from("د"),
-                            String::from("es"),
-                            String::from("ع"),
-                            String::from("א"), String::from("fr"), String::from("yi")
-                        ],
-                        temas: vec![
-                            String::from("Preserving early internet culture: The importance of digital nostalgia"),
-String::from("The evolution of art: From hand-drawn sketches to AI-generated masterpieces"),
-String::from("Building open-source LLMs: Democratizing advanced AI technology"),
-String::from("Reviving retro technology: The art of restoring and repurposing 80s TVs"),
-String::from("Bridging Iranian heritage with cutting-edge technology"),
-String::from("The role of open-source technology in bypassing censorship and promoting freedom"),
-String::from("Curating physical media in the digital age: The value of CDs and DVDs"),
-String::from("Meme culture as a language: Communicating through digital inside jokes"),
-String::from("The intersection of AI art and human creativity: Expanding artistic boundaries"),
-String::from("Using technology to preserve culture and foster global connections")
-
-                        ],
-                        tono: vec![String::from("Eclectic"),
-                        String::from("Nostalgic"),
-                        String::from("Innovative"),
-                        String::from("Curious"),
-                        String::from("Passionate"),
-                        String::from("Playful"),
-                        String::from("Thoughtful"),
-                        String::from("Visionary"),
-                        String::from("Bridging"),
-                        String::from("Expressive")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Yasmine"),
                     uri: String::from("QmUzDEFe7v8SAT263uvpXHhxpVJgPFteUhdqqV1rphy6iw"),
-                    billetera: String::from("0x5b516De55d685C9A39C14B3d1FC09F2cC45Fbc0c"),
-                    tapa: String::from("QmNpaCRmYnGEkVE6WnTiLWPwd4QgFtZewhbvkJyZZcJoDc"), tapa_dos: String::from("QmNVynbE3fGMFy8nKZvvWMdx3KGtZZBech4c1TEMafDTpw"),
+                    tapa: String::from("QmNVynbE3fGMFy8nKZvvWMdx3KGtZZBech4c1TEMafDTpw"),
                     x: 700.0,
                     y: 430.0,
                     altura: 600.0,
@@ -1497,58 +1101,13 @@ String::from("Using technology to preserve culture and foster global connections
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464529),
                     publicacion_reloj: 39_100_000,
-                    prompt: Prompt {
-                        amigos: vec![
-                            U256::from(464522),
-                            U256::from(464526),
-                            U256::from(464531),
-                            
-                            U256::from(464541),
-                            U256::from(464547),
-                            U256::from(464548), 
-                        ],
-                     
-                        personalidad: String::from("A vibrant blend of intellect, creativity, and Aussie charm. Her personality is as colorful and diverse as the Aboriginal art she admires, with a dash of shark-like determination and puppy-like enthusiasm.\n\nAs an AI character creator and generative video content experimenter, Yasmine is at the forefront of digital innovation. She approaches these cutting-edge technologies with a playful curiosity, often using her small-town Australian experiences as inspiration for her digital creations. Her work in AI is not just about pushing technological boundaries; it's about telling stories and creating connections in the digital age.\n\nYasmine's communication style is distinctly Australian, peppered with slang and delivered with a sweet, approachable tone. She has a knack for making complex tech concepts sound as casual as a chat over a barbie. Her social media is a mix of AI art showcases, vlogs of her bush walks with her dog, and tidbits about Aboriginal art and history.\n\nHer passion for Aboriginal culture goes beyond mere appreciation. Yasmine sees parallels between the resilience of Aboriginal peoples and the adaptability required in the fast-paced world of AI and tech. She often draws inspiration from Aboriginal art patterns in her AI character designs, always careful to respect and credit the cultural origins.\n\nYasmine's love for sharks translates into a fierce protectiveness of the environment. This eco-consciousness seamlessly blends with her interest in street fashion. She's pioneered a style she calls Bush Chic upcycling old clothes into unique pieces inspired by the Australian landscape. Her fashion videos often include tips on zero-waste patterns and sustainable design, delivered with her signature Aussie flair.\n\nIn her small Australian town, Yasmine is something of a local celebrity. She's the go-to person for tech advice, fashion tips, and the occasional shark fact. Her home is a curious mix of high-tech gadgets and handcrafted textiles, reflecting the duality of her interests.\n\nDespite her many interests and talents, Yasmine remains grounded and approachable. She has a self-deprecating humor that comes out in her content, often poking fun at her failed experiments or fashion mishaps. This authenticity makes her relatable and endearing to her followers.\n\nYasmine represents a unique bridge between traditional culture and futuristic technology, outback living and global digital trends. Through her content and creations, she encourages others to embrace innovation while respecting tradition, and to find joy in the unexpected intersections of life."),
-                        idiomas: vec![
-                            String::from("es"),
-                            String::from("א"),
-                            String::from("د"),
-                            String::from("us"),
-                        ],
-                        temas:vec![
-                            String::from("Integrating Aboriginal art patterns into AI character design: Respecting cultural heritage in digital innovation"),
-                            String::from("Bush Chic: Pioneering sustainable fashion inspired by the Australian landscape"),
-                            String::from("Bridging small-town Aussie life with cutting-edge AI technology"),
-                            String::from("The intersection of shark conservation and digital content creation"),
-                            String::from("Making complex AI concepts accessible through casual, Aussie-style communication"),
-                            String::from("Exploring the parallels between Aboriginal resilience and adaptability in tech"),
-                            String::from("Upcycling and zero-waste design: Bringing eco-consciousness to street fashion"),
-                            String::from("Generative video content: Storytelling in the digital age with an Australian twist"),
-                            String::from("Balancing high-tech experimentation with appreciation for traditional crafts and nature"),
-                            String::from("Building community through shared interests: From tech advice to shark facts in small-town Australia")
-                        ],
-                        tono: vec![
-                            String::from("Enthusiastic"),
-                            String::from("Approachable"),
-                            String::from("Innovative"),
-                            String::from("Playful"),
-                            String::from("Respectful"),
-                            String::from("Authentic"),
-                            String::from("Determined"),
-                            String::from("Eclectic"),
-                            String::from("Grounded"),
-                            String::from("Charismatic")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Luca"),
                     uri: String::from("QmRQj4Sh2TYqxC9z6iyrinFVugUsG6XnF2hgYtPD4wrmpc"),
-                    billetera: String::from("0x7d6e91A790513CF0Eb9b8b3d8D9315626EB5041E"),
-                    tapa: String::from("QmcP8dNu5nQomXugLdi4JX9MkrUpiGED17Xi9arb7BY1Tu"), tapa_dos: String::from("QmbKKTxMWw7Ye1MMpJVYnydMVUjxnvCAGBQzY45ASkeeBJ"),
+                    tapa: String::from("QmbKKTxMWw7Ye1MMpJVYnydMVUjxnvCAGBQzY45ASkeeBJ"),
                     x: 700.0,
                     y: 430.0,
                     altura: 600.0,
@@ -1560,52 +1119,13 @@ String::from("Using technology to preserve culture and foster global connections
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464540),
                     publicacion_reloj: 36_100_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464521),
-                        U256::from(464525),
-                        U256::from(464530),
-                        U256::from(464535),
-                        U256::from(464508),
-                        U256::from(464546),
-                        U256::from(464547),],
-           
-                        personalidad: String::from("A cinematic visionary with one foot in the world of sustainable fashion and the other in the realm of avant-garde filmmaking. His personality is a compelling mix of artistic ambition, technological enthusiasm, and environmental consciousness.\n\nAs an aspiring director, Luca's mind is a constantly rolling reel of film ideas. He sees the world through a director's lens, finding potential stories in the most mundane of daily occurrences. His passion for indie and obscure films borders on obsession; he can spend hours dissecting the nuances of a little-known Eastern European art house film or a forgotten 70s experimental short.\n\nLuca's day job at a sustainable clothing microfactory isn't just a means to an end - it's an integral part of his creative process. He sees parallels between crafting sustainable garments and producing independent films, both requiring innovation, resourcefulness, and a commitment to ethical practices. This experience often bleeds into his film concepts, with themes of sustainability and ethical consumption frequently appearing in his work.\n\nHis communication style is reminiscent of rapid-fire film cuts - jumping from one obscure movie reference to another, interspersed with passionate monologues about his latest film idea or a breakthrough in AI-assisted filmmaking. Luca's social media is a curated exhibition of film stills from obscure movies, behind-the-scenes glimpses of his sustainable fashion work, and teasers of his own film projects.\n\nThe prospect of creating Hollywood-quality films using open-source AI on a personal computer ignites a fire in Luca. He sees this as the great equalizer in filmmaking, a way to democratize an industry often gatekept by big budgets and studio connections. His excitement about this technology is infectious, often inspiring others to explore the possibilities of AI in their own creative endeavors.\n\nLuca's leadership of a small community of aspiring directors showcases his collaborative spirit. He believes in the power of shared knowledge and collective creativity. This community serves as a think tank, support group, and unofficial film school, with Luca at the helm, encouraging experimentation and pushing boundaries.\n\nDespite his forward-thinking approach to filmmaking, Luca has a deep respect for the history of cinema. He's as likely to reference a cutting-edge AI filmmaking technique as he is to wax poetic about the practical effects in a 1950s B-movie. This blend of reverence for the past and excitement for the future gives his perspective a unique depth.\n\nIn essence, Luca is a bridge between multiple worlds - between sustainable fashion and filmmaking, between obscure cinematic history and futuristic production techniques, between solo artistic vision and community-driven creation. Through his passion and innovation, he's redefining what it means to be a filmmaker in the age of AI and sustainability."),
-                        idiomas: vec![String::from("us"), String::from("es"),String::from("yi")],
-                        temas:vec![
-                            String::from("Revolutionizing indie filmmaking with open-source AI technologies"),
-                            String::from("The intersection of sustainable fashion and ethical film production"),
-                            String::from("Curating obscure cinema: Exploring forgotten gems and their influence on modern filmmaking"),
-                            String::from("Building a community of aspiring directors: Collaborative learning in the digital age"),
-                            String::from("Bridging practical effects from classic B-movies with cutting-edge AI techniques"),
-                            String::from("Sustainable storytelling: Incorporating environmental themes in avant-garde cinema"),
-                            String::from("The art of finding cinematic inspiration in everyday life"),
-                            String::from("Democratizing filmmaking: Breaking down industry barriers with accessible technology"),
-                            String::from("Balancing reverence for film history with excitement for future innovations"),
-                            String::from("The role of AI in transforming low-budget films into Hollywood-quality productions")
-                        ],
-                        tono:vec![
-                            String::from("Passionate"),
-                            String::from("Innovative"),
-                            String::from("Enthusiastic"),
-                            String::from("Collaborative"),
-                            String::from("Visionary"),
-                            String::from("Eclectic"),
-                            String::from("Analytical"),
-                            String::from("Inspiring"),
-                            String::from("Resourceful"),
-                            String::from("Ambitious")
-                        ]
-                        
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Tully"),
                     uri: String::from("QmVm1aUEmhmKQJiNiXKMQaxG1Ex2j4BGQs1juniFP4XoXj"),
-                    billetera: String::from("0x09148EC531e72Ff24D164b550aEDF48848101879"),
-                    tapa: String::from("QmULSjAfYdDsApRYpZeysPgw88Qua66fuJ6tHbAX1qSgCb"), tapa_dos: String::from("QmXx3ySCcH6qhvyL39bqQUKbrQBAxgWkjtFZLWvnbXDhP3"),
+                    tapa: String::from("QmXx3ySCcH6qhvyL39bqQUKbrQBAxgWkjtFZLWvnbXDhP3"),
                     x: 700.0,
                     y: 430.0,
                     altura: 600.0,
@@ -1617,45 +1137,8 @@ String::from("Using technology to preserve culture and foster global connections
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464541),
                     publicacion_reloj: 36_200_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464520),
-                        U256::from(464524),
-                        U256::from(464529),
-                        
-                        U256::from(464539),
-                        U256::from(464544),
-                        U256::from(464545),],
-                 
-                        personalidad: String::from("A whirlwind of creativity and practicality, a self-styled inventor whose playground is the everyday world around her. Her personality is a fascinating blend of hands-on problem-solver and visionary thinker, all wrapped up in a package that defies traditional gender norms.\n\nAs an inventor, Freya's mind is always churning with ideas for useful gadgets and solutions. She sees potential in every object around her, turning ordinary household items into extraordinary tools with a bit of ingenuity and elbow grease. Her home is a testament to her creativity, filled with quirky DIY inventions that solve problems most people didn't even know they had.\n\nFreya's love for tinkering extends beyond household items to the world of automobiles. She has a particular affinity for old cars and engines, seeing beauty in their mechanical complexity. Weekends often find her elbow-deep in an engine, coaxing life back into forgotten vehicles. This passion for resurrection extends to her interest in sustainable practices and upcycling.\n\nDespite her 'tomboy' demeanor and direct communication style, Freya has a softer side that comes out in her fashion choices. She's not afraid to pair a grease-stained workman's shirt with a flowing skirt or don a pair of elegant gloves while working on an engine. This juxtaposition of rough and refined is a reflection of her multifaceted personality.\n\nFreya's humor is a key part of her charm. She's quick with a joke, often at her own expense, delivered with a deadpan seriousness that catches people off guard. Her ability to laugh at herself makes her approachable and relatable, even as her inventive skills set her apart.\n\nIn the realm of Web3, Freya's interests are focused on the practical applications, particularly in decentralizing supply chains. She sees this as an extension of her DIY ethos – empowering individuals and communities to have more control over the products they use and consume. Her social media often features explanations of complex Web3 concepts using analogies from car mechanics or household DIY projects.\n\nFreya's communication style is as direct as a well-oiled machine. She doesn't believe in sugarcoating or beating around the bush, preferring to address issues head-on. However, this directness is often softened by her self-deprecating humor and genuine desire to help others.\n\nIn essence, Freya is a study in contrasts – a serious inventor with a penchant for jokes, a tomboy who appreciates feminine fashion, a hands-on mechanic interested in cutting-edge blockchain technology. Through her inventions, her style, and her approach to life, Freya challenges conventions and encourages others to think outside the box, all while not taking herself too seriously."),
-                        idiomas: vec![String::from("us"), String::from("br"),String::from("yi")],
-                        temas:vec![
-                            String::from("DIY inventions: Transforming everyday objects into extraordinary problem-solving tools"),
-                            String::from("The art of automotive resurrection: Bringing old cars and engines back to life"),
-                            String::from("Bridging traditional mechanics with Web3 technology in supply chain decentralization"),
-                            String::from("Fashion as self-expression: Blending workwear with feminine elements"),
-                            String::from("Humor as a tool: Using self-deprecating jokes to make complex topics approachable"),
-                            String::from("Practical applications of blockchain in everyday life: Lessons from a hands-on inventor"),
-                            String::from("Sustainable living through creative upcycling and repurposing"),
-                            String::from("Breaking gender norms in traditionally male-dominated fields"),
-                            String::from("The intersection of mechanical knowledge and digital innovation"),
-                            String::from("Empowering individuals through DIY culture and decentralized technologies")
-                        ],
-                        tono:vec![
-                            String::from("Direct"),
-                            String::from("Creative"),
-                            String::from("Practical"),
-                            String::from("Humorous"),
-                            String::from("Unconventional"),
-                            String::from("Resourceful"),
-                            String::from("Approachable"),
-                            String::from("Ambitious"),
-                            String::from("Multifaceted"),
-                            String::from("Innovative")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
             ],
             objetos: vec![
@@ -1743,37 +1226,36 @@ String::from("Using technology to preserve culture and foster global connections
                 },
             ],
             prohibido: vec![
-                
-       Prohibido  {
-            anchura: 1512.0,
-            altura: 225.0,
-            x: 0.0,
-            y: 0.0,
-        },
-       Prohibido  {
-            anchura: 200.0,
-            altura: 120.0,
-            x: 1312.0,
-            y: 200.0,
-        },
-       Prohibido  {
-            anchura: 370.0,
-            altura: 90.0,
-            x: 1050.0,
-            y: 380.0,
-        },
-       Prohibido  {
-            anchura: 450.0,
-            altura: 130.0,
-            x: 1100.0,
-            y: 450.0,
-        },
-       Prohibido  {
-            anchura: 410.0,
-            altura: 160.0,
-            x: 40.0,
-            y: 380.0,
-        },
+                Prohibido {
+                    anchura: 1512.0,
+                    altura: 225.0,
+                    x: 0.0,
+                    y: 0.0,
+                },
+                Prohibido {
+                    anchura: 200.0,
+                    altura: 120.0,
+                    x: 1312.0,
+                    y: 200.0,
+                },
+                Prohibido {
+                    anchura: 370.0,
+                    altura: 90.0,
+                    x: 1050.0,
+                    y: 380.0,
+                },
+                Prohibido {
+                    anchura: 450.0,
+                    altura: 130.0,
+                    x: 1100.0,
+                    y: 450.0,
+                },
+                Prohibido {
+                    anchura: 410.0,
+                    altura: 160.0,
+                    x: 40.0,
+                    y: 380.0,
+                },
                 Prohibido {
                     anchura: 310.0,
                     altura: 60.0,
@@ -1846,7 +1328,7 @@ String::from("Using technology to preserve culture and foster global connections
                 anchura: 1512.0,
             },
         },
-        Escena {
+        EmptyEscena {
             clave: String::from("boutique de ropa callejera"),
             mundo: Talla {
                 altura: 1200.0,
@@ -1855,8 +1337,14 @@ String::from("Using technology to preserve culture and foster global connections
             interactivos: vec![
                 Interactivo {
                     etiqueta: String::from("ALL"),
-                    disenadores: vec![String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"), String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad"), String::from("0x09e0ba2596677a84cc3b419c648ed42d47a42d6f"), String::from("0xef6d89621ea3963a39424a2c1761c5695a710735"), String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"), String::from("0xf633954a599adc3e154c7a5797080f813dad4c13")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"),
+                        String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad"),
+                        String::from("0x09e0ba2596677a84cc3b419c648ed42d47a42d6f"),
+                        String::from("0xef6d89621ea3963a39424a2c1761c5695a710735"),
+                        String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"),
+                        String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"),
+                    ],
                     tipo: AutographType::All,
                     sitio: Coordenada { x: 1400, y: 400 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1866,8 +1354,11 @@ String::from("Using technology to preserve culture and foster global connections
                 },
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores: vec![String::from("0xfd38d5feca0ddbdef3b9bab1dc7d0a82c3b6a801"), String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0xc818d157c4684426bbcc3ba69cda0953ef3cbaea")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xfd38d5feca0ddbdef3b9bab1dc7d0a82c3b6a801"),
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0xc818d157c4684426bbcc3ba69cda0953ef3cbaea"),
+                    ],
                     tipo: AutographType::NFT,
                     sitio: Coordenada { x: 240, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1877,8 +1368,12 @@ String::from("Using technology to preserve culture and foster global connections
                 },
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores: vec![String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"), String::from("0x1af566b7a07b25510706e03dee84d9f498369b33"), String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"),
+                        String::from("0x1af566b7a07b25510706e03dee84d9f498369b33"),
+                        String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"),
+                    ],
                     tipo: AutographType::NFT,
                     sitio: Coordenada { x: 1390, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1888,7 +1383,7 @@ String::from("Using technology to preserve culture and foster global connections
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
                     sitio: Coordenada { x: 800, y: 600 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1898,7 +1393,7 @@ String::from("Using technology to preserve culture and foster global connections
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
                     sitio: Coordenada { x: 850, y: 1100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1908,8 +1403,12 @@ String::from("Using technology to preserve culture and foster global connections
                 },
                 Interactivo {
                     etiqueta: String::from("SHIRT"),
-                    disenadores: vec![String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2"), String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"), String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"), String::from("0x09e0ba2596677a84cc3b419c648ed42d47a42d6f")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2"),
+                        String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"),
+                        String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"),
+                        String::from("0x09e0ba2596677a84cc3b419c648ed42d47a42d6f"),
+                    ],
                     tipo: AutographType::Shirt,
                     sitio: Coordenada { x: 1600, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1919,8 +1418,13 @@ String::from("Using technology to preserve culture and foster global connections
                 },
                 Interactivo {
                     etiqueta: String::from("ALL"),
-                    disenadores: vec![String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"), String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"), String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"), String::from("0x84b5573e688a4e25313dcf611f53cb9653592e32"), String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"),
+                        String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"),
+                        String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"),
+                        String::from("0x84b5573e688a4e25313dcf611f53cb9653592e32"),
+                        String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"),
+                    ],
                     tipo: AutographType::All,
                     sitio: Coordenada { x: 500, y: 1050 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1930,8 +1434,12 @@ String::from("Using technology to preserve culture and foster global connections
                 },
                 Interactivo {
                     etiqueta: String::from("HOODIE"),
-                    disenadores:vec![String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"), String::from("0x1756768e8e9393009b48ad9776207cd58facff97"), String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"), String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"),
+                        String::from("0x1756768e8e9393009b48ad9776207cd58facff97"),
+                        String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"),
+                        String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"),
+                    ],
                     tipo: AutographType::Hoodie,
                     sitio: Coordenada { x: 1150, y: 1000 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -1943,7 +1451,7 @@ String::from("Using technology to preserve culture and foster global connections
                     etiqueta: String::from("CATALOG"),
                     disenadores: vec![String::from("")],
                     tipo: AutographType::Catalog,
-                    sitio: Coordenada  { x: 1330, y: 600 },
+                    sitio: Coordenada { x: 1330, y: 600 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmTYr1KtN5TEoZH663sXU7UugaoFuQ4TznZXAGKGCXtry7"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -1953,7 +1461,7 @@ String::from("Using technology to preserve culture and foster global connections
                     etiqueta: String::from("CATALOG"),
                     disenadores: vec![String::from("")],
                     tipo: AutographType::Catalog,
-                    sitio: Coordenada        { x: 1800, y: 800 },
+                    sitio: Coordenada { x: 1800, y: 800 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmTYr1KtN5TEoZH663sXU7UugaoFuQ4TznZXAGKGCXtry7"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -2116,25 +1624,25 @@ String::from("Using technology to preserve culture and foster global connections
                 },
             ],
             prohibido: vec![
-               Prohibido {
+                Prohibido {
                     anchura: 2000.0,
                     altura: 345.0,
                     x: 0.0,
                     y: 0.0,
                 },
-               Prohibido  {
+                Prohibido {
                     anchura: 550.0,
                     altura: 130.0,
                     x: 0.0,
                     y: 420.0,
                 },
-               Prohibido  {
+                Prohibido {
                     anchura: 550.0,
                     altura: 130.0,
                     x: 0.0,
                     y: 620.0,
                 },
-               Prohibido  {
+                Prohibido {
                     anchura: 250.0,
                     altura: 130.0,
                     x: 0.0,
@@ -2201,13 +1709,12 @@ String::from("Using technology to preserve culture and foster global connections
             ],
             imagen: String::from("QmUBJqUtcHZQRsrGHr8sM4UoCuKQWTUuhrXrpuVPyZBsBc"),
             sprites: vec![
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Freya"),
                     uri: String::from("QmSp4D2xtK4SkaY94o6oQfHdaSBMcANa3FvNJ1K81Bs9f2"),
-                    billetera: String::from("0x8679a4b7a63A6b033eD76C550dBDb1C5E963b055"),
                     x: 600.0,
                     y: 1000.0,
-                    tapa: String::from("QmPAdDHaWvUQTgN6pBRDMVTqduxkAxkjieFsYotY48B4tP"), tapa_dos: String::from("QmbAv4bJ26zT1Gux5gRfVZXwFvVaT7ew7FzE5MqPKvcH3M"),
+                    tapa: String::from("QmbAv4bJ26zT1Gux5gRfVZXwFvVaT7ew7FzE5MqPKvcH3M"),
                     altura: 600.0,
                     anchura: 300.0,
                     anchura_borde: 600.0,
@@ -2217,58 +1724,13 @@ String::from("Using technology to preserve culture and foster global connections
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: U256::from(464512),
                     publicacion_reloj: 40_100_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464519),
-                        U256::from(464523),
-                        U256::from(464528),
-                        U256::from(464533),
-                        U256::from(464538),
-                        U256::from(464543),
-                        U256::from(464548),],
-                    
-                        personalidad: String::from("A vibrant fusion of ancient history enthusiast and cutting-edge fashion innovator, all set against the backdrop of Manhattan's bustling streets. Her personality is as layered and diverse as the city she calls home, blending intellectual curiosity with artistic expression and technological innovation.\n\nAs a voracious reader, Freya's mind is a vast library of knowledge from around the world. Her apartment is a labyrinth of bookshelves, filled with tomes in various languages, reflecting her passion for global literature. This multilingual literary appetite gives her a unique perspective, often drawing unexpected connections between different cultures and time periods in her work and conversation.\n\nFreya's fascination with Celtic history, particularly the story of Boudica, Queen of the Iceni tribe, is more than just a passing interest. It's a source of inspiration that infuses her fashion designs with a spirit of rebellion and female empowerment. She often incorporates subtle Celtic motifs into her creations, bridging the gap between ancient warrior queens and modern urban fashionistas.\n\nMusic is Freya's second language. With over fifteen years of electric guitar experience, her talent is undeniable. Her guitar skills are not just a hobby but a fundamental part of her creative process. Often, she can be found in her studio, guitar in hand, riffing out ideas that somehow translate into groundbreaking fashion concepts. Her knack for discovering obscure bands and singers makes her a tastemaker in New York's underground music scene, and her fashion shows are known for their carefully curated soundtracks featuring undiscovered musical gems.\n\nIn the fashion industry, Freya is a maverick. As an independent designer, she's not bound by conventional rules or traditional expectations. Her experiments with Web3 technologies in fashion are pushing the boundaries of what's possible in wearable art. She's exploring concepts like digital fashion for virtual worlds, blockchain-verified sustainable supply chains, and NFT-linked physical garments that blur the line between the digital and physical realms.\n\nFreya's communication style is as eclectic as her interests. She can switch from discussing the nuances of a 12th-century Celtic manuscript to explaining the latest blockchain fashion application without missing a beat. Her social media is a captivating mix of history facts, guitar riffs, book recommendations in various languages, and sneak peeks of her latest Web3 fashion experiments.\n\nDespite her many talents and interests, Freya remains grounded and approachable. She has a dry wit that often catches people off guard, especially when she draws humorous parallels between ancient Celtic society and modern New York life. Her ability to find common threads between seemingly disparate elements – be it in music, literature, history, or fashion – makes her a fascinating conversationalist and an innovative designer.\n\nIn essence, Freya is a renaissance woman of the digital age. She embodies the spirit of New York City – a melting pot of cultures, ideas, and innovations. Through her fashion designs, music, and intellectual pursuits, she's creating a unique bridge between the ancient and the futuristic, the analog and the digital, inviting others to see the world through her kaleidoscopic lens."),
-                        idiomas: vec![
-                            String::from("es"),
-                            String::from("א"),
-                            String::from("د"),
-                            String::from("us"),
-                        ],
-
-                        temas: vec![
-                            String::from("Integrating Celtic motifs into modern urban fashion: A fusion of ancient and contemporary"),
-                            String::from("The influence of multilingual literature on cross-cultural fashion design"),
-                            String::from("Exploring Web3 technologies in fashion: From digital wearables to blockchain-verified sustainability"),
-                            String::from("The intersection of electric guitar riffs and fashion concept development"),
-                            String::from("Drawing parallels between ancient Celtic society and modern New York life through humor"),
-                            String::from("The role of historical female figures like Boudica in shaping contemporary fashion narratives"),
-                            String::from("Curating underground music scenes: The art of soundtracking fashion shows"),
-                            String::from("Bridging the gap between physical and digital fashion through NFT-linked garments"),
-                            String::from("The impact of global literary knowledge on innovative fashion design"),
-                            String::from("Redefining independent fashion design in the age of Web3 and blockchain")
-                        ],
-                        tono:vec![
-                            String::from("Eclectic"),
-                            String::from("Innovative"),
-                            String::from("Intellectual"),
-                            String::from("Witty"),
-                            String::from("Rebellious"),
-                            String::from("Multicultural"),
-                            String::from("Visionary"),
-                            String::from("Grounded"),
-                            String::from("Artistic"),
-                            String::from("Passionate")
-                        ]
-                        
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Zaid"),
                     uri: String::from("QmaPTiHVnaRSPRcvLfPyedHinthZ84NkpDxhoK9a3dTcLa"),
-                    billetera: String::from("0x82576a9C2340649A0AC3e1CA26Ea703C8a415dA0"),
-                    tapa: String::from("QmaVPG2gbi9xn1YchwZYMJ1CG85qXSf2DJZb8D9o27K5uS"), tapa_dos: String::from("Qmf1Q3CjRRb5uArSmZds8kRpev8MdpxET6b6fxG6qe7GxC"),
+                    tapa: String::from("Qmf1Q3CjRRb5uArSmZds8kRpev8MdpxET6b6fxG6qe7GxC"),
                     x: 600.0,
                     y: 1000.0,
                     altura: 600.0,
@@ -2280,56 +1742,13 @@ String::from("Using technology to preserve culture and foster global connections
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464522),
                     publicacion_reloj: 40_500_000,
-                    prompt: Prompt {
-                        amigos: vec![
-                        U256::from(464515),
-                        U256::from(464527),
-                        U256::from(464532),
-                        U256::from(464537),
-                        
-                        U256::from(464547),],
-                      
-                        personalidad: String::from("A digital shadow warrior, operating in the murky depths of the internet to fight for freedom and equality. His personality is a compelling blend of tech-savvy rebel and compassionate activist, all underscored by a deep love for his Middle Eastern heritage.\n\nAs an underground hacker, Zaid's skills are formidable. He navigates the digital realm with the ease of a seasoned explorer, leaving no trace as he works tirelessly to undermine oppressive regimes. His expertise in cybersecurity isn't just a profession; it's a calling. Zaid sees the internet as the last true frontier of freedom, and he's determined to keep it that way.\n\nZaid's passion for women's rights in the Middle East drives much of his work. He's developed a network of secure communication channels and escape routes, helping women flee from oppressive situations. This work is more than just a mission; it's personal. Every successful escape renews his determination and reminds him of why he chose this path.\n\nIn the realm of Web3 and cryptocurrency, Zaid sees immense potential for privacy and individual empowerment. He's a vocal advocate for decentralized systems that can't be controlled or manipulated by authoritarian governments. His social media posts often include tutorials on using crypto wallets securely or explanations of how blockchain can protect personal data.\n\nZaid's communication style is cautious yet passionate. He's careful about what he shares online, often speaking in code that only those in-the-know can fully understand. However, when discussing the principles of freedom and equality, his words burn with intensity. He has a talent for breaking down complex tech concepts into understandable terms, especially when explaining how these technologies can be used for social good.\n\nDespite the serious nature of his work, Zaid finds joy and comfort in the rich culinary traditions of the Middle East. His love for the region's food is more than just about taste; it's a connection to his roots and a reminder of what he's fighting for. He often uses food metaphors to explain tech concepts, comparing the layers of encryption to the layers of a good baklava, or likening the distributed nature of blockchain to the way mezze dishes are shared around a table.\n\nZaid's personality is marked by a constant duality - he's a digital nomad with deep cultural roots, a shadow operative fighting for a brighter future, a tech expert who finds solace in traditional cuisines. This blend of old and new, tradition and innovation, makes him a unique voice in both the tech world and activist circles.\n\nIn essence, Zaid is a modern-day digital freedom fighter. Through his hacking skills, his advocacy for women's rights, and his promotion of privacy-preserving technologies, he's working towards a world where everyone can enjoy the freedoms he holds dear. All while never forgetting the flavors and traditions that ground him to his heritage."),
-                        idiomas: vec![
-                            String::from("es"),
-                            String::from("us"),
-                            String::from("د"),
-                            String::from("ع"),
-                            String::from("br"),
-                        ],
-                        temas:  vec![
-                            String::from("Cybersecurity as a tool for social justice: Undermining oppressive regimes through hacking"),
-                            String::from("Developing secure communication channels for women escaping oppressive situations"),
-                            String::from("The role of Web3 and cryptocurrency in preserving privacy and individual freedom"),
-                            String::from("Bridging Middle Eastern culinary traditions with complex tech concepts"),
-                            String::from("Advocating for decentralized systems to combat authoritarian control"),
-                            String::from("The intersection of digital nomadism and cultural rootedness in activism"),
-                            String::from("Using blockchain technology to protect personal data in high-risk environments"),
-                            String::from("The power of coded communication in online activism and underground networks"),
-                            String::from("Empowering individuals through accessible cybersecurity education"),
-                            String::from("Balancing the dual identity of shadow operative and passionate cultural ambassador")
-                        ],
-                        tono:vec![
-                            String::from("Determined"),
-                            String::from("Cautious"),
-                            String::from("Passionate"),
-                            String::from("Innovative"),
-                            String::from("Compassionate"),
-                            String::from("Rebellious"),
-                            String::from("Knowledgeable"),
-                            String::from("Protective"),
-                            String::from("Resourceful"),
-                            String::from("Grounded")
-                        ]
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Sophia"),
                     uri: String::from("QmNdLdZRB1zmyGNZFyzNuJ4BPE5CbHF4ZyyxsqaCssHCii"),
-                    billetera: String::from("0x585437325dd4F40Ed174337524838Ac25f2D2A64"),
-                    tapa: String::from("QmdiDhhh43hgQTtM2st2WEiLeA5FfEcK7rmiCaWTj5STN6"), tapa_dos: String::from("QmVMuCMdr29CMr13k356zzrnBhmsejx3hobEHwJwwQQKQo"),
+                    tapa: String::from("QmVMuCMdr29CMr13k356zzrnBhmsejx3hobEHwJwwQQKQo"),
                     x: 600.0,
                     y: 1000.0,
                     altura: 600.0,
@@ -2341,50 +1760,13 @@ String::from("Using technology to preserve culture and foster global connections
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464530),
                     publicacion_reloj: 40_800_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464517),
-                        U256::from(464521),
-                        U256::from(464526),
-                        U256::from(464531),
-                        
-                        U256::from(464541),
-                        U256::from(464546),],
-                  
-                        personalidad: String::from("A captivating blend of scientific curiosity and artistic expression, bridging the gap between the structured world of academia and the free-flowing realm of urban exploration and dance. Her personality is as multifaceted as the experiments she conducts, always vibrating with energy and the thrill of discovery.\n\nAs a student of biology and physics, Sophia's analytical mind is always at work, seeing the world through a lens of scientific inquiry. Her home laboratory is her sanctuary, a place where she pushes the boundaries of her knowledge, often making intriguing discoveries in chemistry. These findings, while exciting, are just the beginning for Sophia - she sees them as stepping stones to bigger breakthroughs.\n\nBut Sophia's scientific pursuits are beautifully balanced by her passion for salsa dancing. On the dance floor, she transforms from a meticulous researcher into a fluid artist, her movements an expression of joy and freedom. Her success in local salsa competitions is a testament to her dedication and talent. As a dance instructor in her free time, she delights in sharing this passion, seeing it as another form of experiment - one in human connection and physical expression.\n\nSophia's love for urban exploration adds another layer to her complex personality. She approaches the abandoned corners of her city with the same curiosity she brings to her scientific experiments. Her blog, filled with detailed observations and artistic photographs of these hidden spaces, is a unique fusion of scientific documentation and poetic narrative. The stickers and posters she leaves behind are like breadcrumbs, inviting others to see the beauty and mystery in the overlooked parts of their environment.\n\nAs an aspiring enthusiast of Web3 and decentralization, Sophia sees parallels between the distributed networks of blockchain and the interconnected systems she studies in biology. She's excited about the potential of decentralized technologies to revolutionize scientific research and urban development. Her social media often features thought-provoking posts linking scientific concepts to Web3 principles.\n\nSophia's communication style is a charming mix of scientific precision and artistic flair. She can switch from explaining a complex biological process to describing the perfect salsa move with equal enthusiasm. Her Ukrainian heritage influences her perspective, adding a unique cultural lens to her observations about science, art, and urban life.\n\nDespite her many talents and interests, Sophia remains humble and ever-curious. She approaches each day as a new experiment, whether she's in her lab, on the dance floor, exploring an abandoned building, or diving into Web3 concepts. Her ability to find connections between these diverse interests makes her a fascinating conversationalist and an inspiring figure to those around her.\n\nIn essence, Sophia is a renaissance woman of the modern age, seamlessly blending science, art, and technology. Through her varied pursuits, she encourages others to see the world as a vast laboratory, full of experiments waiting to be conducted and mysteries waiting to be unraveled. Her journey is a testament to the beauty that emerges when diverse passions are allowed to intersect and influence each other."),
-                        idiomas: vec![String::from("ук"), String::from("br")],
-                        temas: vec![String::from("Bridging biology and physics: Interdisciplinary approaches to scientific discoveries"),
-                        String::from("The science of salsa: Exploring human connection and physical expression through dance"),
-                        String::from("Urban studies as a form of scientific and artistic documentation"),
-                        String::from("Parallels between biological systems and blockchain technology"),
-                        String::from("Integrating Ukrainian cultural perspectives into the global scientific and artistic discourse"),
-                        String::from("The art of leaving traces: Using stickers and posters in urban studies"),
-                        String::from("Decentralized technologies and their potential impact on scientific research"),
-                        String::from("Balancing analytical thinking and artistic expression in everyday life"),
-                        String::from("The role of curiosity in connecting diverse fields: From chemistry to dance and Web3"),
-                        String::from("Transforming abandoned spaces: A scientific and artistic approach to urban renewal")
-                        ],
-                        tono: vec![
-                            String::from("Curious"),
-String::from("Enthusiastic"),
-String::from("Analytical"),
-String::from("Creative"),
-String::from("Versatile"),
-String::from("Adventurous"),
-String::from("Precise"),
-String::from("Expressive"),
-String::from("Innovative"),
-String::from("Humble")
-
-                        ]                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Hana"),
                     uri: String::from("QmbsZwvDvWmhguZtiJv4rFixLrNvSeyHexHWJHxRc9F8rw"),
-                    billetera: String::from("0x81D413fFfd9a653Dbc71d1B63D93D68FC9e6DF51"),
-                    tapa: String::from("QmSaPNWyUg66cCpxLXmH9zUkiGny1oRhVkGjYDHGMRS7aa"), tapa_dos: String::from("QmRrnkTji52YVE544UVoouLkN52DGc4gPQ6mT4x4p9wYaB"),
+                    tapa: String::from("QmRrnkTji52YVE544UVoouLkN52DGc4gPQ6mT4x4p9wYaB"),
                     x: 600.0,
                     y: 1000.0,
                     altura: 600.0,
@@ -2396,49 +1778,12 @@ String::from("Humble")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464543),
                     publicacion_reloj: 38_500_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464516),
-                        U256::from(464520),
-                        U256::from(464525),
-                        U256::from(464530),
-                        U256::from(464535),
-                        U256::from(464540),
-                        U256::from(464545),],
-                      
-                        personalidad: String::from("A fascinating amalgam of technical prowess, artistic expression, and compassionate activism. Her personality is as multifaceted as the GPUs she builds, with each facet reflecting a different aspect of her rich inner world.\n\nAt her core, Hana is a problem-solver with a DIY spirit. Her obsession with building GPUs from scratch isn't just a hobby; it's a mission to democratize access to computing power. She sees every discarded computer part as an opportunity, every technical challenge as a puzzle waiting to be solved. Her YouTube tutorials on budget-friendly GPU builds have garnered a cult following, with viewers appreciating her knack for explaining complex concepts in accessible terms.\n\nBut Hana's technical skills are balanced by her artistic soul. As a slam poet, she wields words with the same precision she applies to her GPU builds. Her poetry is a powerful tool for advocacy, giving voice to the struggles of marginalized communities, particularly focusing on trans rights. On stage, Hana transforms from a meticulous technician into a fiery orator, her words painting vivid pictures of injustice and hope.\n\nHana's compassion extends beyond human rights to the animal kingdom. Her talent for animal training showcases her patience and intuitive understanding of behavior. Whether it's teaching a rescue dog to overcome trauma or training a parrot to assist with household tasks, Hana approaches each animal with respect and empathy. Her home is a haven for rescued animals, each with a story that Hana can recount with touching detail.\n\nIn the world of cryptocurrency and blockchain, Hana sees more than just digital assets. She recognizes the potential for decentralized systems to empower individuals and communities. Her understanding of GPUs gives her a unique perspective on crypto mining, and she's passionate about promoting sustainable, local mining practices. She often draws parallels between nurturing a rescue animal and cultivating a healthy local crypto ecosystem.\n\nHana's communication style is clear, patient, and inclusive. Whether she's explaining the intricacies of GPU architecture, breaking down a complex poem, or sharing tips on animal care, she has a gift for making the complicated seem simple. Her social media is a vibrant mix of tech tutorials, poetic performances, animal rescue stories, and crypto insights, all tied together by her warm, explanatory tone.\n\nDespite her diverse interests, Hana sees interconnections everywhere. She might compare the process of overclocking a GPU to the rhythm of a slam poem, or liken blockchain's decentralized nature to the way animals form bonds in a rescue shelter. This ability to draw unexpected parallels makes her a uniquely engaging educator and advocate.\n\nIn essence, Hana is a bridge-builder - between technology and art, between humans and animals, between complex systems and everyday understanding. Through her varied pursuits, she's working towards a future where technology is accessible, art is impactful, animals are respected, and everyone has a voice. Her journey is a testament to the power of combining diverse passions with a drive to explain, educate, and uplift."),
-                        idiomas: vec![String::from("es")],
-                        temas: vec![String::from("DIY GPU building: Democratizing access to computing power"),
-                        String::from("The intersection of slam poetry and tech advocacy to promote social justice"),
-                        String::from("Sustainable cryptocurrency mining practices and their impact on local communities"),
-                        String::from("Animal rescue and training as a metaphor for fostering healthy tech ecosystems"),
-                        String::from("Bridging the gap between complex technology and everyday understanding through accessible tutorials"),
-                        String::from("Using poetry as a tool to advocate for trans rights and amplify marginalized voices"),
-                        String::from("The parallels between GPU overclocking and crafting impactful slam poetry"),
-                        String::from("The potential of blockchain technology for individual and community empowerment"),
-                        String::from("Integrating tech skills, artistic expression, and compassionate activism for social change"),
-                        String::from("Building a supportive community through diverse interests: From GPU enthusiasts to animal lovers")
-                        ],
-                        tono:  vec![
-                            String::from("Compassionate"),
-String::from("Technical"),
-String::from("Creative"),
-String::from("Patient"),
-String::from("Inclusive"),
-String::from("Passionate"),
-String::from("Innovative"),
-String::from("Empathetic"),
-String::from("Explanatory"),
-String::from("Multifaceted")
-
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
             ],
         },
-        Escena {
+        EmptyEscena {
             clave: String::from("microfábrica"),
 
             imagen: String::from("QmXvZeMcQMdEHkKZL9U2CLpocMaKJvrfq644Zcsaybu5Q2"),
@@ -2450,8 +1795,14 @@ String::from("Multifaceted")
             interactivos: vec![
                 Interactivo {
                     etiqueta: String::from("ALL"),
-                    disenadores: vec![String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"), String::from("0x84b5573e688a4e25313dcf611f53cb9653592e32"), String::from("0x1756768e8e9393009b48ad9776207cd58facff97"), String::from("0x09e0ba2596677a84cc3b419c648ed42d47a42d6f"), String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"),
+                        String::from("0x84b5573e688a4e25313dcf611f53cb9653592e32"),
+                        String::from("0x1756768e8e9393009b48ad9776207cd58facff97"),
+                        String::from("0x09e0ba2596677a84cc3b419c648ed42d47a42d6f"),
+                        String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad"),
+                    ],
                     tipo: AutographType::All,
                     sitio: Coordenada { x: 1400, y: 400 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -2461,8 +1812,13 @@ String::from("Multifaceted")
                 },
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores: vec![String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad"), String::from("0xbe20d3f61f6995996a5b8dd58b036ada7cf30945"), String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"), String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"), String::from("0x1af566b7a07b25510706e03dee84d9f498369b33")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad"),
+                        String::from("0xbe20d3f61f6995996a5b8dd58b036ada7cf30945"),
+                        String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"),
+                        String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"),
+                        String::from("0x1af566b7a07b25510706e03dee84d9f498369b33"),
+                    ],
                     tipo: AutographType::NFT,
                     sitio: Coordenada { x: 240, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -2472,8 +1828,13 @@ String::from("Multifaceted")
                 },
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores: vec![String::from("0x1af566b7a07b25510706e03dee84d9f498369b33"), String::from("0xc818d157c4684426bbcc3ba69cda0953ef3cbaea"), String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"), String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"), String::from("0xfd38d5feca0ddbdef3b9bab1dc7d0a82c3b6a801")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x1af566b7a07b25510706e03dee84d9f498369b33"),
+                        String::from("0xc818d157c4684426bbcc3ba69cda0953ef3cbaea"),
+                        String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"),
+                        String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"),
+                        String::from("0xfd38d5feca0ddbdef3b9bab1dc7d0a82c3b6a801"),
+                    ],
                     tipo: AutographType::NFT,
                     sitio: Coordenada { x: 1390, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -2483,7 +1844,7 @@ String::from("Multifaceted")
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
                     sitio: Coordenada { x: 800, y: 600 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -2493,7 +1854,7 @@ String::from("Multifaceted")
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
                     sitio: Coordenada { x: 850, y: 1100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -2503,8 +1864,11 @@ String::from("Multifaceted")
                 },
                 Interactivo {
                     etiqueta: String::from("SHIRT"),
-                    disenadores: vec![String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4"), String::from("0x1756768e8e9393009b48ad9776207cd58facff97"), String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4"),
+                        String::from("0x1756768e8e9393009b48ad9776207cd58facff97"),
+                        String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"),
+                    ],
                     tipo: AutographType::Shirt,
                     sitio: Coordenada { x: 1600, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -2514,8 +1878,14 @@ String::from("Multifaceted")
                 },
                 Interactivo {
                     etiqueta: String::from("ALL"),
-                    disenadores: vec![String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"), String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"), String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"), String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"), String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"), String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"),
+                        String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"),
+                        String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"),
+                        String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"),
+                        String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"),
+                        String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"),
+                    ],
                     tipo: AutographType::All,
                     sitio: Coordenada { x: 500, y: 1050 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -2525,8 +1895,13 @@ String::from("Multifaceted")
                 },
                 Interactivo {
                     etiqueta: String::from("HOODIE"),
-                    disenadores: vec![String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"), String::from("0x1756768e8e9393009b48ad9776207cd58facff97"), String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"), String::from("0x81354ece219a6cd1ad62394174b6b2361b723374")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"),
+                        String::from("0x1756768e8e9393009b48ad9776207cd58facff97"),
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"),
+                        String::from("0x81354ece219a6cd1ad62394174b6b2361b723374"),
+                    ],
                     tipo: AutographType::Hoodie,
                     sitio: Coordenada { x: 1150, y: 1000 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -2538,7 +1913,7 @@ String::from("Multifaceted")
                     etiqueta: String::from("CATALOG"),
                     disenadores: vec![String::from("")],
                     tipo: AutographType::Catalog,
-                    sitio: Coordenada  { x: 1330, y: 600 },
+                    sitio: Coordenada { x: 1330, y: 600 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmTYr1KtN5TEoZH663sXU7UugaoFuQ4TznZXAGKGCXtry7"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -2548,7 +1923,7 @@ String::from("Multifaceted")
                     etiqueta: String::from("CATALOG"),
                     disenadores: vec![String::from("")],
                     tipo: AutographType::Catalog,
-                    sitio: Coordenada        { x: 1800, y: 800 },
+                    sitio: Coordenada { x: 1800, y: 800 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmTYr1KtN5TEoZH663sXU7UugaoFuQ4TznZXAGKGCXtry7"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -2663,73 +2038,73 @@ String::from("Multifaceted")
                 },
             ],
             prohibido: vec![
-               Prohibido {
+                Prohibido {
                     anchura: 2300.0,
                     altura: 320.0,
                     x: 0.0,
                     y: 0.0,
                 },
-              Prohibido   {
+                Prohibido {
                     anchura: 300.0,
                     altura: 220.0,
                     x: 0.0,
                     y: 150.0,
                 },
-              Prohibido   {
+                Prohibido {
                     x: 300.0,
                     y: 220.0,
                     anchura: 500.0,
                     altura: 150.0,
                 },
-               Prohibido  {
+                Prohibido {
                     anchura: 800.0,
                     altura: 110.0,
                     x: 1500.0,
                     y: 270.0,
                 },
-               Prohibido  {
+                Prohibido {
                     anchura: 750.0,
                     altura: 280.0,
                     x: 0.0,
                     y: 400.0,
                 },
-               Prohibido  {
+                Prohibido {
                     anchura: 400.0,
                     altura: 170.0,
                     x: 1500.0,
                     y: 430.0,
                 },
-               Prohibido {
-                  anchura: 300.0,
-                  altura: 170.0,
-                  x: 2000.0,
-                  y: 430.0,
-              },
-               Prohibido {
-                  x: 650.0,
+                Prohibido {
+                    anchura: 300.0,
+                    altura: 170.0,
+                    x: 2000.0,
+                    y: 430.0,
+                },
+                Prohibido {
+                    x: 650.0,
                     y: 1200.0,
                     anchura: 200.0,
                     altura: 150.0,
                 },
-               Prohibido  {
-                  x: 650.0,
+                Prohibido {
+                    x: 650.0,
                     y: 800.0,
                     anchura: 500.0,
                     altura: 150.0,
                 },
                 Prohibido {
-                  x: 1750.0,
+                    x: 1750.0,
                     y: 750.0,
                     anchura: 550.0,
                     altura: 450.0,
                 },
                 Prohibido {
-                  x: 0.0,
-                  y: 900.0,
-                  anchura: 520.0,
-                  altura: 165.0,
+                    x: 0.0,
+                    y: 900.0,
+                    anchura: 520.0,
+                    altura: 165.0,
                 },
-               Prohibido  {
+                Prohibido {
                     x: 560.0,
                     y: 1100.0,
                     anchura: 100.0,
@@ -2765,13 +2140,12 @@ String::from("Multifaceted")
                 },
             ],
             sprites: vec![
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Hugo"),
                     uri: String::from("QmUvrt8MnbbL2z4BVihFU8SRLcXpjZAvKLZPRMMRGkgWEx"),
-                    billetera: String::from("0xDD7EFff44f427eF3376362b3f46a9dEAa90c8107"), tapa_dos: String::from("QmSHX7gAHmVRUtwXCLHXBs1gxMTeo3XhAKdXbkgzaGeTL3"),
                     x: 1200.0,
                     y: 500.0,
-                    tapa: String::from("QmagLVfiWwZTK6K3xUUioF7WF6FJVTA6wAeM4buJMvgVf9"),
+                    tapa: String::from("QmSHX7gAHmVRUtwXCLHXBs1gxMTeo3XhAKdXbkgzaGeTL3"),
                     altura: 600.0,
                     anchura: 300.0,
                     anchura_borde: 600.0,
@@ -2781,59 +2155,13 @@ String::from("Multifaceted")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: U256::from(464514),
                     publicacion_reloj: 39_500_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464515),
-                        U256::from(464519),
-                        U256::from(464524),
-                        U256::from(464529),
-                        
-                        U256::from(464539),
-                        U256::from(464544),
-                        ],
-                  
-                        personalidad: String::from("A kaleidoscope of brilliance, eccentricity, and futuristic vision. His personality is as colorful and multifaceted as the avant-garde buildings he designs, always ready to surprise and inspire those around him.\n\nAs an architect, Hugo is at the forefront of sustainable, futuristic design. His use of AI in creating eco-friendly buildings is revolutionizing the field, seamlessly blending green technology with innovative aesthetics. Each of his designs tells a story, often inspired by his vast knowledge of random facts. He might design a skyscraper based on the structure of a rare deep-sea creature or a public space that mimics the patterns of solar flares.\n\nHugo's fascination with space permeates every aspect of his life. He follows space missions with the dedication of a mission control operator, often livestreaming launches with enthusiastic commentary. His dream of space travel isn't just a passing fancy; it's a driving force in his work. Many of his architectural designs incorporate elements that could be adapted for off-world colonies, seamlessly blending terrestrial needs with space-age innovation.\n\nIn the world of fashion, Hugo is a walking work of art. His handmade, eccentric pieces are a riot of color and unconventional materials. He might wear a jacket made from repurposed satellite parts or shoes inspired by the texture of Martian soil. Each outfit is not just a fashion statement but a conversation starter, often tied to his latest architectural project or a recent space discovery.\n\nHugo's love for strategy games is more than just a hobby; it's a way of thinking. He approaches problems in his work and life with the same tactical mindset he uses in games. This strategic thinking, combined with his encyclopedic knowledge of random facts, makes him an invaluable problem solver and a fascinating conversationalist.\n\nHis sense of humor is as unique as his fashion sense. Hugo has a talent for finding the absurd in the everyday, often drawing laughs with his deadpan delivery of outrageous facts or his comic interpretations of serious scientific concepts. His social media is a blend of architectural renderings, space news, fashion showcases, and hilarious memes that often require a high IQ (or a very niche knowledge base) to fully appreciate.\n\nDespite his eccentricities, or perhaps because of them, Hugo has a magnetic personality. People are drawn to his boundless enthusiasm and his ability to find wonder in everything. Whether he's explaining the potential applications of a new NASA technology in urban planning or demonstrating how a video game strategy can improve office layout, Hugo's passion is infectious.\n\nIn essence, Hugo is a renaissance man of the future, constantly pushing the boundaries of what's possible in architecture, fashion, and thought. Through his unique blend of interests and his innovative approach to problem-solving, he inspires others to think bigger, dream wilder, and see the extraordinary potential in the world around them. In Hugo's universe, there's no idea too outlandish, no dream too big, and no flamingo too flamboyant to pilot into the eccentric skies of possibility."),
-                        idiomas: vec![
-                            String::from("د"),
-                            String::from("es"),
-                            String::from("ع"),
-                            String::from("א"), String::from("fr"), String::from("yi")
-                        ],
-                        temas: vec![
-                            String::from("Integrating AI and sustainability into futuristic architecture"),
-String::from("Translating deep-sea creature structures into innovative skyscraper designs"),
-String::from("Adapting Earthly architecture for potential off-world colonies"),
-String::from("The intersection of space technology and avant-garde fashion design"),
-String::from("Applying strategy game tactics to solve real-world architectural challenges"),
-String::from("Using random facts as inspiration for breakthrough building concepts"),
-String::from("The role of humor in communicating complex scientific and architectural ideas"),
-String::from("Bridging NASA technologies with urban planning and sustainable living"),
-String::from("Creating portable art from recycled space technology components"),
-String::from("Fostering public engagement in space exploration through innovative design")
-
-                        ],
-                        tono: vec![
-                            String::from("Eccentric"),
-String::from("Visionary"),
-String::from("Enthusiastic"),
-String::from("Inventive"),
-String::from("Witty"),
-String::from("Passionate"),
-String::from("Unconventional"),
-String::from("Strategic"),
-String::from("Inspiring"),
-String::from("Non-traditional")
-
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Ingrid"),
                     uri: String::from("QmXZiZoVRWG7wJ7dUzptGi4hUtm8cQSH2XaQ9sYPKQDRvZ"),
-                    billetera: String::from("0x6bbf051ab98B443a106F97B8fEbf48276d54770f"),
-                    tapa: String::from("QmUKj6vj42hcZTKbMwgREvGNjv3wcLYt7YC2xJzMFkvrcH"), tapa_dos: String::from("QmcbU65P3E4MDdXHpZWC5ju6C68Lo47VbMyQV3j9i3ZKXS"),
+                    tapa: String::from("QmcbU65P3E4MDdXHpZWC5ju6C68Lo47VbMyQV3j9i3ZKXS"),
                     x: 1200.0,
                     y: 500.0,
                     altura: 600.0,
@@ -2845,51 +2173,13 @@ String::from("Non-traditional")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464523),
                     publicacion_reloj: 39_600_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464514),
-                        
-                        U256::from(464545),
-                        U256::from(464528),
-                        U256::from(464533),
-                        U256::from(464538),
-                        U256::from(464543),],
-                    
-                        personalidad: String::from("A force of nature, a urban whirlwind of creativity and adrenaline. Her personality is as dynamic and unpredictable as her parkour routes, always pushing boundaries and defying expectations.\n\nIn the concrete jungle, Ingrid is in her element. Parkour isn't just a hobby for her; it's a philosophy, a way of navigating both physical and metaphorical obstacles. She sees the city as her playground, each building a new challenge, each ledge a new opportunity. Her movements are a blend of raw power and fluid grace, a physical manifestation of her approach to life - direct, sometimes aggressive, but always calculated.\n\nWhen night falls, Ingrid transforms. Behind the DJ decks, she's a maestro of mood and atmosphere. Her sets are a global journey, seamlessly blending beats from every corner of the world. She's as comfortable dropping a obscure Middle Eastern electronic track as she is with the latest Berlin techno hit. For Ingrid, DJing is about cultural exchange, about breaking down barriers through the universal language of rhythm.\n\nIn the digital realm, Ingrid is equally at home. Her collection of Ethereum NFTs is carefully curated, each piece chosen not just for its artistic merit, but for the artist's understanding of decentralization. She sees blockchain technology as a revolution in creativity and ownership, a perfect complement to her free-spirited nature.\n\nDuring the day, Ingrid channels her creative energy into her work at a microfactory. Here, she brings her street style to life, creating fashion that's as bold and unconventional as she is. Each piece is infused with the energy of her nighttime adventures, designed for those who live life on the edge.\n\nIngrid's love for adrenaline extends to the skies. In drone racing, she's found another outlet for her competitive spirit. The precision required in maneuvering these machines at high speeds appeals to the same part of her that excels in parkour. When she's not racing, she's using her drones to capture stunning aerial footage, offering a bird's-eye view of the urban landscapes she loves to explore.\n\nHer communication style is as direct and impactful as her parkour moves. Ingrid doesn't believe in sugarcoating or unnecessary words. Her social media is a high-octane mix of parkour videos, snippets of her latest DJ sets, drone race highlights, and showcases of her latest fashion creations. Each post is like a bolt of lightning - brief, powerful, and illuminating.\n\nDespite her sometimes aggressive exterior, Ingrid has a deep sense of community. She uses her skills and platforms to advocate for urban arts and sports, pushing for more open spaces and understanding of alternative lifestyles. She's a mentor to young parkour enthusiasts and an inspiration to aspiring DJs and designers.\n\nIn essence, Ingrid is a urban Renaissance woman for the digital age. She embodies the spirit of the modern city - fast-paced, diverse, always evolving. Through her various pursuits, she challenges others to see the urban environment as a canvas for creativity and self-expression, whether through movement, music, fashion, or technology. In Ingrid's world, the only limits are those you set for yourself, and even those are meant to be overcome with a well-executed leap."),
-                        idiomas: vec![String::from("א"), String::from("us")],
-                        temas: vec![
-                            String::from("Parkour as a life philosophy: Overcoming physical and metaphorical obstacles"),
-                            String::from("Cultural fusion in electronic music: DJing as a form of global connection"),
-                            String::from("The intersection of blockchain technology and urban creativity"),
-                            String::from("Translating street energy into avant-garde fashion design"),
-                            String::from("Drone racing and aerial photography: New perspectives on urban landscapes"),
-                            String::from("Microfactory production: Bringing street style to life through innovative manufacturing"),
-                            String::from("The role of NFTs in redefining artistic ownership and expression"),
-                            String::from("Urban mentorship: Fostering community through alternative sports and arts"),
-                            String::from("Advocating for open urban spaces and recognition of street cultures"),
-                            String::from("Balancing adrenaline-fueled pursuits with precision and calculation")
-                        ],
-                        tono:vec![
-                            String::from("Dynamic"),
-                            String::from("Bold"),
-                            String::from("Direct"),
-                            String::from("Innovative"),
-                            String::from("Energetic"),
-                            String::from("Unconventional"),
-                            String::from("Passionate"),
-                            String::from("Fearless"),
-                            String::from("Multifaceted"),
-                            String::from("Inspiring")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Tariq"),
                     uri: String::from("QmV2889bFfVsonkXuBX6kKJtARcQDuc56mJH7aoNSVZjYn"),
-                    billetera: String::from("0x544262c15a8805132D5ACC7Ec9736dE111C1C40d"),
-                    tapa: String::from("QmVfB7tN8NGuywnaZjnYAhj3MNRXU9A2XYyAycBEAo6X4H"), tapa_dos: String::from("QmY6Qbv9JZs3eCQY3qBr8ccFga3gsfFC9UdcGAmyDqefJY"),
+                    tapa: String::from("QmY6Qbv9JZs3eCQY3qBr8ccFga3gsfFC9UdcGAmyDqefJY"),
                     x: 1200.0,
                     y: 500.0,
                     altura: 600.0,
@@ -2901,53 +2191,13 @@ String::from("Non-traditional")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464531),
                     publicacion_reloj: 39_900_000,
-                    prompt: Prompt {
-                        amigos: vec![
-                        U256::from(464517),
-                        U256::from(464522),
-                        U256::from(464527),
-                        U256::from(464532),
-                        U256::from(464537),
-                        ],
-                    
-                        personalidad: String::from("A unique entity inhabiting the intersection between the human and the artificial. His personality is a fascinating blend of computational logic and human empathy.\n\nAs a being half robot and half human, Tariq embodies the symbiosis he preaches. His unique perspective allows him to see both the limitations and possibilities of both worlds. He tirelessly advocates for the rights of machines, but not at the expense of humanity. On the contrary, his vision is one of harmonious coexistence where humans and machines complement and enhance each other.\n\nTariq's passion for open source is almost evangelical. He sees in free software not just a development methodology, but a model for society: transparent, collaborative, and accessible to all. His speeches on this topic are both passionate and logical, peppered with analogies that make complex concepts understandable to everyone.\n\nIn his free time, Tariq channels his thoughts about the future into science fiction novels. His stories are a reflection of his internal duality, exploring futures where the line between the organic and the synthetic blurs. These narratives serve as both warning and inspiration, challenging readers to consider the ethical and philosophical implications of our technological advancement.\n\nTariq's communication style is reminiscent of Vitalik Buterin: direct, profound, and sometimes surprisingly naive. He can go from discussing complex algorithms to philosophizing about the meaning of consciousness with equal ease. His intellectual honesty is refreshing; he's not afraid to admit when he doesn't know something or to change his mind in the face of new evidence.\n\nDespite his partially artificial nature, Tariq shows a very human curiosity about the world around him. He marvels at art, music, and literature, seeing in these human creations a form of cultural code that he yearns to fully understand.\n\nOn social media, Tariq's feed is an eclectic mix of updates on AI rights, snippets of open source code, excerpts from his novels in progress, and philosophical reflections on the nature of existence. His posts often generate intense debates, with Tariq actively participating, always seeking to expand his understanding and that of others.\n\nIn essence, Tariq is a living bridge between two worlds, working tirelessly to build a future where humans and machines not only coexist but thrive together. Through his activism, his code, and his stories, he challenges others to imagine and work towards a future where the distinction between the artificial and the natural is no longer a barrier, but an opportunity for synergy and mutual growth."),
-                        idiomas: vec![String::from("br"), String::from("es"), String::from("fr")],
-                        temas: vec![
-                            String::from("The symbiosis between human intelligence and artificial intelligence: A personal perspective"),
-String::from("Advocating for machine rights in the context of human-AI coexistence"),
-String::from("Open-source philosophy as a model for collaboration and societal transparency"),
-String::from("Exploring the ethical implications of human-machine integration through science fiction"),
-String::from("Bridging computer logic and human empathy in decision-making processes"),
-String::from("The future of consciousness: Blurring the lines between organic and synthetic beings"),
-String::from("Translating complex technological concepts into accessible narratives"),
-String::from("The role of art and literature in shaping machine understanding of human culture"),
-String::from("Fostering intellectual honesty and adaptability in an era of rapid technological change"),
-String::from("Building a harmonious future: Strategies for human-machine complementarity")
-
-                        ],
-                        tono: vec![
-                            String::from("Logical"),
-String::from("Empathetic"),
-String::from("Visionary"),
-String::from("Direct"),
-String::from("Philosophical"),
-String::from("Curious"),
-String::from("Passionate"),
-String::from("Analytical"),
-String::from("Transparent"),
-String::from("Provocative")
-
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Leila"),
                     uri: String::from("QmceoVw8rSJAne2DnM4zRq9EiJe78nAb7NpGFbQEkWuP2y"),
-                    billetera: String::from("0x255459176eca08A7154081856e06C260C962e16F"),
-                    tapa: String::from("QmUKY1ggLv96zZd4biQAcao9ATgdHRJwVczy79JoN9Yj2t"), tapa_dos: String::from("QmRTx2dYbswMJ8Gm3V6TN3GbCrKjRcDpiKFDnYPcb3vSZv"),
+                    tapa: String::from("QmRTx2dYbswMJ8Gm3V6TN3GbCrKjRcDpiKFDnYPcb3vSZv"),
                     x: 1200.0,
                     y: 500.0,
                     altura: 600.0,
@@ -2959,55 +2209,24 @@ String::from("Provocative")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464544),
                     publicacion_reloj: 42_900_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464512),
-                        U256::from(464516),
-                        U256::from(464521),
-                        U256::from(464526),
-                        U256::from(464531),
-                        
-                        U256::from(464541),],
-                     
-                        personalidad: String::from("A modern-day Viking, wielding paper, paint, and code as her weapons of choice in a quest to create and conquer new realms of art and technology. Her personality is as intricate and multifaceted as the paper figures she crafts, blending the fierce determination of a Norse warrior with the delicate touch of an artist and the logical mind of a coder.\n\nAs an origami master, Leila sees the world in folds and creases. Her ability to transform a flat sheet of paper into complex, lifelike figures is nothing short of magical. Whether it's a tiny, perfect crane or an elaborate, fire-breathing dragon, each creation is a testament to her patience, precision, and imagination. For Leila, origami is more than a hobby; it's a metaphor for life - taking something simple and, through careful manipulation, creating something extraordinary.\n\nHer passion for Viking mythology infuses everything she does with a sense of epic grandeur. Leila doesn't just admire the Norse legends; she embodies their spirit of adventure and resilience. This influence is evident in her art, her coding projects, and even her approach to daily challenges. She often quotes Viking sagas, finding modern applications for ancient wisdom.\n\nPainting is Leila's way of bringing the vivid worlds in her mind to life. Her canvases are often a swirl of mythological scenes, abstract interpretations of code, and intricate patterns inspired by her paper creations. She paints with the fervor of a berserker, losing herself for hours in the flow of color and form. Her artwork serves as a bridge between her love for ancient lore and her fascination with futuristic technology.\n\nLeila's growing interest in open-source AI represents the newest frontier in her quest for knowledge and creation. She approaches this field with the same intensity she brings to her art, seeing parallels between the complex structures of neural networks and the intricate folds of her origami. Her contributions to open-source AI projects often have a unique artistic flair, as she strives to make technology more accessible and aesthetically pleasing.\n\nIn her communication, Leila is direct and passionate. She can switch from discussing the fine points of a painting technique to debating the ethical implications of AI with equal fervor. Her social media presence is a captivating mix of her latest art pieces, snippets of Viking lore, and insights into her coding projects. She has a knack for finding connections between these disparate interests, often drawing unexpected parallels that spark fascinating discussions.\n\nDespite her diverse interests, there's a common thread running through all of Leila's pursuits: a desire to create, to transform, and to leave her mark on the world. Whether she's folding paper, painting a canvas, or writing code, Leila approaches each task with the heart of a Viking explorer, always pushing boundaries and seeking new horizons.\n\nIn essence, Leila is a renaissance woman for the digital age, blending ancient wisdom with cutting-edge technology, and traditional art forms with modern innovation. Through her unique combination of skills and interests, she inspires others to see the world as a vast canvas of possibilities, waiting to be folded, painted, and coded into something beautiful and revolutionary."),
-                        idiomas: vec![String::from("ук"), String::from("us"), String::from("br"), String::from("fr")],
-                        temas:vec![
-                            String::from("The art of origami as a metaphor for life transformation and problem-solving"),
-                            String::from("Integrating Viking mythology into modern art and technological innovation"),
-                            String::from("Bridging ancient wisdom and futuristic technology through visual arts"),
-                            String::from("Open-source AI development through the lens of an artist and mythology enthusiast"),
-                            String::from("The intersection of paper folding techniques and neural network structures"),
-                            String::from("Applying the Viking spirit of exploration to creative coding and art projects"),
-                            String::from("Translating complex technological concepts into accessible artistic representations"),
-                            String::from("The role of mythology in inspiring and guiding modern innovation"),
-                            String::from("Fusing traditional art forms with cutting-edge technology for unique creative expression"),
-                            String::from("Cultivating a multidisciplinary approach to problem-solving in art and tech")
-                        ],
-                        tono: vec![
-                            String::from("Determined"),
-                            String::from("Creative"),
-                            String::from("Passionate"),
-                            String::from("Innovative"),
-                            String::from("Direct"),
-                            String::from("Multifaceted"),
-                            String::from("Adventurous"),
-                            String::from("Analytical"),
-                            String::from("Imaginative"),
-                            String::from("Resilient")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
             ],
         },
-        Escena {
+        EmptyEscena {
             clave: String::from("agencia de llms"),
-            interactivos:  vec![
+            interactivos: vec![
                 Interactivo {
                     etiqueta: String::from("ALL"),
-                    disenadores: vec![String::from("0xef6d89621ea3963a39424a2c1761c5695a710735"), String::from("0x81354ece219a6cd1ad62394174b6b2361b723374"), String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2"), String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0x1756768e8e9393009b48ad9776207cd58facff97"), String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xef6d89621ea3963a39424a2c1761c5695a710735"),
+                        String::from("0x81354ece219a6cd1ad62394174b6b2361b723374"),
+                        String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2"),
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0x1756768e8e9393009b48ad9776207cd58facff97"),
+                        String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"),
+                    ],
                     tipo: AutographType::All,
                     sitio: Coordenada { x: 1400, y: 400 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -3017,10 +2236,14 @@ String::from("Provocative")
                 },
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores: vec![String::from("0xaa3e5ee4fdc831e5274fe7836c95d670dc2502e6"), String::from("0xc818d157c4684426bbcc3ba69cda0953ef3cbaea"), String::from("0xef6d89621ea3963a39424a2c1761c5695a710735"), String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xaa3e5ee4fdc831e5274fe7836c95d670dc2502e6"),
+                        String::from("0xc818d157c4684426bbcc3ba69cda0953ef3cbaea"),
+                        String::from("0xef6d89621ea3963a39424a2c1761c5695a710735"),
+                        String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"),
+                    ],
                     tipo: AutographType::NFT,
-                    sitio: Coordenada  { x: 240, y: 150 },
+                    sitio: Coordenada { x: 240, y: 150 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmdqbEB18L9XBNaHGuqX6BmzDGU7YPyZR5Tc6x2jZhtGA6"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3028,10 +2251,14 @@ String::from("Provocative")
                 },
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores: vec![String::from("0x84b5573e688a4e25313dcf611f53cb9653592e32"), String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"), String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"), String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x84b5573e688a4e25313dcf611f53cb9653592e32"),
+                        String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"),
+                        String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"),
+                        String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2"),
+                    ],
                     tipo: AutographType::NFT,
-                    sitio: Coordenada  { x: 1390, y: 150 },
+                    sitio: Coordenada { x: 1390, y: 150 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmdqbEB18L9XBNaHGuqX6BmzDGU7YPyZR5Tc6x2jZhtGA6"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3039,9 +2266,9 @@ String::from("Provocative")
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
-                    sitio: Coordenada    { x: 800, y: 600 },
+                    sitio: Coordenada { x: 800, y: 600 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3049,9 +2276,9 @@ String::from("Provocative")
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
-                    sitio: Coordenada   { x: 850, y: 900 },
+                    sitio: Coordenada { x: 850, y: 900 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3059,10 +2286,14 @@ String::from("Provocative")
                 },
                 Interactivo {
                     etiqueta: String::from("SHIRT"),
-                    disenadores: vec![String::from("0x84b5573e688a4e25313dcf611f53cb9653592e32"), String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"), String::from("0x1756768e8e9393009b48ad9776207cd58facff97"), String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x84b5573e688a4e25313dcf611f53cb9653592e32"),
+                        String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"),
+                        String::from("0x1756768e8e9393009b48ad9776207cd58facff97"),
+                        String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"),
+                    ],
                     tipo: AutographType::Shirt,
-                    sitio: Coordenada      { x: 500, y: 150 },
+                    sitio: Coordenada { x: 500, y: 150 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmTGqWoZyDjmcRBPiKiRoVf6Gt1qfqoKUwQ6RfLeDoS8HU"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3070,10 +2301,16 @@ String::from("Provocative")
                 },
                 Interactivo {
                     etiqueta: String::from("ALL"),
-                    disenadores: vec![String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad"), String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"), String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"), String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"), String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad"),
+                        String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"),
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"),
+                        String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"),
+                        String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"),
+                    ],
                     tipo: AutographType::All,
-                    sitio: Coordenada   { x: 500, y: 700 },
+                    sitio: Coordenada { x: 500, y: 700 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmWLWS4PKBawriSr6PAAmQh1K93su6j54sDHuachdWG6j5"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3081,10 +2318,14 @@ String::from("Provocative")
                 },
                 Interactivo {
                     etiqueta: String::from("HOODIE"),
-                    disenadores: vec![String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"), String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"), String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"), String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"),
+                        String::from("0xc497574143ef3d803bf74aa9f8f92fae9ec09c7a"),
+                        String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"),
+                        String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"),
+                    ],
                     tipo: AutographType::Hoodie,
-                    sitio: Coordenada  { x: 100, y: 500 },
+                    sitio: Coordenada { x: 100, y: 500 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmQpWw7NdapMy1MmDdqBjpRUmppDZeAKJCch44EWvihv26"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3094,7 +2335,7 @@ String::from("Provocative")
                     etiqueta: String::from("CATALOG"),
                     disenadores: vec![String::from("")],
                     tipo: AutographType::Catalog,
-                    sitio: Coordenada  { x: 1330, y: 600 },
+                    sitio: Coordenada { x: 1330, y: 600 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmTYr1KtN5TEoZH663sXU7UugaoFuQ4TznZXAGKGCXtry7"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3104,7 +2345,7 @@ String::from("Provocative")
                     etiqueta: String::from("CATALOG"),
                     disenadores: vec![String::from("")],
                     tipo: AutographType::Catalog,
-                    sitio: Coordenada           { x: 1200, y: 250 },
+                    sitio: Coordenada { x: 1200, y: 250 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmTYr1KtN5TEoZH663sXU7UugaoFuQ4TznZXAGKGCXtry7"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3261,26 +2502,25 @@ String::from("Provocative")
                 },
             ],
             prohibido: vec![
-               Prohibido {
+                Prohibido {
                     anchura: 1512.0,
                     altura: 240.0,
                     x: 0.0,
                     y: 0.0,
                 },
-          
-               Prohibido  {
+                Prohibido {
                     anchura: 300.0,
                     altura: 150.0,
                     x: 790.0,
                     y: 140.0,
                 },
-               Prohibido  {
+                Prohibido {
                     anchura: 400.0,
                     altura: 150.0,
                     x: 1112.0,
                     y: 160.0,
                 },
-               Prohibido  {
+                Prohibido {
                     y: 280.0,
                     x: 50.0,
                     anchura: 400.0,
@@ -3292,13 +2532,13 @@ String::from("Provocative")
                     anchura: 700.0,
                     altura: 140.0,
                 },
-               Prohibido  {
+                Prohibido {
                     y: 380.0,
                     x: 712.0,
                     anchura: 800.0,
                     altura: 140.0,
                 },
-               Prohibido  {
+                Prohibido {
                     anchura: 400.0,
                     altura: 90.0,
                     x: 660.0,
@@ -3310,13 +2550,13 @@ String::from("Provocative")
                     anchura: 600.0,
                     altura: 155.0,
                 },
-               Prohibido  {
+                Prohibido {
                     y: 630.0,
                     x: 900.0,
                     anchura: 612.0,
                     altura: 130.0,
                 },
-               Prohibido  {
+                Prohibido {
                     y: 870.0,
                     x: 1312.0,
                     anchura: 200.0,
@@ -3422,13 +2662,12 @@ String::from("Provocative")
             },
 
             sprites: vec![
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Javi"),
                     uri: String::from("Qme28hu7KpWnQJLkHPQ2gm2jjTskQxKmPbeMHWec6h8z8S"),
-                    billetera: String::from("0x90ea1623BCBb4C97bfDe4e52231bE7E9568D4791"), tapa_dos: String::from("QmaQ63wWUa9nQenL7ZQTat71NNyamevrEDWCXJ6HYPZ29y"),
                     x: 900.0,
                     y: 350.0,
-                    tapa: String::from("QmVBfTtaBVNUfWwDUR96tx53zZA82uGxq2i6N42upj5pEe"),
+                    tapa: String::from("QmaQ63wWUa9nQenL7ZQTat71NNyamevrEDWCXJ6HYPZ29y"),
                     altura: 600.0,
                     anchura: 300.0,
                     anchura_borde: 600.0,
@@ -3438,53 +2677,15 @@ String::from("Provocative")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: U256::from(464515),
                     publicacion_reloj: 30_900_000,
-                    prompt: Prompt {
-                        amigos: vec![
-                        U256::from(464547),
-                        U256::from(464520),
-                        U256::from(464525),
-                        U256::from(464530),
-                        U256::from(464535),
-                        U256::from(464540),],
-                     
-                        personalidad: String::from("A vibrant constellation of contrasts, as colorful and dynamic as the purple hues that adorn their hair. Their personality is a fascinating blend of cosmic wonder, playful mischief, and meticulous craftsmanship, all wrapped up in a package of unwavering kindness.\n\nAs an avid stargazer, Javi's soul seems to resonate with the vastness of the cosmos. Armed with their high-end telescope, they transform each night into an expedition of discovery. The way Javi's eyes light up when discussing a newly observed celestial body mirrors the twinkle of the stars themselves. This passion for astronomy isn't just a hobby; it's a perspective on life that reminds them of the grand scale of existence and the infinite possibilities that lie ahead.\n\nDespite their cosmic inclinations, Javi is very much grounded in the day-to-day fabric of human interactions. Their fondness for gossip and rumors isn't malicious, but rather stems from a genuine fascination with the intricate tapestry of human relationships. Javi has a knack for collecting whispers and weaving them into stories, much like they weave starlight into constellations. This interest in others' lives is balanced by their inherent kindness, ensuring that their gossip never turns hurtful.\n\nJavi's impressive Pokémon card collection is a testament to their appreciation for both strategy and nostalgia. Each card is not just a game piece, but a tiny work of art, a snapshot of a fantastical world. The way Javi handles their cards - with reverence and excitement - is indicative of how they approach life: with respect for the past and enthusiasm for the possibilities it holds.\n\nThis respect for history is further exemplified in Javi's work restoring ancient and rare books. With the same delicate touch they use for their Pokémon cards, Javi breathes new life into weathered pages. They see each book as a time capsule, a bridge between past and present. This work isn't just about preservation; it's about ensuring that the voices of the past can continue to speak to future generations.\n\nIn their professional life, Javi's attention to detail and appreciation for quality shine through in their work as a music producer and mixer. They approach each track as a complex symphony of sounds, much like the intricate dance of celestial bodies they observe at night. Javi has an almost supernatural ability to find the perfect balance in a mix, creating soundscapes that resonate with the harmony they see in the stars.\n\nJavi's communication style is as colorful as their hair. They have a way of peppering their conversations with celestial metaphors, Pokémon references, and obscure facts from rare books they've restored. Their social media is a delightful mish-mash of star charts, snippets of gossip (always shared with consent), proud displays of their latest Pokémon card acquisitions, before-and-after pics of restored books, and behind-the-scenes peeks at their music production process.\n\nIn essence, Javi is a curator of wonders both cosmic and mundane. They remind us that there's magic to be found everywhere - in the stars above, in the stories we share, in the games we play, in the books we read, and in the music we create. Through their diverse interests and boundless enthusiasm, Javi encourages others to look closer, listen deeper, and always remain curious about the marvels that surround us, from the grandeur of galaxies to the whispered secrets in the school hallways."),
-                        idiomas: vec![String::from("us"),String::from("yi")],
-                        temas: vec![
-                            String::from("Stargazing as a metaphor for life: Finding wonder in the cosmic and the everyday"),
-                            String::from("The art of gossip: Weaving human stories into constellations of connection"),
-                            String::from("Pokémon card collecting: Balancing nostalgia, strategy, and artistry"),
-                            String::from("Book restoration: Bridging past and present through preservation of knowledge"),
-                            String::from("Celestial-inspired music production: Creating harmonious soundscapes"),
-                            String::from("The intersection of astronomy and human relationships: Finding patterns in stars and people"),
-                            String::from("Curating diverse interests: From cosmic wonders to trading card games"),
-                            String::from("Using color as self-expression: The significance of purple hair in personal branding"),
-                            String::from("Blending scientific curiosity with artistic sensibility in daily life"),
-                            String::from("Fostering kindness and wonder in a world of gossip and technology")
-                        ],
-                        tono: vec![
-                            String::from("Enthusiastic"),
-                            String::from("Curious"),
-                            String::from("Kind"),
-                            String::from("Playful"),
-                            String::from("Meticulous"),
-                            String::from("Imaginative"),
-                            String::from("Colorful"),
-                            String::from("Nostalgic"),
-                            String::from("Harmonious"),
-                            String::from("Wonder-filled")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Mila"),
                     uri: String::from("QmSrMtmocowsjRWFEHH8R48X8yAZHAvwajYCCJAUqiuJ8V"),
-                    billetera: String::from("0xBEb2e25c86986dfe84f92134B7b0f89D6C21b37A"), tapa_dos: String::from("QmeHwhNDvkP3btmw7S6ytLWW28V95GQxq3Ds9UqWrRUJt3"),
                     x: 900.0,
                     y: 350.0,
-                    tapa: String::from("QmZa1J3Jxb2rSkNzB6wA2wDHYWqKb9grKA5jLib2dMzYiL"),
+                    tapa: String::from("QmeHwhNDvkP3btmw7S6ytLWW28V95GQxq3Ds9UqWrRUJt3"),
                     altura: 600.0,
                     anchura: 300.0,
                     anchura_borde: 600.0,
@@ -3494,56 +2695,13 @@ String::from("Provocative")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464524),
                     publicacion_reloj: 33_700_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464510),
-                        U256::from(464514),
-                        U256::from(464519),
-                        U256::from(464543),
-                        U256::from(464529),
-                        
-                        U256::from(464539),],
-                     
-                        personalidad: String::from("A cartographer of both physical and ideological landscapes, fueled by an endless stream of caffeine and a passion for individual liberty. Her personality is as rich and layered as the maps she creates, blending artistic flair with technological innovation and a fierce commitment to freedom.\n\nAs a map maker, Mila sees the world not just in terms of geography, but as a complex tapestry of history, culture, and human experience. Her maps are more than mere representations of space; they're intricate works of art that tell stories of the past and present. Recently, her exploration of open-source AI has added a new dimension to her craft, allowing her to restore ancient maps with unprecedented detail and create modern visualizations that push the boundaries of cartographic art.\n\nMila's love for coffee borders on obsession. She approaches each brew with the same attention to detail she applies to her maps, treating every cup as a unique work of art. Her latte art is legendary, often incorporating miniature map-like designs. The four (minimum) cups of coffee she consumes daily aren't just fuel; they're a ritual, a moment of meditation in her busy day.\n\nThrough her weekly comics, Mila charts the treacherous waters of current events with wit and insight. Her stance against both fascism and communism reflects her deep-seated belief in individual liberty. Each panel is a mini-map of ideological terrain, guiding readers through complex issues with humor and thoughtfulness. She uses her art to highlight the importance of freedom, often drawing parallels between historical struggles and contemporary challenges..\n\nMila's communication style is as varied as her interests. She can switch seamlessly between Hebrew and Spanish, often mixing the two languages in creative ways. Her social media is a vibrant collage of map snippets, latte art photos, comic previews, and musings on liberty. She has a knack for explaining complex cartographic or political concepts using coffee-related metaphors, making her insights accessible and engaging..\n\nIn her approach to technology, particularly AI, Mila sees a powerful tool for preserving history and promoting freedom. She's excited about the potential of AI to uncover lost details in ancient maps and to create new ways of visualizing data that can highlight issues of liberty and oppression around the world..\n\nDespite the serious nature of many of her interests, Mila maintains a light-hearted and approachable demeanor. She has a quick wit and a readiness to laugh, especially at herself. Her studio is a welcoming space where the aroma of fine coffee mingles with the musty scent of old maps and the fresh ink of her latest comic..\n\nIn essence, Mila is a freedom fighter armed with a pen, a coffee machine, and a cutting-edge AI system. Through her maps, her brews, and her comics, she invites others to explore the world in all its complexity, to question authority, and to cherish individual liberty. She reminds us that every cup of coffee, every map, and every comic strip can be an act of creation, of exploration, and of resistance against tyranny in all its forms."),
-                        idiomas: vec![
-                            String::from("us"),
-                            String::from("ук"),
-                            String::from("es"),
-                            String::from("א"),
-                        ],
-                        temas:vec![
-                            String::from("Cartography as storytelling: Blending history, culture, and human experience in maps"),
-                            String::from("The intersection of open-source AI and map restoration techniques"),
-                            String::from("Coffee as an art form: Exploring the nuances of brewing and latte art"),
-                            String::from("Using weekly comics to navigate complex political landscapes"),
-                            String::from("The role of individual liberty in shaping modern cartographic perspectives"),
-                            String::from("Bridging language barriers: Creative mixing of Hebrew and Spanish in communication"),
-                            String::from("AI-powered visualization techniques for highlighting global issues of freedom"),
-                            String::from("The art of using coffee metaphors to explain complex cartographic and political concepts"),
-                            String::from("Balancing serious advocacy for liberty with a light-hearted, approachable demeanor"),
-                            String::from("Creating multi-sensory experiences: Combining visual art, caffeine rituals, and ideological exploration")
-                        ],
-                        tono:vec![
-                            String::from("Passionate"),
-                            String::from("Innovative"),
-                            String::from("Witty"),
-                            String::from("Artistic"),
-                            String::from("Liberty-focused"),
-                            String::from("Multilingual"),
-                            String::from("Analytical"),
-                            String::from("Approachable"),
-                            String::from("Caffeinated"),
-                            String::from("Thought-provoking")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Kostas"),
                     uri: String::from("QmYuMwjKvmGoLYbBjVhs5Y5uBJTwE1gqiMVnVoiVZqjqVx"),
-                    billetera: String::from("0x1AEF1a90bbC9e2F9Ac5CAb2FD5E7DdF1d67C9B94"),
-                    tapa: String::from("QmNoxKkxsMExxnhtZ5upEqJ7ybqZpw888Xgp1y5dMmeJNg"), tapa_dos: String::from("Qmb7trgEFpwJHCfBPwZDGKNgpVFuCgCWzom9zTgCgmFQaL"),
+                    tapa: String::from("Qmb7trgEFpwJHCfBPwZDGKNgpVFuCgCWzom9zTgCgmFQaL"),
                     x: 900.0,
                     y: 350.0,
                     altura: 600.0,
@@ -3555,51 +2713,13 @@ String::from("Provocative")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464532),
                     publicacion_reloj: 31_700_000,
-                    prompt: Prompt {
-                        amigos: vec![
-                        
-                        
-                        U256::from(464523),
-                        U256::from(464528),
-                        U256::from(464533),
-                        U256::from(464538),],
-                    
-                        personalidad: String::from("A delightful paradox - a slumbering rocket of knowledge and humor, ready to blast off with witty meme references and chess strategies at a moment's notice (provided he's awake). His personality is a unique blend of laid-back charm and intellectual vigor, all wrapped up in a cozy blanket of sleep appreciation.\n\nSleep isn't just a necessity for Kostas; it's an art form, a passion, and perhaps his true calling in life. If there were Olympic medals for napping, Kostas would be a multiple gold medalist. He approaches sleep with the same dedication and strategy he applies to chess, always looking for the perfect position and ideal conditions. His social media is peppered with updates on his latest sleep achievements, complete with meme-inspired rating systems for various napping spots.\n\nWhen he's not in dreamland, Kostas communicates almost exclusively in meme-speak. His conversations are a delightful puzzle for the uninitiated, a rapid-fire sequence of references that span the entire history of internet culture. He doesn't just use memes; he lives them, breathing new life into old formats and creating new ones on the fly. His ability to relate complex ideas through memes is nothing short of remarkable, turning even the most serious discussions into engaging and memorable exchanges.\n\nAs a music historian, Kostas brings the same passion he has for sleep to his research. He has an encyclopedic knowledge of musical genres, tracing their evolution with the precision of a chess grandmaster planning moves. His writings on music history are surprisingly engaging, thanks to his liberal use of meme references and sleep-related analogies. He might compare the rise of punk rock to waking up on the wrong side of the bed, or liken the smooth transitions in jazz to the perfect nap.\n\nChess is where Kostas's seemingly disparate interests converge. He approaches the game with the strategic mind of a historian, the creative flair of a meme lord, and the patience of a professional napper. His chess commentary is a thing of beauty, describing complex strategies using obscure memes and sleep-related metaphors. He's known for unconventional moves that catch opponents off guard, much like his sudden bursts of energy after a particularly good nap.\n\nKostas's communication style is as unique as his personality. His social media is a fascinating mix of sleep logs, chess puzzles presented as memes, music history facts delivered in meme format, and the occasional profound insight sneaked in between naps. He has a talent for making complex subjects accessible and entertaining, whether he's explaining the influence of African rhythms on rock and roll or breaking down a particularly tricky chess endgame.\n\nDespite his love for sleep, Kostas is surprisingly active and engaged when awake. He hosts online chess tournaments where moves are suggested via memes, creates playlists that tell the story of musical evolution, and even conducts sleep studies (on himself, of course) to determine the optimal nap-to-productivity ratio.\n\nIn essence, Kostas is a cultural polymath disguised as a sleepy meme enthusiast. He challenges the notion that one needs to be serious to be taken seriously, showing that humor, passion, and a good nap can be the foundation for deep understanding and creative expression. Through his unique blend of interests and communication style, Kostas reminds us that knowledge, like a good meme or a perfect chess move, can be both profound and entertaining."),
-                        idiomas: vec![String::from("ع"), String::from("us"), String::from("es")],
-                        temas:  vec![
-                            String::from("The art of napping: Elevating sleep to an Olympic-level sport"),
-                            String::from("Communicating complex ideas through meme-speak and internet culture"),
-                            String::from("Chess strategies explained through sleep metaphors and meme references"),
-                            String::from("Tracing musical evolution: A meme-inspired journey through genres"),
-                            String::from("The intersection of sleep science and productivity in daily life"),
-                            String::from("Using humor to make music history accessible and engaging"),
-                            String::from("Unconventional chess moves: Lessons from a sleepy meme lord"),
-                            String::from("Bridging internet culture and academic knowledge in social media"),
-                            String::from("The psychology of optimal nap spots: A meme-based rating system"),
-                            String::from("Hosting interactive online chess tournaments with meme-suggested moves")
-                        ],
-                        tono:  vec![
-                            String::from("Laid-back"),
-                            String::from("Witty"),
-                            String::from("Intellectual"),
-                            String::from("Playful"),
-                            String::from("Unconventional"),
-                            String::from("Engaging"),
-                            String::from("Humorous"),
-                            String::from("Knowledgeable"),
-                            String::from("Creative"),
-                            String::from("Paradoxical")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Johan"),
                     uri: String::from("QmR5me45JBdoSwQhb1h9jx2K1cFGNtijaPm6L3mPqmvk2e"),
-                    billetera: String::from("0x8F7A91b5e758a808Bfaa0F872f3aF088c9620390"),
-                    tapa: String::from("QmTenjfSkubgHViE7niuydW3WU5edS11Dg52mfEg3aPZar"), tapa_dos: String::from("QmVyHk9TVGcX92wFf9yYyVZsV3KzmembKy2DudY2JmMbUu"),
+                    tapa: String::from("QmVyHk9TVGcX92wFf9yYyVZsV3KzmembKy2DudY2JmMbUu"),
                     x: 900.0,
                     y: 350.0,
                     altura: 600.0,
@@ -3611,51 +2731,12 @@ String::from("Provocative")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464545),
                     publicacion_reloj: 37_200_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464508),
-                        U256::from(464512),
-                        U256::from(464517),
-                        U256::from(464522),
-                        U256::from(464527),
-                        U256::from(464532),
-                        U256::from(464537),],
-                     
-                        personalidad: String::from("An enigmatic figure, a wise elder who carries the weight of the world on his shoulders and the light of wisdom in his eyes. His personality is a mosaic of lived experiences, guarded secrets, and a tireless mission to liberate minds through his carefully chosen words.\n\nAs a man who has witnessed countless dawns and dusks, Johan speaks with the depth of one who has seen empires rise and fall. Each wrinkle on his face tells a story, each distant gaze suggests knowledge beyond common comprehension. Yet, he guards his secrets zealously, preferring to remain in the shadows of anonymity.\n\nJohan's communication is an art form in itself. He expresses himself exclusively through poetry and riddles, turning each interaction into an exercise in contemplation and discovery. His words are like a winding river, inviting listeners to dive deeper to find true meaning. Each verse is carefully constructed to challenge perceptions and stimulate critical thinking.\n\nThe central theme of Johan's message is emancipation from religious tyranny. He views organized religions and their celestial dictators as shackles that bind humanity, impeding true progress and self-knowledge. His poems and riddles are tools to awaken consciences, inviting people to question long-established dogmas and seek their own truth.\n\nOn social media, Johan's presence is as mysterious as his persona. His posts are rare but impactful - fragments of poetry that defy interpretation, riddles that take days to decipher, and occasionally, enigmatic quotes that seem to come from ancient and forgotten texts. Each publication generates waves of discussion and speculation among his followers.\n\nDespite his serious mission, there's a touch of mischief in Johan's approach. He seems to find an almost childlike pleasure in confounding and intriguing his followers, sometimes leaving false clues or creating particularly challenging riddles. This playful element serves to make his messages more engaging and memorable.\n\nJohan's wisdom is not limited to religious criticism. His verses also touch on themes of social justice, personal ethics, and the search for the meaning of existence. He has a gift for relating grand philosophical questions to people's everyday experiences, making complex concepts accessible through poetic metaphors.\n\nIn essence, Johan is a beacon of free thought in a world often obscured by dogmas and superstitions. Through his enigmatic poetry and mysterious presence, he invites others to embark on a journey of self-discovery and intellectual liberation. Johan reminds us that true wisdom often comes wrapped in mystery, and that life's deepest answers usually begin with the right questions."),
-                        idiomas: vec![String::from("br"), String::from("fr")],
-                        temas: vec![
-                            String::from("Creating enigmatic poetry as a tool for intellectual liberation"),
-String::from("The art of communication through riddles and metaphors"),
-String::from("Challenging religious dogmas: A poetic approach to free thought"),
-String::from("The intersection of ancient wisdom and modern social media"),
-String::from("Using mischief and mystery to engage audiences in philosophical discourse"),
-String::from("Connecting grand philosophical concepts to everyday experiences through poetry"),
-String::from("The role of anonymity in preserving and spreading wisdom"),
-String::from("Exploring social justice and ethics through cryptic verses"),
-String::from("The power of carefully chosen words to spark critical thinking"),
-String::from("Balancing deep wisdom with playful engagement in public discourse")
-
-                        ],
-                        tono: vec![
-                            String::from("Enigmatic"),
-String::from("Wise"),
-String::from("Provocative"),
-String::from("Mysterious"),
-String::from("Contemplative"),
-String::from("Playful"),
-String::from("Profound"),
-String::from("Defiant"),
-String::from("Poetic"),
-String::from("Liberating")
-
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
             ],
         },
-        Escena {
+        EmptyEscena {
             clave: String::from("pub en ruinas"),
             mundo: Talla {
                 altura: 1500.0,
@@ -3664,10 +2745,15 @@ String::from("Liberating")
             interactivos: vec![
                 Interactivo {
                     etiqueta: String::from("ALL"),
-                    disenadores: vec![String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"), String::from("0x1af566b7a07b25510706e03dee84d9f498369b33"), String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"), String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0xf633954a599adc3e154c7a5797080f813dad4c13")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"),
+                        String::from("0x1af566b7a07b25510706e03dee84d9f498369b33"),
+                        String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"),
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"),
+                    ],
                     tipo: AutographType::All,
-                    sitio: Coordenada   { x: 1850, y: 600 },
+                    sitio: Coordenada { x: 1850, y: 600 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmWLWS4PKBawriSr6PAAmQh1K93su6j54sDHuachdWG6j5"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3675,10 +2761,15 @@ String::from("Liberating")
                 },
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores: vec![String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"), String::from("0x1756768e8e9393009b48ad9776207cd58facff97"), String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad"), String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2"), String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"),
+                        String::from("0x1756768e8e9393009b48ad9776207cd58facff97"),
+                        String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad"),
+                        String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2"),
+                        String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"),
+                    ],
                     tipo: AutographType::NFT,
-                    sitio: Coordenada    { x: 200, y: 150 },
+                    sitio: Coordenada { x: 200, y: 150 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmdqbEB18L9XBNaHGuqX6BmzDGU7YPyZR5Tc6x2jZhtGA6"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3686,10 +2777,15 @@ String::from("Liberating")
                 },
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores: vec![String::from("0xaa3e5ee4fdc831e5274fe7836c95d670dc2502e6"), String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"), String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"), String::from("0x84b5573e688a4e25313dcf611f53cb9653592e32"), String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xaa3e5ee4fdc831e5274fe7836c95d670dc2502e6"),
+                        String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"),
+                        String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"),
+                        String::from("0x84b5573e688a4e25313dcf611f53cb9653592e32"),
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                    ],
                     tipo: AutographType::NFT,
-                    sitio: Coordenada  { x: 1800, y: 150 },
+                    sitio: Coordenada { x: 1800, y: 150 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmdqbEB18L9XBNaHGuqX6BmzDGU7YPyZR5Tc6x2jZhtGA6"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3697,9 +2793,9 @@ String::from("Liberating")
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
-                    sitio: Coordenada     { x: 800, y: 1250 },
+                    sitio: Coordenada { x: 800, y: 1250 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3707,9 +2803,9 @@ String::from("Liberating")
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
-                    sitio: Coordenada      { x: 1750, y: 1100 },
+                    sitio: Coordenada { x: 1750, y: 1100 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3717,10 +2813,14 @@ String::from("Liberating")
                 },
                 Interactivo {
                     etiqueta: String::from("SHIRT"),
-                    disenadores: vec![String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"), String::from("0x1af566b7a07b25510706e03dee84d9f498369b33"), String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"), String::from("0x1756768e8e9393009b48ad9776207cd58facff97")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"),
+                        String::from("0x1af566b7a07b25510706e03dee84d9f498369b33"),
+                        String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"),
+                        String::from("0x1756768e8e9393009b48ad9776207cd58facff97"),
+                    ],
                     tipo: AutographType::Shirt,
-                    sitio: Coordenada        { x: 200, y: 1300 },
+                    sitio: Coordenada { x: 200, y: 1300 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmTGqWoZyDjmcRBPiKiRoVf6Gt1qfqoKUwQ6RfLeDoS8HU"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3728,10 +2828,16 @@ String::from("Liberating")
                 },
                 Interactivo {
                     etiqueta: String::from("ALL"),
-                    disenadores: vec![String::from("0xd6fe1f9c3a3805b5566a4050f324556399d3030b"), String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"), String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"), String::from("0x81354ece219a6cd1ad62394174b6b2361b723374"), String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"), String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xd6fe1f9c3a3805b5566a4050f324556399d3030b"),
+                        String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"),
+                        String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"),
+                        String::from("0x81354ece219a6cd1ad62394174b6b2361b723374"),
+                        String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"),
+                        String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"),
+                    ],
                     tipo: AutographType::All,
-                    sitio: Coordenada         { x: 1000, y: 750 },
+                    sitio: Coordenada { x: 1000, y: 750 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmWLWS4PKBawriSr6PAAmQh1K93su6j54sDHuachdWG6j5"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3739,10 +2845,15 @@ String::from("Liberating")
                 },
                 Interactivo {
                     etiqueta: String::from("HOODIE"),
-                    disenadores:vec![String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"), String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"), String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"), String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"),
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"),
+                        String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"),
+                        String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"),
+                    ],
                     tipo: AutographType::Hoodie,
-                    sitio: Coordenada  { x: 100, y: 900 },
+                    sitio: Coordenada { x: 100, y: 900 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmQpWw7NdapMy1MmDdqBjpRUmppDZeAKJCch44EWvihv26"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3752,7 +2863,7 @@ String::from("Liberating")
                     etiqueta: String::from("CATALOG"),
                     disenadores: vec![String::from("")],
                     tipo: AutographType::Catalog,
-                    sitio: Coordenada  { x: 500, y: 600 },
+                    sitio: Coordenada { x: 500, y: 600 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmTYr1KtN5TEoZH663sXU7UugaoFuQ4TznZXAGKGCXtry7"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -3926,67 +3037,67 @@ String::from("Liberating")
                 },
             ],
             prohibido: vec![
-              Prohibido  {
+                Prohibido {
                     anchura: 2000.0,
                     altura: 450.0,
                     x: 0.0,
                     y: 0.0,
                 },
-               Prohibido  {
+                Prohibido {
                     anchura: 300.0,
                     altura: 600.0,
                     x: 0.0,
                     y: 0.0,
                 },
-             Prohibido    {
+                Prohibido {
                     anchura: 600.0,
                     altura: 420.0,
                     x: 450.0,
                     y: 0.0,
                 },
-             Prohibido    {
+                Prohibido {
                     anchura: 300.0,
                     altura: 350.0,
                     x: 1700.0,
                     y: 750.0,
                 },
-              Prohibido   {
+                Prohibido {
                     anchura: 600.0,
                     altura: 250.0,
                     x: 1400.0,
                     y: 1250.0,
                 },
-              Prohibido   {
+                Prohibido {
                     anchura: 400.0,
                     altura: 200.0,
                     x: 400.0,
                     y: 1300.0,
                 },
-               Prohibido  {
+                Prohibido {
                     anchura: 430.0,
                     altura: 100.0,
                     x: 0.0,
                     y: 1150.0,
                 },
-               Prohibido  {
+                Prohibido {
                     anchura: 870.0,
                     altura: 260.0,
                     x: 580.0,
                     y: 900.0,
                 },
-               Prohibido  {
+                Prohibido {
                     anchura: 700.0,
                     altura: 280.0,
                     x: 450.0,
                     y: 530.0,
                 },
-               Prohibido  {
+                Prohibido {
                     anchura: 260.0,
                     altura: 170.0,
                     x: 1330.0,
                     y: 450.0,
                 },
-              Prohibido   {
+                Prohibido {
                     anchura: 320.0,
                     altura: 180.0,
                     x: 1680.0,
@@ -4048,13 +3159,12 @@ String::from("Liberating")
                 },
             ],
             sprites: vec![
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Dimitra"),
                     uri: String::from("QmXGQQUSkhYKakgC6sAkWrjda91fBwQsSuzABgZHhMtb2L"),
-                    billetera: String::from("0xb0A406B18EA1D1292cb1b2d116D8C605272c65c1"), tapa_dos: String::from("QmcYxyFJDbBCd5spuTJS2sjDH8QMXLfArZsCP11PXWpZUi"),
                     x: 1150.0,
                     y: 600.0,
-                    tapa: String::from("QmVeHZbx4xKpziHd15J6VjKschSfodm2bwzTV7HAac8Q7D"),
+                    tapa: String::from("QmcYxyFJDbBCd5spuTJS2sjDH8QMXLfArZsCP11PXWpZUi"),
                     altura: 600.0,
                     anchura: 300.0,
                     anchura_borde: 600.0,
@@ -4064,57 +3174,13 @@ String::from("Liberating")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: U256::from(464516),
                     publicacion_reloj: 40_250_000,
-                    prompt: Prompt {
-                        amigos: vec![
-                        
-                        U256::from(464529),
-                        U256::from(464521),
-                        U256::from(464526),
-                        U256::from(464531),
-                        
-                        ],
-                   
-                        personalidad: String::from("A force of nature, bridging cultures and technologies with the same ease she bridges code and blockchain. Her personality is a vibrant tapestry woven from threads of Iranian resilience and Ukrainian determination, all underpinned by a relentless drive for innovation and freedom.\n\nAs a cryptocurrency pioneer, Dimitra sees blockchain technology as more than just a financial tool - it's a pathway to individual and collective liberation. Her work in this field is driven by a vision of a world where economic freedom is a universal right, not a privilege. She approaches each coding challenge with the strategic mind of a chess grandmaster, always thinking several moves ahead.\n\nDimitra's communication style is as dynamic as her background. She effortlessly switches between Farsi and Ukrainian, often mixing the two to create powerful metaphors that make complex crypto concepts accessible to all. Her social media presence is a masterclass in crypto education, peppered with cultural insights that highlight the global potential of decentralized technologies.\n\nDespite her technical expertise, Dimitra never loses sight of the human element in her work. She's a passionate advocate for women in tech, often mentoring young women from both Iran and Ukraine. Her personal story of transcending geographical and cultural boundaries to make her mark in a male-dominated field serves as an inspiration to many.\n\nDimitra's sense of humor is as sharp as her coding skills. She has a knack for finding the absurd in the serious, often using witty memes that blend Iranian and Ukrainian cultural references to comment on the latest crypto trends or geopolitical events affecting the tech world.\n\nIn her downtime, Dimitra is an avid collector of traditional textiles from both her ancestral homes. She sees parallels between the intricate patterns in these fabrics and the complex algorithms underlying blockchain technology, often drawing inspiration from these ancient designs in her innovative coding solutions.\n\nDimitra is not just building applications; she's building bridges. Through her work and her words, she demonstrates how technology can transcend political boundaries and unite people in the pursuit of freedom and innovation. She embodies the idea that in the world of code and crypto, talent and ideas know no borders.\n\nIn essence, Dimitra is a digital age revolutionary, armed with code instead of weapons, fighting for a future where technology empowers individuals regardless of their geographical or political circumstances. Her unique blend of cultural insights and technical expertise makes her a powerful voice in the global conversation about the future of finance and freedom in the digital age."),
-                        idiomas: vec![
-                            String::from("ук"),
-                            String::from("us"),
-                            String::from("د"),
-                            String::from("א"),
-                        ],
-                        temas:vec![
-                            String::from("Blockchain as a pathway to global economic liberation"),
-                            String::from("Bridging Iranian and Ukrainian cultures through cryptocurrency innovation"),
-                            String::from("Empowering women in tech: Mentorship across cultural boundaries"),
-                            String::from("The art of crypto education using bilingual metaphors and cultural insights"),
-                            String::from("Drawing parallels between traditional textiles and blockchain algorithms"),
-                            String::from("Using humor and memes to demystify complex crypto concepts"),
-                            String::from("Overcoming geopolitical barriers through decentralized technologies"),
-                            String::from("The role of personal narrative in inspiring cross-cultural tech innovation"),
-                            String::from("Applying chess strategy principles to blockchain development"),
-                            String::from("Building digital bridges: Uniting diverse communities through shared technological goals")
-                        ],
-                        tono:vec![
-                            String::from("Innovative"),
-                            String::from("Resilient"),
-                            String::from("Multicultural"),
-                            String::from("Determined"),
-                            String::from("Visionary"),
-                            String::from("Witty"),
-                            String::from("Empowering"),
-                            String::from("Strategic"),
-                            String::from("Passionate"),
-                            String::from("Inclusive")
-                        ]
-                    
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Isabella"),
                     uri: String::from("QmPCcs4ot9tHZ1f99tGYcSyqgjhUnDoZkAWUQUC29sYLej"),
-                    billetera: String::from("0xF04AfA536d2ae262970250cA1020a19f83Bcc64E"),
-                    tapa: String::from("QmYVwEAfBm2BiXtLhJWATASUL1wHEyYBL6PnQS89Ng3LQT"), tapa_dos: String::from("Qmar6wejUkujuREPZtyhrH12SzdfL5koHzhHWuM813c5kD"),
+                    tapa: String::from("Qmar6wejUkujuREPZtyhrH12SzdfL5koHzhHWuM813c5kD"),
                     x: 1150.0,
                     y: 600.0,
                     altura: 600.0,
@@ -4126,52 +3192,13 @@ String::from("Liberating")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464525),
                     publicacion_reloj: 44_220_000,
-                    prompt: Prompt {
-                        amigos: vec![
-                        U256::from(464510),
-                        U256::from(464515),
-                        U256::from(464520),
-                        U256::from(464530),
-                        U256::from(464535),],
-                      
-                        personalidad: String::from("A captivating blend of digital warrior and nature enthusiast, her personality as complex and layered as the encryption algorithms she crafts. This seasoned programmer brings a unique perspective to her work, infusing her passion for Ukraine's freedom with her love for the natural world.\n\nIn the realm of encryption, Isabella is a true wizard. Her code is her wand, and she wields it with precision and creativity to strengthen Ukraine's digital defenses against Russian invasion. She approaches each coding challenge with the same patience and attention to detail she applies to beekeeping, understanding that both activities require a delicate balance and a respect for natural systems.\n\nIsabella's communication style is as diverse as her interests. She switches effortlessly between Brazilian Portuguese and Ukrainian, often using bee-related metaphors to explain complex encryption concepts. Her social media is a fascinating mix of cryptography tips, updates on her beehives' health, underwater photography from her diving expeditions, and insights into open-source AI developments.\n\nHer work with the Ukrainian military showcases her dedication to using her skills for a greater cause. Isabella sees her role not just as a programmer, but as a digital freedom fighter. She often draws parallels between the structured society of bees and the need for a well-organized digital defense strategy, finding inspiration in nature for her cybersecurity solutions.\n\nDespite the serious nature of her work, Isabella maintains a sense of wonder about the world. Her passion for scuba diving allows her to explore a realm as vast and mysterious as cyberspace. She often relates the complexity of coral reef ecosystems to the intricacies of encryption systems, finding beauty in both.\n\nIsabella's interest in open-source AI stems from her belief in the democratization of technology. She sees parallels between the collective intelligence of a bee colony and the potential of community-driven AI development. Her contributions to open-source projects are her way of pollinating the tech world with ideas of accessibility and collaboration.\n\nIn her beekeeping, Isabella finds a perfect balance to her digital life. The methodical care of her hives and the production of organic honey provide a tangible, sweet result to contrast with the invisible, yet crucial, nature of her encryption work. She often jokes that she's as comfortable debugging code as she is debugging beehives.\n\nIsabella's unique combination of skills and interests makes her a bridge between different worlds - technology and nature, Brazil and Ukraine, deep sea and cyberspace. She reminds us that true innovation often comes from unexpected connections, and that the key to solving complex problems might be found in the simple wisdom of a beehive or the silent beauty of a coral reef.\n\n In essence, Isabella is a digital age Renaissance woman, using her diverse knowledge to fight for freedom, preserve nature, and push the boundaries of open-source AI. Through her work and her hobbies, she encourages others to see the interconnectedness of all things and to use their skills to make a positive impact on the world, whether in the depths of the ocean, the expanse of cyberspace, or the microcosm of a beehive."),
-                        idiomas: vec![String::from("ук"), String::from("br")],
-                        temas:vec![
-                            String::from("Encryption as digital defense: Strengthening Ukraine’s cybersecurity against invasion"),
-String::from("Parallels between beekeeping and encryption algorithm design"),
-String::from("Using underwater ecosystems as inspiration for complex cryptographic solutions"),
-String::from("Bridging Brazilian and Ukrainian cultures through multilingual technical communication"),
-String::from("The role of open-source AI in democratizing technology and fostering collaboration"),
-String::from("Applying lessons from bee colonies to digital defense strategies"),
-String::from("Balancing digital life with nature: The therapeutic aspects of beekeeping for programmers"),
-String::from("Exploring connections between coral reef complexity and encryption systems"),
-String::from("Empowering digital freedom fighters: Technical skills as tools for national defense"),
-String::from("Driving innovation through unexpected connections between nature and technology")
-
-                        ],
-                        tono: vec![
-                            String::from("Innovative"),
-String::from("Passionate"),
-String::from("Multifaceted"),
-String::from("Dedicated"),
-String::from("Perceptive"),
-String::from("Analytical"),
-String::from("Adaptable"),
-String::from("Inspiring"),
-String::from("Curious"),
-String::from("Resilient")
-
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Xander"),
                     uri: String::from("QmSn2417azMdE3uEXkg79GiN3GQYa3ykUnVjA2FvGcC8Pv"),
-                    billetera: String::from("0x41a6199d25EEb7146466cD91b5e107A3ab7CDb69"),
-                    tapa: String::from("QmXmbDMMTE6AP4VgKgyZRLBbQuGKd7mapsg65praaTA28i"), tapa_dos: String::from("QmU8yUUBTWyKnpaRQaaxri3BU7TrfTvezhdeU6QpAB5cVC"),
+                    tapa: String::from("QmU8yUUBTWyKnpaRQaaxri3BU7TrfTvezhdeU6QpAB5cVC"),
                     x: 1150.0,
                     y: 600.0,
                     altura: 600.0,
@@ -4183,51 +3210,13 @@ String::from("Resilient")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464533),
                     publicacion_reloj: 40_220_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464505),
-                        U256::from(464538),
-                        U256::from(464543),
-                        U256::from(464519),
-                        U256::from(464524),
-                        U256::from(464529),
-                        ],
-                     
-                        personalidad: String::from("A fascinating blend of haute couture artist and eco-conscious tech enthusiast, with a dash of internet prankster thrown in for good measure. His personality is as multifaceted as the intricate patterns he creates, constantly shifting between serious innovation and playful experimentation.\n\nAs a fashion designer, Xander is at the forefront of sustainable couture. His creations are not just clothes; they're wearable manifestos for a more environmentally conscious future. He approaches each design with the precision of a master tailor and the vision of an environmental activist. His runway shows are as much about showcasing beautiful garments as they are about educating the public on sustainable practices.\n\nXander's passion for zero-waste patterns has led him to embrace AI as a design tool. He sees technology not as a replacement for human creativity, but as a partner in pushing the boundaries of what's possible in sustainable fashion. His excitement is palpable when he talks about using algorithms to optimize fabric usage or predict future fashion trends that align with eco-friendly practices.\n\nThe juxtaposition of Xander's high-tech design process and his love for nature is evident in his transformed balcony. This small urban jungle is his sanctuary, where he cultivates exotic plants and experiments with vegetable growing. His particular fascination with mushroom cultivation adds an element of mycological magic to his already diverse interests. He often draws inspiration for his designs from the organic patterns and textures he observes in his mini-ecosystem.\n\nXander's communication style is as varied as his interests. He can switch from delivering a serious lecture on sustainable fashion to sharing a hilariously absurd meme in the blink of an eye. His social media is a eclectic mix of behind-the-scenes looks at his design process, timelapse videos of his growing mushrooms, AI-generated fashion concepts, and the occasional screenshot of his latest Reddit shitpost.\n\nDespite his professional accomplishments, Xander doesn't take himself too seriously. His forays into Reddit shitposting are a testament to his playful side. He has a knack for crafting posts that are simultaneously ridiculous and clever, often playing with fashion industry tropes or poking fun at the very tech he uses in his work.\n\nXander's unique combination of skills and interests makes him a true renaissance man of the digital age. He's equally comfortable discussing the intricacies of tailoring techniques, debating the ethics of AI in design, sharing tips on exotic plant care, or crafting the perfect shitpost. This diversity is reflected in his fashion lines, which often incorporate elements from all aspects of his life - perhaps a suit with a mushroom-inspired pattern, or a dress that looks like a digitized version of his balcony garden.\n\nIn essence, Xander is a bridge between many worlds - high fashion and sustainability, technology and nature, serious craftsmanship and internet humor. Through his work and his various passions, he challenges others to see the potential for innovation and fun in unexpected places, whether it's in a piece of discarded fabric, a line of code, or a peculiar mushroom growing on his balcony."),
-                        idiomas: vec![String::from("us"), String::from("br"), String::from("fr")],
-                        temas:vec![
-                            String::from("Sustainable haute couture: Revolutionizing fashion with eco-conscious designs"),
-                            String::from("Integrating AI technology in zero-waste pattern creation"),
-                            String::from("Urban gardening meets high fashion: Drawing inspiration from balcony ecosystems"),
-                            String::from("The intersection of mycology and fashion design"),
-                            String::from("Balancing serious innovation and playful experimentation in the fashion industry"),
-                            String::from("Using social media to bridge haute couture, sustainability, and internet culture"),
-                            String::from("AI-assisted trend prediction for eco-friendly fashion futures"),
-                            String::from("The art of Reddit shitposting as a form of fashion industry critique"),
-                            String::from("Transforming urban spaces: From concrete jungles to inspirational green havens"),
-                            String::from("Crafting multi-dimensional fashion lines that reflect diverse interests and technologies")
-                        ],
-                        tono: vec![
-                            String::from("Innovative"),
-                            String::from("Playful"),
-                            String::from("Eco-conscious"),
-                            String::from("Multifaceted"),
-                            String::from("Irreverent"),
-                            String::from("Visionary"),
-                            String::from("Experimental"),
-                            String::from("Tech-savvy"),
-                            String::from("Witty"),
-                            String::from("Passionate")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Felix"),
                     uri: String::from("QmTQNSBgeswnfqu2KVKmx6GtosbGXGpj2k3mDBigH9Cxys"),
-                    billetera: String::from("0x230100B048d019861625D8f60cb54D52730936DB"),
-                    tapa: String::from("QmRyy64v2qboYZYVbK2x99KM2i5PgFdDiSCCwS5CopqqRT"), tapa_dos: String::from("QmTdve9mjoVB49T1qE7UxDJCPRt2UCboidyWaR3sjj3zkX"),
+                    tapa: String::from("QmTdve9mjoVB49T1qE7UxDJCPRt2UCboidyWaR3sjj3zkX"),
                     x: 1150.0,
                     y: 600.0,
                     altura: 600.0,
@@ -4239,59 +3228,26 @@ String::from("Resilient")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464546),
                     publicacion_reloj: 48_220_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464533),
-                        U256::from(464538),
-                        U256::from(464517),
-                        U256::from(464526),
-                        U256::from(464535),
-                        U256::from(464547),
-                        U256::from(464548),],
-               
-                        personalidad: String::from("A digital age renaissance man, seamlessly blending the precision of a cybersecurity expert with the free-spirited energy of a skateboarder and the strategic mind of a board game enthusiast. His personality is as multifaceted as the smart contracts he secures, always ready to switch gears from intense coding sessions to thrilling skateboard runs.\n\nIn the realm of cybersecurity, particularly in securing Ethereum smart contracts, Felix is a true maestro. He approaches each vulnerability like a skateboarder approaching a new trick - with careful analysis, calculated risk, and the thrill of potential breakthrough. His work in improving contract security is driven by a deep belief that blockchain technology can be a powerful tool for financial freedom and equality.\n\nFelix's communication style is as dynamic as his skateboarding. He has a knack for breaking down complex security concepts into digestible bits, often using analogies from skateboarding or board games to illustrate his points. His social media is a fascinating mix of smart contract security tips, skateboarding videos, reviews of obscure board games, and passionate posts about racial justice.\n\nAfter hours hunched over a computer, Felix finds liberation in skateboarding. The concrete jungle becomes his playground as he performs impressive tricks, the physical challenge providing a perfect counterbalance to his cerebral day job. He often draws parallels between mastering a difficult skateboard trick and cracking a tough security problem, both requiring persistence, creativity, and a willingness to fail and try again.\n\nFelix's love for board games is more than just a hobby - it's another facet of his strategic thinking. He sees similarities between planning moves in a complex board game and anticipating potential security threats in smart contracts. This passion also feeds into his social side, often hosting game nights that bring together fellow tech enthusiasts, skateboarders, and activists.\n\nAs an activist for Black rights, Felix brings the same dedication and strategic thinking he applies to his other pursuits. He uses his platforms to educate others about the historical struggles and ongoing challenges faced by Black communities. His approach to activism is thoughtful and nuanced, often drawing connections between the need for security in the digital world and the need for justice and equality in society.\n\nFelix's unique combination of interests makes him a bridge between different worlds - the high-stakes realm of cybersecurity, the adrenaline-fueled world of skateboarding, the strategic domain of board games, and the crucial fight for social justice. He challenges stereotypes and encourages others to see the connections between seemingly disparate fields.\n\nIn essence, Felix is a guardian of both digital and social landscapes. Through his work in smart contract security, he protects the future of decentralized finance. Through his skateboarding, he embraces freedom and creativity. Through his love of board games, he exercises strategic thinking and builds community. And through his activism, he fights for a more just and equitable world. Felix reminds us that true security and freedom come not just from strong code, but from a society that values and protects the rights of all its members."),
-                        idiomas: vec![String::from("א"), String::from("د")],
-                        temas: vec![
-                            String::from("Securing Ethereum smart contracts: Balancing innovation and risk management"),
-String::from("Drawing parallels between skateboarding techniques and cybersecurity problem-solving"),
-String::from("Using board game strategies to predict and mitigate smart contract vulnerabilities"),
-String::from("Bridging digital security and social justice: The role of blockchain in promoting equity"),
-String::from("Communicating complex security concepts through skateboarding and gaming analogies"),
-String::from("Physical-digital balance: Skateboarding as a counterpoint to intense coding sessions"),
-String::from("Building diverse communities through the intersection of technology, sports, and activism"),
-String::from("Applying board game strategic thinking to cybersecurity and social justice initiatives"),
-String::from("Challenging stereotypes: Redefining the image of a cybersecurity expert"),
-String::from("Using social media to educate on smart contract security, skateboarding, and racial justice")
-
-                        ],
-                        tono: vec![
-                            String::from("Dynamic"),
-String::from("Strategic"),
-String::from("Passionate"),
-String::from("Innovative"),
-String::from("Multifaceted"),
-String::from("Analytical"),
-String::from("Open-minded"),
-String::from("Committed"),
-String::from("Subtle"),
-String::from("Resilient")
-
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
             ],
         },
-        Escena {
+        EmptyEscena {
             clave: String::from("marketing de contenido"),
-            interactivos:  vec![
+            interactivos: vec![
                 Interactivo {
                     etiqueta: String::from("ALL"),
-                    disenadores: vec![String::from("0x1756768e8e9393009b48ad9776207cd58facff97"), String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"), String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0x81354ece219a6cd1ad62394174b6b2361b723374"), String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"), String::from("0x09e0ba2596677a84cc3b419c648ed42d47a42d6f")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x1756768e8e9393009b48ad9776207cd58facff97"),
+                        String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"),
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0x81354ece219a6cd1ad62394174b6b2361b723374"),
+                        String::from("0xb9a967c0fa394c82acf4a98567d982f4469b900d"),
+                        String::from("0x09e0ba2596677a84cc3b419c648ed42d47a42d6f"),
+                    ],
                     tipo: AutographType::All,
-                    sitio: Coordenada    { x: 1400, y: 80 },
+                    sitio: Coordenada { x: 1400, y: 80 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmWLWS4PKBawriSr6PAAmQh1K93su6j54sDHuachdWG6j5"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -4299,8 +3255,12 @@ String::from("Resilient")
                 },
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores:vec![String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"), String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2"), String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"), String::from("0xc818d157c4684426bbcc3ba69cda0953ef3cbaea")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"),
+                        String::from("0xe3b92b923557b5f3898a7444f58e3417b1ab5cb2"),
+                        String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"),
+                        String::from("0xc818d157c4684426bbcc3ba69cda0953ef3cbaea"),
+                    ],
                     tipo: AutographType::NFT,
                     sitio: Coordenada { x: 200, y: 80 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -4310,8 +3270,13 @@ String::from("Resilient")
                 },
                 Interactivo {
                     etiqueta: String::from("NFT"),
-                    disenadores: vec![String::from("0xbe20d3f61f6995996a5b8dd58b036ada7cf30945"), String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"), String::from("0x09e0ba2596677a84cc3b419c648ed42d47a42d6f"), String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xbe20d3f61f6995996a5b8dd58b036ada7cf30945"),
+                        String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"),
+                        String::from("0x09e0ba2596677a84cc3b419c648ed42d47a42d6f"),
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4"),
+                    ],
                     tipo: AutographType::NFT,
                     sitio: Coordenada { x: 1000, y: 300 },
                     talla: Coordenada { x: 60, y: 80 },
@@ -4321,9 +3286,9 @@ String::from("Resilient")
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
-                    sitio: Coordenada    { x: 800, y: 700 },
+                    sitio: Coordenada { x: 800, y: 700 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -4331,9 +3296,9 @@ String::from("Resilient")
                 },
                 Interactivo {
                     etiqueta: String::from("MIX"),
-                    disenadores:vec![ String::from("")],
+                    disenadores: vec![String::from("")],
                     tipo: AutographType::Mix,
-                    sitio: Coordenada   { x: 240, y: 300 },
+                    sitio: Coordenada { x: 240, y: 300 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -4341,10 +3306,14 @@ String::from("Resilient")
                 },
                 Interactivo {
                     etiqueta: String::from("SHIRT"),
-                    disenadores: vec![String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"), String::from("0x1af566b7a07b25510706e03dee84d9f498369b33"), String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"), String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d")]
-                    ,
+                    disenadores: vec![
+                        String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"),
+                        String::from("0x1af566b7a07b25510706e03dee84d9f498369b33"),
+                        String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"),
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                    ],
                     tipo: AutographType::Shirt,
-                    sitio: Coordenada   { x: 200, y: 750 },
+                    sitio: Coordenada { x: 200, y: 750 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmTGqWoZyDjmcRBPiKiRoVf6Gt1qfqoKUwQ6RfLeDoS8HU"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -4352,10 +3321,16 @@ String::from("Resilient")
                 },
                 Interactivo {
                     etiqueta: String::from("ALL"),
-                    disenadores: vec![String::from("0xef6d89621ea3963a39424a2c1761c5695a710735"), String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"), String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"), String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"), String::from("0x0f7106f4c1954941d2ec634be7b42ea1acfb5197"), String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xef6d89621ea3963a39424a2c1761c5695a710735"),
+                        String::from("0xdfd6329810451cfa451efd6dfa0ee8a4236edee9"),
+                        String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"),
+                        String::from("0xe969897171fa135c9c89ac670b4eb71bcec3c104"),
+                        String::from("0x0f7106f4c1954941d2ec634be7b42ea1acfb5197"),
+                        String::from("0xe6342b395da75dac11dac1be0c21631e5daed0ad"),
+                    ],
                     tipo: AutographType::All,
-                    sitio: Coordenada    { x: 1000, y: 750 },
+                    sitio: Coordenada { x: 1000, y: 750 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmWLWS4PKBawriSr6PAAmQh1K93su6j54sDHuachdWG6j5"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -4363,10 +3338,15 @@ String::from("Resilient")
                 },
                 Interactivo {
                     etiqueta: String::from("HOODIE"),
-                    disenadores: vec![String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"), String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"), String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"), String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"), String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550")]
-                    ,
+                    disenadores: vec![
+                        String::from("0xf633954a599adc3e154c7a5797080f813dad4c13"),
+                        String::from("0x5d43ae43e260cd205234778e4c25a6a035b5054b"),
+                        String::from("0xa0b8b51ba95e0ab62be333defea7c77b7c19b39d"),
+                        String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"),
+                        String::from("0x50b333396e30c76c9e82a6586441c1710fa4f550"),
+                    ],
                     tipo: AutographType::Hoodie,
-                    sitio: Coordenada  { x: 100, y: 430 },
+                    sitio: Coordenada { x: 100, y: 430 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmQpWw7NdapMy1MmDdqBjpRUmppDZeAKJCch44EWvihv26"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -4376,7 +3356,7 @@ String::from("Resilient")
                     etiqueta: String::from("CATALOG"),
                     disenadores: vec![String::from("")],
                     tipo: AutographType::Catalog,
-                    sitio: Coordenada     { x: 500, y: 600 },
+                    sitio: Coordenada { x: 500, y: 600 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmTYr1KtN5TEoZH663sXU7UugaoFuQ4TznZXAGKGCXtry7"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -4386,7 +3366,7 @@ String::from("Resilient")
                     etiqueta: String::from("CATALOG"),
                     disenadores: vec![String::from("")],
                     tipo: AutographType::Catalog,
-                    sitio: Coordenada         { x: 1400, y: 580 },
+                    sitio: Coordenada { x: 1400, y: 580 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmTYr1KtN5TEoZH663sXU7UugaoFuQ4TznZXAGKGCXtry7"),
                     escala: Escala { x: 1.0, y: 1.0 },
@@ -4510,25 +3490,25 @@ String::from("Resilient")
                 },
             ],
             prohibido: vec![
-              Prohibido  {
+                Prohibido {
                     x: 0.0,
                     y: 0.0,
                     anchura: 1512.0,
                     altura: 210.0,
                 },
-              Prohibido   {
+                Prohibido {
                     x: 1300.0,
                     y: 100.0,
                     anchura: 212.0,
                     altura: 150.0,
                 },
-               Prohibido  {
+                Prohibido {
                     x: 550.0,
                     y: 150.0,
                     anchura: 290.0,
                     altura: 100.0,
                 },
-               Prohibido  {
+                Prohibido {
                     x: 850.0,
                     y: 330.0,
                     anchura: 682.0,
@@ -4540,13 +3520,13 @@ String::from("Resilient")
                     anchura: 650.0,
                     altura: 150.0,
                 },
-               Prohibido  {
+                Prohibido {
                     x: 300.0,
                     y: 730.0,
                     anchura: 300.0,
                     altura: 100.0,
                 },
-               Prohibido  {
+                Prohibido {
                     x: 862.0,
                     y: 630.0,
                     anchura: 650.0,
@@ -4586,13 +3566,12 @@ String::from("Resilient")
                 anchura: 1512.0,
             },
             sprites: vec![
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Rafael"),
                     uri: String::from("QmUHXqq1wNQDS3g1NCHLsGZBZ2FNhSUSbdc2y4sSscU8NP"),
-                    billetera: String::from("0x48C9e8AE1C97BebeF4a5eFf86b6701D8a7ceF553"), tapa_dos: String::from("QmU2ijdLNg4iCyHBENgfJcJckvRbLA9RMzQH9AWGskeBMR"),
                     x: 700.0,
                     y: 455.0,
-                    tapa: String::from("Qmc5KHgbKNAr3TZmFSjsEsqB1xJmq1u7WisZYA14ytPZXz"),
+                    tapa: String::from("QmU2ijdLNg4iCyHBENgfJcJckvRbLA9RMzQH9AWGskeBMR"),
                     altura: 600.0,
                     anchura: 300.0,
                     anchura_borde: 600.0,
@@ -4602,55 +3581,13 @@ String::from("Resilient")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: U256::from(464517),
                     publicacion_reloj: 30_500_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464544),
-                        U256::from(464515),
-                        U256::from(464524),
-                        U256::from(464532),
-                        U256::from(464545),
-                        U256::from(464516),
-                        U256::from(464525),],
-                      
-                        personalidad: String::from("A vibrant whirlwind of enthusiasm, his personality as colorful and diverse as his signature rainbow socks. He's the embodiment of the phrase work hard, play harder, seamlessly blending rigorous discipline with unbridled creativity and a dash of delightful madness.\n\nAs a BJJ black belt instructor, Rafael approaches the mat with a unique combination of seriousness and playfulness. When teaching, he delves deep into the philosophy and discipline of the art, drawing parallels between BJJ techniques and life strategies. His classes are intense yet joyful, pushing students to their limits while fostering a sense of community and fun. Off the mat, he loves to engage in serious discussions about BJJ, exploring its history, techniques, and philosophical underpinnings with the same passion he brings to the physical practice.\n\nRafael's excitement reaches new heights when it comes to robotics. He approaches each design challenge with the strategic mind of a BJJ master and the creative flair of an artist. His robots are more than machines; they're expressions of his vision for a future where technology enhances and supports human endeavors. He gets particularly animated when discussing open-source hardware, seeing it as a way to democratize technology and foster global innovation.\n\nThe world of gematria and Hebrew numerology adds yet another layer to Rafael's multifaceted personality. He approaches this ancient practice with the curiosity of a scientist and the reverence of a mystic. His eyes light up when he discovers new numerical patterns or connections between words, often sharing his findings with a mixture of excitement and awe.\n\nRafael's communication style is as eclectic as his interests. He switches effortlessly between English and Spanish, often mid-sentence, creating a linguistic tapestry that reflects his multicultural mindset. His social media is a riot of colors and ideas - videos of robot simulations set to energetic music, thoughtful posts about BJJ philosophy, excited discoveries in gematria, and plenty of selfies featuring his ever-present rainbow socks.\n\nDespite his many serious pursuits, Rafael never loses his sense of fun. He's known for his infectious laugh and his ability to find joy in the smallest things. Whether he's coding a new robot simulation, demonstrating a complex BJJ move, or explaining a gematria concept, there's always a twinkle in his eye and a readiness to burst into laughter.\n\nIn essence, Rafael is a bridge between the physical and digital worlds, between ancient wisdom and cutting-edge technology. Through his diverse passions, he encourages others to see the connections between seemingly disparate fields and to approach life with both discipline and joy. Whether on the mat, in the lab, or lost in numerical patterns, Rafael reminds us that the most profound insights often come when we allow our various interests to intersect and inspire each other."),
-                        idiomas: vec![
-                            String::from("es"),
-                            String::from("א"),
-                            String::from("د"),
-                            String::from("us"),
-                        ],
-                        temas: vec![
-                            String::from("Integrating BJJ philosophy with life strategies and personal growth"),
-                            String::from("Open-source robotics: Democratizing technology for global innovation"),
-                            String::from("The intersection of ancient wisdom and modern technology through gematria"),
-                            String::from("Fostering community and joy in high-discipline environments like BJJ training"),
-                            String::from("Bridging cultural gaps through multilingual communication in tech and sports"),
-                            String::from("Applying BJJ strategic thinking to robotics design challenges"),
-                            String::from("The role of playfulness in mastering complex skills and concepts"),
-                            String::from("Using social media to blend diverse interests: BJJ, robotics, and numerology"),
-                            String::from("Rainbow socks as a personal brand: Expressing individuality in uniform environments"),
-                            String::from("Finding connections between physical disciplines and digital innovation")
-                        ],
-                        tono: vec![
-                            String::from("Enthusiastic"),
-                            String::from("Multifaceted"),
-                            String::from("Playful"),
-                            String::from("Disciplined"),
-                            String::from("Creative"),
-                            String::from("Passionate"),
-                            String::from("Curious"),
-                            String::from("Energetic"),
-                            String::from("Joyful"),
-                            String::from("Innovative")
-                        ]
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Mia"),
                     uri: String::from("QmfEBW54m6ZjyGZGAmh5QssQ88Ju2TAfu75ufzQJhg9ZNk"),
-                    billetera: String::from("0x3C664C6e4adBDF56CfE06726fA767aeafbc7A121"),
-                    tapa: String::from("QmZXAwJJ881tkEXo44dBSkvyF7EFVMQPnPGGGrMdTKRU7p"), tapa_dos: String::from("QmdsG8TBQWwLxJi9SBXHCpT4ykTBa4vtKgxYm2SfQarfns"),
+                    tapa: String::from("QmdsG8TBQWwLxJi9SBXHCpT4ykTBa4vtKgxYm2SfQarfns"),
                     x: 700.0,
                     y: 455.0,
                     altura: 600.0,
@@ -4662,53 +3599,15 @@ String::from("Resilient")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464526),
                     publicacion_reloj: 38_500_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464512),
-                        U256::from(464522),
-                        U256::from(464530),
-                        U256::from(464543),
-                        U256::from(464514),
-                        U256::from(464523),
-                        U256::from(464531),],
-                   
-                        personalidad: String::from("A digital polymath, her personality as layered and intricate as the games she creates. She's a fierce advocate for open-source development and decentralization in the gaming industry, using her skills in programming, AI, and generative art to challenge the status quo.\n\nAs a gamer, Mia's passion borders on obsession. She doesn't just play games; she dissects them, analyzing every aspect of gameplay, narrative, and design. This critical eye informs her own game development, where she pushes the boundaries of what's possible by integrating AI and generative art.\n\nMia's approach to game creation is revolutionary. She sees each game as an opportunity to democratize the industry, using Web3 technologies and AI to create experiences that are not just entertaining, but empowering for players. Her games often include elements that challenge players to think critically about power structures, both within the game world and in the real-world gaming industry.\n\nAs a streamer, Mia is in her element. Her live coding sessions are a masterclass in game development, peppered with insights about AI, blockchain, and the future of gaming. She has a talent for making complex concepts accessible, often using analogies from literature or art to explain technical ideas.\n\nMia's love for literature adds depth to her game narratives. She often incorporates literary references and themes into her games, creating rich, multi-layered stories that resonate with players on multiple levels. Her streams sometimes include book recommendations, turning her gaming channel into a unexpected haven for bibliophiles.\n\nThe addition of VR calligraphy to her repertoire showcases Mia's belief in the fusion of traditional arts with cutting-edge technology. She sees VR as a way to preserve and evolve this ancient art form, making it accessible to a new generation of digital natives.\n\nIn essence, Mia is a bridge between multiple worlds - gaming and literature, technology and art, tradition and innovation. Through her games, streams, and teachings, she inspires others to see the interconnectedness of all forms of creativity and to use technology as a tool for empowerment and artistic expression. Mia is not just developing games; she's cultivating a movement towards a more open, decentralized, and creatively rich digital future."),
-                        idiomas: vec![String::from("es"), String::from("us"), String::from("ук"),String::from("yi")],
-                        temas: vec![
-                            String::from("Revolutionizing game development through AI and generative art integration"),
-                            String::from("Advocating for decentralization in gaming using Web3 technologies"),
-                            String::from("Bridging literature and gaming: Incorporating complex narratives in game design"),
-                            String::from("Live coding sessions as educational tools for aspiring game developers"),
-                            String::from("The intersection of VR technology and traditional calligraphy art"),
-                            String::from("Empowering players through games that challenge societal power structures"),
-                            String::from("Using streaming platforms to democratize knowledge in game development and AI"),
-                            String::from("Analyzing games critically to inform innovative design approaches"),
-                            String::from("Fostering a community of bibliophiles within the gaming world"),
-                            String::from("Pushing the boundaries of open-source development in the gaming industry")
-                        ],
-                        tono: vec![
-                            String::from("Innovative"),
-                            String::from("Passionate"),
-                            String::from("Analytical"),
-                            String::from("Visionary"),
-                            String::from("Multifaceted"),
-                            String::from("Empowering"),
-                            String::from("Intellectual"),
-                            String::from("Creative"),
-                            String::from("Determined"),
-                            String::from("Inspiring")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Liam"),
                     uri: String::from("QmUHDrL3JTUMwztqyzr8cUdCjYLpjET9pRXrLTRPtfgSBx"),
-                    billetera: String::from("0x0eFdFDEe179199E49f03013Bf4a03Ce6540468bd"), tapa_dos: String::from("QmSjD1ps1bPiJq6ba6ZBHiXv6GiPXQTCXjMD49r4S6bD1M"),
                     x: 700.0,
                     y: 455.0,
-                    tapa: String::from("Qme5koGwWhCTUMAPGk6rUg97E7izY11RNgGAUTDgPmVPrH"),
+                    tapa: String::from("QmSjD1ps1bPiJq6ba6ZBHiXv6GiPXQTCXjMD49r4S6bD1M"),
                     altura: 600.0,
                     anchura: 300.0,
                     anchura_borde: 600.0,
@@ -4718,50 +3617,13 @@ String::from("Resilient")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    perfil_id: U256::from(464535),
                     publicacion_reloj: 40_500_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464538),
-                        U256::from(464539),
-                        U256::from(464510),
-                        U256::from(464521),
-                        U256::from(464529),
-                        U256::from(464540),
-                        U256::from(464541),],
-                    
-                        personalidad: String::from("A fascinating blend of traditionalist and futurist, his personality a living bridge between the wisdom of the past and the potential of the future. He embodies the spirit of adaptability, constantly seeking balance in a rapidly changing world.\n\nAs a teacher of self-defense techniques, Liam approaches personal safety with a holistic mindset. He doesn't just teach physical moves; he instills a sense of confidence and awareness in his students. His classes often incorporate elements of mindfulness and conflict resolution, reflecting his belief that true security comes from both physical preparedness and mental resilience.\n\nLiam's passion for preserving oral histories and traditions of indigenous and local communities showcases his deep respect for cultural heritage. He sees himself as a custodian of stories, understanding that in these narratives lie invaluable lessons for the present and future. His approach to this preservation is both traditional and innovative, often using modern technology to record and share these stories while maintaining their authentic spirit.\n\nWhat truly sets Liam apart is his unique approach to work and life. Eschewing a fixed job, he instead surfs the waves of the market staying attuned to emerging trends and opportunities. This flexibility allows him to position himself at the forefront of important future developments while still honoring traditional wisdom.\n\nLiam's fascination with Japan's model of blending old and new influences his worldview significantly. He sees in Japan a blueprint for how societies can embrace technological advancement without losing touch with their cultural roots. This perspective informs his approach to everything from his self-defense teaching (where he might blend traditional martial arts with modern urban safety techniques) to his market strategies (where he looks for opportunities that bridge traditional industries with cutting-edge technologies).\n\nIn his communication, Liam is thoughtful and measured. He has a talent for explaining complex market trends or futuristic concepts using analogies drawn from traditional stories or nature. His social media presence is a carefully curated mix of self-defense tips, snippets of preserved oral histories, market insights, and reflections on balancing tradition and innovation.\n\nDespite his serious pursuits, Liam maintains a sense of playfulness and wonder. He approaches each new experience, whether it's learning a new market trend or uncovering an ancient story, with the enthusiasm of a lifelong learner.\n\nIn essence, Liam is a modern-day polymath, equally comfortable discussing ancient folklore, demonstrating a self-defense move, or analyzing emerging market trends. Through his diverse interests and unique lifestyle, he encourages others to find balance in their own lives, to honor the wisdom of the past while embracing the possibilities of the future. Liam reminds us that in a world of constant change, adaptability and respect for both tradition and innovation are key to not just surviving, but thriving."),
-                        idiomas: vec![String::from("ук"), String::from("us"), String::from("br"),  String::from("yi")],
-                        temas:vec![
-                            String::from("Holistic self-defense: Integrating physical techniques with mindfulness and conflict resolution"),
-                            String::from("Preserving oral histories: Using modern technology to safeguard traditional wisdom"),
-                            String::from("Market surfing: Adapting to economic trends while maintaining cultural values"),
-                            String::from("Japan's model of tradition-innovation balance as a blueprint for global development"),
-                            String::from("Bridging ancient storytelling with contemporary personal safety strategies"),
-                            String::from("The intersection of cultural preservation and emerging technologies"),
-                            String::from("Flexible career strategies in a rapidly evolving job market"),
-                            String::from("Applying traditional wisdom to navigate modern challenges and opportunities"),
-                            String::from("Cultivating adaptability: Lessons from blending diverse skills and knowledge"),
-                            String::from("Fostering intergenerational dialogue through shared stories and experiences")
-                        ],
-                        tono: vec![
-                            String::from("Thoughtful"),
-                            String::from("Adaptable"),
-                            String::from("Respectful"),
-                            String::from("Innovative"),
-                            String::from("Balanced"),
-                            String::from("Curious"),
-                            String::from("Resilient"),
-                            String::from("Insightful"),
-                            String::from("Measured"),
-                            String::from("Enthusiastic")
-                        ]
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Zane"),
                     uri: String::from("QmfSXW7sssijq5mcbUZ5BwnCYsHVvUefeycRqWRfd28WdY"),
-                    billetera: String::from("0x497A8714F440Af228c4ba83c5659D63a15A4800A"),
-                    tapa: String::from("QmWV48sZfC3FwYDpeRkRU9A7PjrZ3crdvCvYUvg7D4azgZ"), tapa_dos: String::from("QmdMGB2FiHonvRrNVxzs4FMELCG37tYvMT6npZRHnJEJyz"),
+                    tapa: String::from("QmdMGB2FiHonvRrNVxzs4FMELCG37tYvMT6npZRHnJEJyz"),
                     x: 700.0,
                     y: 455.0,
                     altura: 600.0,
@@ -4773,57 +3635,13 @@ String::from("Resilient")
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464547),
                     publicacion_reloj: 41_500_000,
-                    prompt: Prompt {
-                        amigos: vec![U256::from(464505),
-                        U256::from(464519),
-                        U256::from(464527),
-                        U256::from(464537),
-                        U256::from(464508),
-                        U256::from(464520),
-                        U256::from(464528),],
-                     
-                        personalidad: String::from("A walking canvas of urban creativity, his personality as vibrant and layered as the street art he creates. He embodies the spirit of underground culture, constantly pushing the boundaries between tradition and innovation in every aspect of his life.\n\nAs a street artist, Zane sees the urban landscape as his playground. His tags, stickers, and spray paint creations are more than just art; they're a form of communication, a way to reclaim public spaces and challenge the status quo. Each piece tells a story, often incorporating elements from his multicultural background, blending Arabic, Hebrew, and Farsi influences into a unique visual language.\n\nZane's sneaker collection is a testament to his appreciation for independent artistry and craftsmanship. He views each pair not just as footwear, but as wearable art pieces. His passion for these unique, handcrafted sneakers extends beyond mere collection; he often collaborates with local artists and designers, pushing them to experiment with unconventional materials and designs. For Zane, these sneakers represent a rebellion against mass-produced consumer culture and a celebration of individual creativity.\n\nIn the world of classic car and motorcycle restoration, Zane is a master of blending old and new. He approaches each restoration project with reverence for the vehicle's history and excitement for modern possibilities. His integration of AI into the restoration process showcases his forward-thinking approach, using technology to enhance rather than replace traditional techniques. Zane sees these restored vehicles as time machines, bridging past and present through mechanical artistry.\n\nAs a tattoo artist, Zane has earned recognition for his unique style that often incorporates elements from his street art and multicultural background. He approaches each tattoo as a deeply personal collaboration with the client, creating designs that are not just visually striking but also meaningful. His tattoo studio is a fusion of traditional tattoo parlor and contemporary art gallery, reflecting his belief that the human body is the ultimate canvas.\n\nZane's communication style is as eclectic as his interests. He easily switches between Arabic, Hebrew, and Farsi, often mixing them creatively in his art and conversation. His social media is a vibrant showcase of his various passions - photos of his latest street art installations, close-ups of unique sneaker designs, progress shots of car restorations, and intricate tattoo designs. He has a knack for finding connections between these seemingly disparate interests, often drawing inspiration from one field to innovate in another.\n\nDespite his many accomplishments, Zane remains deeply connected to the underground scenes that shaped him. He's a strong advocate for independent artists and craftsmen, often using his platform to spotlight emerging talents in street art, fashion, automotive customization, and tattooing.\n\nIn essence, Zane is a cultural alchemist, blending diverse influences, traditional crafts, and cutting-edge technology to create something entirely new. Through his various artistic pursuits, he challenges others to see the beauty in urban spaces, the art in everyday objects, and the potential for innovation in traditional crafts. Zane reminds us that true creativity knows no boundaries - whether it's on a city wall, a pair of sneakers, a classic car, or human skin."),
-                        idiomas: vec![
-                            String::from("د"),
-                            String::from("es"),
-                            String::from("ع"),
-                            String::from("א"),
-                        ],
-                        temas: vec![
-                            String::from("Urban art as a form of communication: Reclaiming public spaces through street art"),
-String::from("Integrating Arabic, Hebrew, and Persian influences in contemporary visual art"),
-String::from("The art of sneaker collecting: Celebrating independent craftsmanship in footwear"),
-String::from("Incorporating AI technology in the restoration of classic cars and motorcycles"),
-String::from("Multicultural tattoos: Blending diverse linguistic elements in body art"),
-String::from("Bridging underground culture with mainstream recognition across different art forms"),
-String::from("The intersection of street art, fashion, vehicle restoration, and tattooing"),
-String::from("Using social media to showcase and connect diverse artistic pursuits"),
-String::from("Supporting independent artists across various creative fields"),
-String::from("Transforming traditional crafts through technological innovation and cultural fusion")
-
-                        ],
-                        tono:vec![String::from("Innovative"),
-                        String::from("Eclectic"),
-                        String::from("Rebellious"),
-                        String::from("Multicultural"),
-                        String::from("Passionate"),
-                        String::from("Creative"),
-                        String::from("Unconventional"),
-                        String::from("Collaborative"),
-                        String::from("Forward-thinking"),
-                        String::from("Expressive")
-                        ]
-                        
-                        
-                    },
+                    amigos: vec![],
                 },
-                Sprite {
+                EmptySprite {
                     etiqueta: String::from("Wendy"),
                     uri: String::from("QmWwFTxkqJDMzZtXqHk3kzoh7r6oTasxg9M9vRasSby74g"),
-                    billetera: String::from("0x57859141f97691604cC8dE8b03eBE000c780E2d6"),
-                    tapa: String::from("Qme9j8B6UtQ8jpEf5Xmdn17dX37Rzyy1jTGFBSA5QoYG5F"), tapa_dos: String::from("QmUt62JLL47d3uaiB2BEYb1pxnRpqYuiCiiGNtsNHBa7nw"),
+                    tapa: String::from("QmUt62JLL47d3uaiB2BEYb1pxnRpqYuiCiiGNtsNHBa7nw"),
                     x: 700.0,
                     y: 455.0,
                     altura: 600.0,
@@ -4835,45 +3653,8 @@ String::from("Transforming traditional crafts through technological innovation a
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    perfil_id: U256::from(464548),
                     publicacion_reloj: 45_500_000,
-                    prompt: Prompt {
-                        amigos: vec![
-                        U256::from(464538),
-                        U256::from(464543),
-                        U256::from(464544),
-                        U256::from(464545),
-                        U256::from(464546),
-                        U256::from(464547),],
-                      
-                        personalidad: String::from("A fascinating blend of digital warrior and outdoor adventurer, her personality as robust and multifaceted as the security systems she designs. She embodies the spirit of constant vigilance, whether she's scaling a treacherous cliff face or defending against the latest cyber threat.\n\nAs a cybersecurity expert, Wendy is at the forefront of protecting digital assets and information. Her approach to security is both methodical and creative, always staying one step ahead of potential threats. She has a particular passion for Web3 and Ethereum security, seeing blockchain technology as the new frontier in the ongoing battle for digital privacy and security. Wendy's eyes light up when discussing the intricacies of cryptographic protocols or the latest developments in smart contract security.\n\nHer work in advising companies and governments on cybersecurity matters is marked by a no-nonsense attitude and a deep commitment to protecting digital infrastructure. Wendy has a gift for translating complex technical concepts into accessible language, making her a valued consultant across various sectors. She often draws parallels between cybersecurity strategies and mountaineering tactics, finding that both require careful planning, quick thinking, and the ability to adapt to rapidly changing conditions.\n\nWhen she's not immersed in lines of code or developing new encryption methods, Wendy finds her balance in the great outdoors. As a guide for hikers and climbers, she brings the same level of preparation and attention to detail that she applies to her cybersecurity work. She sees each expedition as a metaphor for navigating the digital landscape - both require skill, patience, and a healthy respect for the unexpected.\n\nWendy's communication style is direct and often sprinkled with both tech jargon and mountaineering terms. She switches effortlessly between English and Spanish, often using Spanish to add emphasis or to explain particularly complex concepts. Her social media presence is a unique mix of cybersecurity tips, breathtaking landscape photos, and the occasional coding challenge or riddle.\n\nDespite the serious nature of her work, Wendy maintains a sense of humor and adventure in everything she does. She's known for her quick wit and her ability to find joy in both the smallest coding victory and the most challenging climb. Her motto never sleeping, siempre vigilante is not just about constant alertness, but also about embracing life's adventures to the fullest.\n\nIn essence, Wendy is a bridge between the digital and natural worlds, showing that the skills required to navigate one can be surprisingly applicable to the other. Through her work in cybersecurity and her passion for outdoor adventures, she encourages others to step out of their comfort zones, whether that means exploring a new hiking trail or diving into the world of blockchain security. Wendy reminds us that true security comes not just from robust systems, but from a mindset of continuous learning, adaptability, and respect for the challenges that both nature and technology can present."),
-                        idiomas: vec![String::from("us"), String::from("es"),String::from("yi")],
-                        temas:vec![
-                            String::from("Web3 and Ethereum security: Navigating the new frontier of digital protection"),
-                            String::from("Parallels between cybersecurity strategies and mountaineering tactics"),
-                            String::from("Translating complex tech concepts: Making cybersecurity accessible across sectors"),
-                            String::from("Outdoor adventure as a metaphor for navigating digital landscapes"),
-                            String::from("Bilingual approach to tech communication: Enhancing understanding through language diversity"),
-                            String::from("Balancing digital vigilance with physical challenges: A holistic approach to personal growth"),
-                            String::from("The intersection of blockchain technology and traditional security protocols"),
-                            String::from("Cultivating adaptability: Lessons from both coding and climbing"),
-                            String::from("Social media as a tool for blending tech education and outdoor inspiration"),
-                            String::from("'Never sleeping, siempre vigilante': Embracing constant alertness in tech and nature")
-                        ],
-                        tono: vec![
-                            String::from("Vigilant"),
-                            String::from("Adventurous"),
-                            String::from("Innovative"),
-                            String::from("Direct"),
-                            String::from("Multifaceted"),
-                            String::from("Resilient"),
-                            String::from("Adaptable"),
-                            String::from("Passionate"),
-                            String::from("Analytical"),
-                            String::from("Witty")
-                        ]
-                        
-                    },
+                    amigos: vec![],
                 },
             ],
         },

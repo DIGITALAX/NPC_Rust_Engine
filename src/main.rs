@@ -1,5 +1,5 @@
 use dotenv::dotenv;
-use futures_util::{future::try_join_all, SinkExt, StreamExt};
+use futures_util::{SinkExt, StreamExt};
 use serde_json::{from_str, json, to_string, Value};
 use std::{collections::HashMap, env, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{
@@ -12,15 +12,15 @@ use tokio_tungstenite::{
     accept_hdr_async,
     tungstenite::{
         handshake::server::{ErrorResponse, Request, Response},
-        Error, Message,
+        Message,
     },
 };
 use tungstenite::http::method;
 
 mod bib;
 mod classes;
-use bib::constants::*;
 use bib::types::*;
+use bib::{constants::*, graph::handle_escenas};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -34,43 +34,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let oyente = TcpListener::bind(&addr)
         .await
         .expect("No se pudo vincular a la dirección");
-    let rt = tokio::runtime::Runtime::new().unwrap();
-    let manija = rt.handle().clone();
 
-    let futures: Vec<_> = LISTA_ESCENA
-        .iter()
-        .map(|escena: &Escena| async {
-            Ok::<_, Error>(EscenaEstudio::new(escena.clone(), manija.clone()).await)
-        })
-        .collect();
+    match handle_escenas().await {
+        Ok(escenas) => {
+            let escenas_creadas: HashMap<String, EscenaEstudio> = escenas
+                .iter()
+                .map(|escena| (escena.clave.clone(), EscenaEstudio::new(escena.clone())))
+                .collect();
+            let mapa_escena = Arc::new(RwLock::new(escenas_creadas));
 
-    let resultados = try_join_all(futures).await.unwrap();
+            let mapa_escena_clone = mapa_escena.clone();
+            spawn(async move {
+                bucle_juego(mapa_escena_clone).await;
+            });
 
-    let mut mapa_escena = HashMap::new();
-    for escena in resultados {
-        mapa_escena.insert(escena.clave.clone(), escena);
-    }
-    let mapa_escena = Arc::new(RwLock::new(mapa_escena));
-
-    let mapa_escena_clone = mapa_escena.clone();
-    spawn(async move {
-        bucle_juego(mapa_escena_clone).await;
-    });
-
-    while let Ok((stream, _)) = oyente.accept().await {
-        let render_clone = render_clave.clone();
-        let mapa_escena_clone = mapa_escena.clone();
-        spawn(async move {
-            if let Err(err) = manejar_conexion(stream, render_clone, mapa_escena_clone).await {
-                if !err.to_string().contains("Handshake not finished")
-                    && !err.to_string().contains("Unsupported HTTP method used")
-                {
-                    eprintln!("Error al manejar la conexión: {}", err);
-                } else {
-                    eprintln!("Debug: {}", err);
-                }
+            while let Ok((stream, _)) = oyente.accept().await {
+                let render_clone = render_clave.clone();
+                let mapa_escena_clone = mapa_escena.clone();
+                spawn(async move {
+                    if let Err(err) =
+                        manejar_conexion(stream, render_clone, mapa_escena_clone).await
+                    {
+                        if !err.to_string().contains("Handshake not finished")
+                            && !err.to_string().contains("Unsupported HTTP method used")
+                        {
+                            eprintln!("Error al manejar la conexión: {}", err);
+                        } else {
+                            eprintln!("Debug: {}", err);
+                        }
+                    }
+                });
             }
-        });
+        }
+        Err(err) => {
+            eprintln!("Error en configurar escenas {}", err)
+        }
     }
 
     Ok(())
@@ -100,19 +98,19 @@ async fn manejar_conexion(
                         if let Some(origen) = origen {
                             match origen.to_str() {
                                 Ok(origen_str) => {
-                                    if origen_str == "https://www.npcstudio.xyz"
-                                        || origen_str == "https://npc.digitalax.xyz"
-                                        || origen_str
-                                            == "https://glorious-eft-deeply.ngrok-free.app"
-                                        || origen_str == "https://npcstudio.xyz"
-                                        || origen_str == "https://skyhunters.agentmeme.xyz"
-                                    {
-                                        return Ok(respuesta);
-                                    } else {
-                                        return Err(ErrorResponse::new(Some(
-                                            "Forbidden".to_string(),
-                                        )));
-                                    }
+                                    // if origen_str == "https://www.npcstudio.xyz"
+                                    //     || origen_str == "https://npc.digitalax.xyz"
+                                    //     || origen_str
+                                    //         == "https://glorious-eft-deeply.ngrok-free.app"
+                                    //     || origen_str == "https://npcstudio.xyz"
+                                    //     || origen_str == "https://skyhunters.agentmeme.xyz"
+                                    // {
+                                    return Ok(respuesta);
+                                    // } else {
+                                    //     return Err(ErrorResponse::new(Some(
+                                    //         "Forbidden".to_string(),
+                                    //     )));
+                                    // }
                                 }
                                 Err(e) => {
                                     eprintln!("Error al procesar el encabezado origin: {:?}", e);

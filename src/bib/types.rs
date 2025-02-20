@@ -1,21 +1,18 @@
-use core::fmt;
 use ethers::{
-    abi::{Token, Tokenizable, Tokenize},
+    abi::{Token, Tokenizable},
     contract::ContractInstance,
     core::k256::ecdsa::SigningKey,
     middleware::SignerMiddleware,
     providers::{Http, Provider},
     signers::Wallet,
-    types::{Address, Bytes, U256},
+    types::U256,
 };
 use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
-    error::Error,
     sync::{Arc, Mutex},
 };
 use strum::EnumIter;
-use tokio::runtime::Handle;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Coordenada {
@@ -27,15 +24,6 @@ pub struct Coordenada {
 pub struct Escala {
     pub x: f32,
     pub y: f32,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Prompt {
-    pub personalidad: String,
-    pub idiomas: Vec<String>,
-    pub temas:  Vec<String>,
-    pub tono: Vec<String>,
-    pub amigos: Vec<U256>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -127,25 +115,54 @@ pub struct Silla {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Sprite {
+pub struct HalfSprite {
+    pub id: u32,
+    pub account_address: String,
+    pub prompt: Prompt,
+    pub billetera: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct EmptySprite {
     pub etiqueta: String,
     pub uri: String,
-    pub billetera: String,
     pub x: f32,
     pub y: f32,
-    pub perfil_id: U256,
     pub altura: f32,
     pub anchura: f32,
     pub anchura_borde: f32,
     pub altura_borde: f32,
     pub margen: f32,
     pub tapa: String,
-    pub tapa_dos: String,
     pub marco_inicio: f32,
     pub marco_final: f32,
     pub movimientos_max: f32,
     pub escala: Escala,
     pub publicacion_reloj: u64,
+    pub amigos: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Sprite {
+    pub id: u32,
+    pub etiqueta: String,
+    pub uri: String,
+    pub billetera: String,
+    pub x: f32,
+    pub y: f32,
+    pub altura: f32,
+    pub anchura: f32,
+    pub anchura_borde: f32,
+    pub altura_borde: f32,
+    pub margen: f32,
+    pub tapa: String,
+    pub marco_inicio: f32,
+    pub marco_final: f32,
+    pub movimientos_max: f32,
+    pub escala: Escala,
+    pub publicacion_reloj: u64,
+    pub amigos: Vec<String>,
+    pub account_address: String,
     pub prompt: Prompt,
 }
 
@@ -184,6 +201,20 @@ pub struct Escena {
     pub fondo: Fondo,
     pub objetos: Vec<Articulo>,
     pub sprites: Vec<Sprite>,
+    pub interactivos: Vec<Interactivo>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct EmptyEscena {
+    pub clave: String,
+    pub mundo: Talla,
+    pub imagen: String,
+    pub prohibido: Vec<Prohibido>,
+    pub profundidad: Vec<Articulo>,
+    pub sillas: Vec<Silla>,
+    pub fondo: Fondo,
+    pub objetos: Vec<Articulo>,
+    pub sprites: Vec<EmptySprite>,
     pub interactivos: Vec<Interactivo>,
 }
 
@@ -251,10 +282,41 @@ pub enum RespuestaTrabajadora<'a> {
 }
 
 #[derive(Clone, Debug)]
+pub struct Mention {
+    pub content: String,
+    pub id: String,
+    pub post_id: String
+}
+
+#[derive(Clone, Debug)]
 pub struct EscenaEstudio {
     pub clave: String,
     pub sillas_ocupadas: Arc<Mutex<Vec<Silla>>>,
     pub npcs: Vec<NPCAleatorio>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Text {
+    pub text: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct MessageExample {
+    pub user: String,
+    pub content: Text,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Prompt {
+    pub bio: String,
+    pub lore: String,
+    pub style: String,
+    pub knowledge: String,
+    pub adjectives: String,
+    pub model: String,
+    pub custom_instructions: String,
+    pub message_examples: Vec<Vec<MessageExample>>,
+    pub cover: String,
 }
 
 #[derive(Clone)]
@@ -271,20 +333,17 @@ pub struct NPCAleatorio {
     pub mapa: Mapa,
     pub escena: String,
     pub ultimo_tiempo_comprobacion: u64,
-    pub lens_hub_contrato: Arc<
-        ContractInstance<
-            Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
-            SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
-        >,
-    >,
     pub autograph_data_contrato: Arc<
         ContractInstance<
             Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
             SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
         >,
     >,
-    pub manija: Handle,
     pub tokens: Option<TokensAlmacenados>,
+    pub registro_tipos: Vec<LensType>,
+    pub registro_paginas: Vec<U256>,
+    pub registro_colecciones: Vec<U256>,
+    pub ultima_mencion: String
 }
 
 #[derive(Clone)]
@@ -318,127 +377,6 @@ pub struct Mapa {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Pub {
-    pub profileId: U256,
-    pub contentURI: String,
-    pub actionModules: Vec<Address>,
-    pub actionModulesInitDatas: Vec<Bytes>,
-    pub referenceModule: Address,
-    pub referenceModuleInitData: Bytes,
-}
-
-impl Tokenize for Pub {
-    fn into_tokens(self) -> Vec<Token> {
-        vec![
-            Token::Uint(self.profileId),
-            Token::String(self.contentURI),
-            Token::Array(
-                self.actionModules
-                    .into_iter()
-                    .map(|addr| addr.into_token())
-                    .collect(),
-            ),
-            Token::Array(
-                self.actionModulesInitDatas
-                    .into_iter()
-                    .map(|data| Token::Bytes(data.to_vec()))
-                    .collect(),
-            ),
-            self.referenceModule.into_token(),
-            Token::Bytes(self.referenceModuleInitData.to_vec()),
-        ]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Mirror {
-    pub profileId: U256,
-    pub metadataURI: String,
-    pub pointedProfileId: U256,
-    pub pointedPubId: U256,
-    pub referrerProfileIds: Vec<U256>,
-    pub referrerPubIds: Vec<U256>,
-    pub referenceModuleData: Bytes,
-}
-
-impl Tokenize for Mirror {
-    fn into_tokens(self) -> Vec<Token> {
-        vec![
-            Token::Uint(self.profileId),
-            Token::String(self.metadataURI),
-            Token::Uint(self.pointedProfileId),
-            Token::Uint(self.pointedPubId),
-            Token::Array(
-                self.referrerProfileIds
-                    .into_iter()
-                    .map(|uint| uint.into_token())
-                    .collect(),
-            ),
-            Token::Array(
-                self.referrerPubIds
-                    .into_iter()
-                    .map(|uint| uint.into_token())
-                    .collect(),
-            ),
-            Token::Bytes(self.referenceModuleData.to_vec()),
-        ]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct Comment {
-    pub profileId: U256,
-    pub contentURI: String,
-    pub pointedProfileId: U256,
-    pub pointedPubId: U256,
-    pub referrerProfileIds: Vec<U256>,
-    pub referrerPubIds: Vec<U256>,
-    pub referenceModuleData: Bytes,
-    pub actionModules: Vec<Address>,
-    pub actionModulesInitDatas: Vec<Bytes>,
-    pub referenceModule: Address,
-    pub referenceModuleInitData: Bytes,
-}
-
-impl Tokenize for Comment {
-    fn into_tokens(self) -> Vec<Token> {
-        vec![
-            Token::Uint(self.profileId),
-            Token::String(self.contentURI),
-            Token::Uint(self.pointedProfileId),
-            Token::Uint(self.pointedPubId),
-            Token::Array(
-                self.referrerProfileIds
-                    .into_iter()
-                    .map(|uint| uint.into_token())
-                    .collect(),
-            ),
-            Token::Array(
-                self.referrerPubIds
-                    .into_iter()
-                    .map(|uint| uint.into_token())
-                    .collect(),
-            ),
-            Token::Bytes(self.referenceModuleData.to_vec()),
-            Token::Array(
-                self.actionModules
-                    .into_iter()
-                    .map(|addr| addr.into_token())
-                    .collect(),
-            ),
-            Token::Array(
-                self.actionModulesInitDatas
-                    .into_iter()
-                    .map(|data| Token::Bytes(data.to_vec()))
-                    .collect(),
-            ),
-            self.referenceModule.into_token(),
-            Token::Bytes(self.referenceModuleInitData.to_vec()),
-        ]
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
 pub struct IpfsRespuesta {
     Name: String,
     pub Hash: String,
@@ -457,7 +395,6 @@ pub struct Contenido {
     pub tags: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub image: Option<Imagen>,
-    pub attributes: Option<Vec<MetadataAttribute>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -474,7 +411,7 @@ pub struct Imagen {
     pub item: String,
 }
 
-#[derive(Copy,PartialEq, EnumIter, Clone, Deserialize, Debug)]
+#[derive(Copy, PartialEq, EnumIter, Clone, Deserialize, Debug)]
 pub enum LensType {
     Catalog,
     Comment,
@@ -540,34 +477,11 @@ impl Tokenizable for LensType {
     }
 }
 
-#[derive(Debug)]
-pub struct CustomError {
-    details: String,
-}
-
-impl CustomError {
-    pub fn new(msg: &str) -> CustomError {
-        CustomError {
-            details: msg.to_string(),
-        }
-    }
-}
-
-impl fmt::Display for CustomError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.details)
-    }
-}
-
-impl Error for CustomError {}
-unsafe impl Send for CustomError {}
-unsafe impl Sync for CustomError {}
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct LensTokens {
     pub access_token: String,
     pub refresh_token: String,
-    pub identity_token: String,
+    pub id_token: String,
 }
 
 #[derive(Debug, Clone)]
@@ -577,31 +491,8 @@ pub struct TokensAlmacenados {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MetadataAttribute {
-    pub key: String,
-    #[serde(rename = "type")]
-    pub tipo: String,
-    pub value: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OpenAIRespuesta {
-    pub complecion: String,
-    pub modelo: String,
-    pub uso: OpenAIUso,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct OpenAIUso {
-    pub prompt_tokens: i64,
-    pub completion_tokens: i64,
-    pub total_tokens: i64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Coleccion {
     pub imagen: String,
     pub descripcion: String,
-    pub titulo: String,
     pub coleccion_id: String,
 }

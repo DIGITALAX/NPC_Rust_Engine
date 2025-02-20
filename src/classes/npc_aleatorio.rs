@@ -1,15 +1,37 @@
-use crate::{bib::{ai::call_chat_completion_openai, graph::handle_collections, lens, types::{
-    Comment, Contenido, Coordenada, CustomError, Estado, GameTimer, Imagen, LensType, Mapa, Mirror, Movimiento, NPCAleatorio, OpenAIRespuesta, OpenAIUso, Pub, Publicacion,  Silla, Sprite, Talla
-}, utils::{between, subir_ipfs, subir_ipfs_imagen}}, MetadataAttribute, TokensAlmacenados, CONVERSACION, ISO_CODES, ISO_CODES_PROMPT, LENS_HUB_PROXY};
-use abi::{Token, Tokenize};
-use ethers::{prelude::*, types::{Address, Bytes, U256}};
+use crate::{
+    bib::{
+        contracts::inicializar_contrato,
+        graph::handle_collections,
+        ipfs::{subir_ipfs, subir_ipfs_imagen},
+        lens::{
+            find_comment, get_mentions, handle_tokens, make_comment, make_like, make_mirror,
+            make_publication, make_quote,
+        },
+        types::{
+            Contenido, Coordenada, Estado, GameTimer, Imagen, LensType, Mapa, Movimiento,
+            NPCAleatorio, Publicacion, Silla, Sprite, Talla,
+        },
+        utils::{between, format_instructions, obtener_lens, obtener_pagina},
+        venice::{
+            call_chat_completion, call_comment_completion, call_gen_image, call_prompt,
+            call_publication_completion,
+        },
+    },
+    TokensAlmacenados,
+};
+use ethers::{prelude::*, types::U256};
 use pathfinding::prelude::astar;
-use serde_json::{to_string, json};
-use rand::{prelude::SliceRandom, thread_rng, Rng};
-use tokio::runtime::Handle;
-use std::{error::Error, marker::{Send,Sync}, str::FromStr, sync::{Arc, Mutex}};
+use rand::{thread_rng, Rng};
+use serde_json::to_string;
+use std::{
+    error::Error,
+    io,
+    marker::{Send, Sync},
+    str::FromStr,
+    sync::{Arc, Mutex},
+};
+use tokio::sync::mpsc;
 use uuid::Uuid;
-use strum::IntoEnumIterator;
 
 impl NPCAleatorio {
     pub fn new(
@@ -20,10 +42,8 @@ impl NPCAleatorio {
         reloj_juego: GameTimer,
         mapa: Mapa,
         escena: String,
-        manija: Handle) -> Self {
-        let (lens_hub_contrato, autograph_data_contrato) =
-            lens::inicializar_contrato(&sprite.etiqueta.to_string());
-            lens::inicializar_api();
+    ) -> Self {
+        let autograph_data_contrato = inicializar_contrato(&sprite.etiqueta.to_string());
 
         NPCAleatorio {
             reloj_juego,
@@ -37,11 +57,13 @@ impl NPCAleatorio {
             contador: 0.0,
             silla_cerca: None,
             ultimo_tiempo_comprobacion: 0,
-            lens_hub_contrato,
             autograph_data_contrato,
             escena,
-            manija,
             tokens: None,
+            registro_paginas: vec![],
+            registro_colecciones: vec![],
+            registro_tipos: vec![],
+            ultima_mencion: String::from(""),
         }
     }
 
@@ -57,13 +79,11 @@ impl NPCAleatorio {
         if self.ultimo_tiempo_comprobacion < self.npc.publicacion_reloj {
             self.ultimo_tiempo_comprobacion += delta_time;
         }
-        
 
         if self.ultimo_tiempo_comprobacion >= self.npc.publicacion_reloj {
             self.ultimo_tiempo_comprobacion = 0;
-            self.comprobar_conversacion();
+            self.comprobar_actividad();
         }
-
     }
 
     fn elegir_direccion_aleatoria(&mut self) {
@@ -180,23 +200,27 @@ impl NPCAleatorio {
     }
 
     fn sentar(&mut self) {
-        let sillas_disponibles: Vec<&Silla> = self.sillas.iter().filter(|silla| {
-            !self
-                .sillas_ocupadas
-                .lock()
-                .unwrap()
-                .iter()
-                .any(|silla_ocupada| silla_ocupada.etiqueta == silla.etiqueta)
-        }).collect();
+        let sillas_disponibles: Vec<&Silla> = self
+            .sillas
+            .iter()
+            .filter(|silla| {
+                !self
+                    .sillas_ocupadas
+                    .lock()
+                    .unwrap()
+                    .iter()
+                    .any(|silla_ocupada| silla_ocupada.etiqueta == silla.etiqueta)
+            })
+            .collect();
 
         if !sillas_disponibles.is_empty() {
-            let silla_aleatoria = sillas_disponibles[thread_rng().gen_range(0..sillas_disponibles.len())];
-
+            let silla_aleatoria =
+                sillas_disponibles[thread_rng().gen_range(0..sillas_disponibles.len())];
 
             self.sillas_ocupadas
-            .lock()
-            .unwrap()
-            .push(silla_aleatoria.clone());
+                .lock()
+                .unwrap()
+                .push(silla_aleatoria.clone());
 
             let mut silla_x = silla_aleatoria.x_adjustado;
             let mut silla_y = silla_aleatoria.y_adjustado;
@@ -208,7 +232,8 @@ impl NPCAleatorio {
             } else if silla_x < 0.0 {
                 nearest = self.encontrar_camino_cercano(1, silla_y as i32);
             } else if silla_y >= self.mundo.altura {
-                nearest = self.encontrar_camino_cercano(silla_x as i32, self.mundo.altura as i32 - 1);
+                nearest =
+                    self.encontrar_camino_cercano(silla_x as i32, self.mundo.altura as i32 - 1);
             } else if silla_y < 0.0 {
                 nearest = self.encontrar_camino_cercano(silla_x as i32, 1);
             } else if self.mapa.prohibidos[silla_x as usize][silla_y as usize] {
@@ -219,7 +244,7 @@ impl NPCAleatorio {
                 silla_x = nearest.x as f32;
                 silla_y = nearest.y as f32;
             }
-    
+
             self.silla_cerca = Some(Coordenada {
                 x: silla_x as i32,
                 y: silla_y as i32,
@@ -234,7 +259,7 @@ impl NPCAleatorio {
                 npc_etiqueta: self.npc.etiqueta.clone(),
                 silla_aleatoria: Some(silla_aleatoria.etiqueta.clone()),
             });
-    
+
             let sillas_ocupadas = Arc::clone(&self.sillas_ocupadas);
             let silla_aleatoria_etiqueta = silla_aleatoria.etiqueta.clone();
             self.reloj_juego.set_timeout(
@@ -245,7 +270,6 @@ impl NPCAleatorio {
                 (bt / 600.0) as u64,
             );
         } else {
-     
             self.silla_cerca = Some(Coordenada {
                 x: self.npc.x as i32,
                 y: self.npc.y as i32,
@@ -253,7 +277,7 @@ impl NPCAleatorio {
         }
         self.npc.x = self.silla_cerca.unwrap().x as f32;
         self.npc.y = self.silla_cerca.unwrap().y as f32;
-      
+
         self.contador = 0.0;
     }
 
@@ -285,281 +309,287 @@ impl NPCAleatorio {
         }
     }
 
+    fn comprobar_actividad(&mut self) {
+        let (tx, mut rx) = mpsc::channel(1);
+        let etiqueta = self.npc.etiqueta.clone();
+        let account_address = self.npc.account_address.clone();
+        let tokens = self.tokens.clone();
 
-    fn comprobar_conversacion(&mut self)  {
-        let mut npc_clone = Arc::new(self.clone());
-       
-        self.manija.spawn(async move {
+        tokio::task::spawn_blocking(move || {
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async move {
+                let result = handle_tokens(&etiqueta, &account_address, tokens).await;
+                let _ = tx.send(result).await;
+            });
+        });
 
-            let tokens = lens::obtener_o_refrescar_tokens(&npc_clone.npc.etiqueta.to_string(), 
-            npc_clone.npc.perfil_id
-            , npc_clone.tokens.clone()
-        
-        )
-            .await 
-            .map_err(|e| Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >);
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            if let Some(tokens_result) = rx.recv().await {
+                match tokens_result {
+                    Ok(nuevos_tokens) => {
+                        self.actualizar_tokens(nuevos_tokens.clone());
+                        self.comprobar_menciones().await;
+                        self.hacer_publicacion().await;
+                    }
+                    Err(e) => {
+                        eprintln!("Error al conectarse a Lens: {}", e);
+                    }
+                }
+            }
+        });
+    }
 
-            let mut prompt = String::from("");
-            let mut titulo = String::from("");
+    async fn comprobar_menciones(&mut self) {
+        let access_tokens = self.tokens.clone().unwrap().tokens.access_token;
+
+        match get_mentions(&access_tokens, &self.ultima_mencion).await {
+            Ok(menciones) => {
+                self.ultima_mencion = menciones.last().unwrap().id.clone();
+            }
+            Err(err) => {
+                eprintln!("Error in mentions {}", err);
+            }
+        }
+    }
+
+    async fn hacer_publicacion(&mut self) {
+        let access_tokens = self.tokens.clone().unwrap().tokens.access_token;
+        let lens_tipo = obtener_lens(self.registro_tipos.clone());
+        self.registro_tipos.push(lens_tipo);
+
+        let account_address = &self.npc.amigos[thread_rng().gen_range(0..self.npc.amigos.len())];
+
+        if lens_tipo == LensType::Autograph || lens_tipo == LensType::Catalog {
+            let mut imagen = String::from("");
             let mut descripcion = String::from("");
-            let mut imagen: Option<String> = None;
-            let mut locale =npc_clone.npc.prompt.idiomas.first().unwrap().to_string();
-            let limite_palabra = [100,200,350][thread_rng().gen_range(0..3)] ;
-            let etiquetas = [" and at the end include some hashtags. ", " and do not include any hashtags. "][thread_rng().gen_range(0..2)];
-            let mut  comentario_perfil = U256::from(0);
-            let mut comentario_pub= U256::from(0);
-            let mut metadata_uri: String = String::from("");
-            let lens_tipo = *LensType::iter().collect::<Vec<_>>().choose(&mut thread_rng()).unwrap();
-            let perfil_id = npc_clone.npc.prompt.amigos[thread_rng().gen_range(0..npc_clone.npc.prompt.amigos.len())];
-            
 
+            if lens_tipo == LensType::Autograph {
+                match handle_collections(&self.npc.billetera, self.registro_colecciones.clone())
+                    .await
+                {
+                    Ok(coleccion) => {
+                        imagen = coleccion.imagen;
 
+                        descripcion = coleccion.descripcion;
 
+                        self.registro_colecciones
+                            .push(U256::from_str(&coleccion.coleccion_id).unwrap());
+                    }
+                    Err(err) => {
+                        eprintln!("Un error de obtener la colección {}", err);
+                    }
+                }
+            } else {
+                let pagina = obtener_pagina(self.registro_paginas.clone());
+                self.registro_paginas.push(U256::from(pagina));
 
-match tokens {
+                let metodo = self
+                    .autograph_data_contrato
+                    .method::<_, String>("getAutographPage", pagina);
 
-    Ok (nuevos_tokens) => {
-        Arc::get_mut(&mut npc_clone).unwrap().actualizar_tokens(nuevos_tokens.clone());
+                match metodo {
+                    Ok(llama) => {
+                        let resultado: Result<
+                            String,
+                            ethers::contract::ContractError<
+                                SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
+                            >,
+                        > = llama.call().await;
 
-
-       
-     
-
-                        let mut haz_pub = false;
-                    if lens_tipo == LensType::Autograph {
-
-                        
-                        match handle_collections(&npc_clone.npc.billetera).await {
-
-                                Ok(coleccion) => {
-                                    imagen =
-                                    Some(coleccion.imagen);
-
-                                    titulo =
-                                   coleccion.titulo;
-descripcion =
-coleccion.descripcion;
-                                    haz_pub = true;
-                                },
-                                Err(err) => {
-                                    eprintln!("Un error de obtener la colección {}", err);
-                                }
-        
-                        }
-                 
-                               
-                     
-
-                    }  else if lens_tipo == LensType::Catalog {
-                        let pagina = thread_rng().gen_range(1..=54);
-                        let metodo = npc_clone
-                            .autograph_data_contrato
-                            .method::<_, String>("getAutographPage", pagina);
-
-                        match metodo {
-                            Ok(llama) => {
-                                let resultado: Result<
-                                    String,
-                                    ethers::contract::ContractError<
-                                        SignerMiddleware<Arc<Provider<Http>>, LocalWallet>,
-                                    >,
-                                > = llama.call().await;
-
-                                match resultado {
-                                    Ok(uri) => {
-                                        imagen = Some(uri);
-                                    }
-                                    Err(e) => {
-                                        eprintln!(
-                                            "Error al obtener la página del catálogo: {}",
-                                            e
-                                        );
-                                        return;
-                                    }
-                                }
+                        match resultado {
+                            Ok(uri) => {
+                                imagen = uri;
+                                descripcion = String::from("The Autograph Quarterly.");
                             }
                             Err(e) => {
-                                eprintln!("Un error de ABI {}", e);
+                                eprintln!("Error al obtener la página del catálogo: {}", e);
                                 return;
                             }
                         }
-
-                        haz_pub = true;
-                    } 
-                    else {
-                  
-
-                           if lens_tipo == LensType::Comment || lens_tipo == LensType::Mirror || lens_tipo == LensType::Quote {
-
-
-
-
-
-                         
-
-                          
-let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&format!("0x0{:x}", perfil_id)).await {
-    Ok(result) => result,
-    Err(e) => {
-        eprintln!("Error al encontrar el comentario: {}", e);
-        return;
-    }
-};
-
-   if metadata != ""  {
-     
-
-           
-       let mut rng = thread_rng();
-       if let Some(idioma_aleatorio) = npc_clone.npc.prompt.idiomas.choose(&mut rng) {
-           locale = idioma_aleatorio.to_string();
-       }
-
-        
-
-          metadata_uri = metadata;
-           comentario_perfil = perfil;
-           comentario_pub = publicacion;
-           prompt = format!("{} {} {} {} {} {} {} {} {} {:?} {} {:?} {} {}",CONVERSACION[0], npc_clone.npc.etiqueta.as_str(), CONVERSACION[1], &npc_clone.npc.prompt.tono.join(", "), CONVERSACION[2], &limite_palabra.to_string(), CONVERSACION[3], &contenido,  CONVERSACION[4],  ISO_CODES_PROMPT
-           .get(locale.as_str()), CONVERSACION[5], ISO_CODES_PROMPT
-           .get(locale.as_str()), &etiquetas, CONVERSACION[6]);
-
-   } else {
-       haz_pub = true;
-   }
-
-
-
-
-
-                      
-
-                           } else {
-                               haz_pub = true;
-                           } 
-
-
-                         
-                            
-                        
-                        
-
-
                     }
+                    Err(e) => {
+                        eprintln!("Un error de ABI {}", e);
+                        return;
+                    }
+                }
+            }
 
+            match call_chat_completion(
+                &descripcion,
+                &format_instructions(&self.npc.prompt),
+                &self.npc.prompt.model,
+            )
+            .await
+            {
+                Ok(content) => {
+                    match formatear_pub(
+                        Some(content),
+                        Some(imagen),
+                        lens_tipo,
+                        "",
+                        &self.escena,
+                        &access_tokens,
+                        &self.npc.etiqueta,
+                    )
+                    .await
+                    {
+                        Ok(()) => {
+                            println!("Publication sent for autograph/catalog");
+                        }
+                        Err(err) => {
+                            eprintln!("Error in sending for autograph/catalog {}", err);
+                        }
+                    }
+                }
+                Err(err) => {
+                    eprintln!("Error in sending for autograph/catalog {}", err)
+                }
+            }
+        } else if lens_tipo == LensType::Comment
+            || lens_tipo == LensType::Quote
+            || lens_tipo == LensType::Mirror
+        {
+            let (contenido, comentario_id) = match find_comment(&account_address).await {
+                Ok(result) => result,
+                Err(e) => {
+                    eprintln!("Error al encontrar el comentario: {}", e);
+                    return;
+                }
+            };
 
-                    if haz_pub {
+            if lens_tipo != LensType::Mirror {
+                match call_comment_completion(
+                    &contenido,
+                    &format_instructions(&self.npc.prompt),
+                    &self.npc.prompt.model,
+                )
+                .await
+                {
+                    Ok((content, image)) => {
+                        let mut imagen: Option<String> = None;
 
-                                                  
-                        
-                                                   prompt = if lens_tipo ==LensType::Autograph {
-                                                    format!("{} {} {} {} {} {} {} {} {:?} {} {:?} {} {}",CONVERSACION[0], npc_clone.npc.etiqueta.as_str(), CONVERSACION[1], &npc_clone.npc.prompt.tono.join(", "), CONVERSACION[2], &limite_palabra.to_string(), format!("extending on the flow, content and ideas of the attached image that has this title: {}, and description {}", titulo, descripcion),  CONVERSACION[4], ISO_CODES_PROMPT
-                                                    .get(locale.as_str()), CONVERSACION[5], ISO_CODES_PROMPT
-                                                    .get(locale.as_str()), &etiquetas, CONVERSACION[6])
-                                                   } else if lens_tipo == LensType::Catalog {
-                                                    format!("{} {} {} {} {} {} {} {} {:?} {} {:?} {} {}",CONVERSACION[0], npc_clone.npc.etiqueta.as_str(), CONVERSACION[1], &npc_clone.npc.prompt.tono.join(", "), CONVERSACION[2], &limite_palabra.to_string(), "creating either a short story, commentary or other interesting response about the attached image",  CONVERSACION[4], ISO_CODES_PROMPT
-                                                    .get(locale.as_str()), CONVERSACION[5], ISO_CODES_PROMPT
-                                                    .get(locale.as_str()), &etiquetas, CONVERSACION[6])
-                                                   } else {
-                                                    format!("{} {} {} {} {} {} {} {} {} {:?} {} {:?} {} {}",CONVERSACION[0], npc_clone.npc.etiqueta.as_str(), CONVERSACION[1], &npc_clone.npc.prompt.tono.join(", "), CONVERSACION[2], &limite_palabra.to_string(), CONVERSACION[7], &npc_clone.npc.prompt.temas[thread_rng().gen_range(0..npc_clone.npc.prompt.temas.len())],  CONVERSACION[4], ISO_CODES_PROMPT
-                                                    .get(locale.as_str()), CONVERSACION[5], ISO_CODES_PROMPT
-                                                    .get(locale.as_str()), &etiquetas, CONVERSACION[6])
-                                                   };
-                        
-                                   
-                                               }
+                        if image {
+                            imagen = match call_prompt(&content, &self.npc.prompt.model).await {
+                                Ok((prompt, image_model)) => {
+                                    match call_gen_image(&prompt, &image_model).await {
+                                        Ok(image) => Some(image),
+                                        Err(_) => None,
+                                    }
+                                }
+                                Err(_) => None,
+                            }
+                        }
 
+                        match formatear_pub(
+                            Some(content),
+                            imagen,
+                            lens_tipo,
+                            &comentario_id,
+                            &self.escena,
+                            &access_tokens,
+                            &self.npc.etiqueta,
+                        )
+                        .await
+                        {
+                            Ok(()) => {
+                                println!("Publication sent for comment/quote");
+                            }
+                            Err(err) => {
+                                eprintln!("Error in sending for comment/quote {}", err);
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        eprintln!("Error in sending for comment/quote {}", err);
+                    }
+                }
+            } else {
+                match formatear_pub(
+                    None,
+                    None,
+                    lens_tipo,
+                    &comentario_id,
+                    &self.escena,
+                    &access_tokens,
+                    &self.npc.etiqueta,
+                )
+                .await
+                {
+                    Ok(()) => {
+                        println!("Publication sent for mirror");
+                    }
+                    Err(err) => {
+                        eprintln!("Error in sending for mirror {}", err);
+                    }
+                }
+            }
+        } else {
+            match call_publication_completion(
+                &format_instructions(&self.npc.prompt),
+                &self.npc.prompt.model,
+            )
+            .await
+            {
+                Ok(content) => {
+                    let imagen = match call_prompt(&content, &self.npc.prompt.model).await {
+                        Ok((prompt, image_model)) => {
+                            match call_gen_image(&prompt, &image_model).await {
+                                Ok(image) => Some(image),
+                                Err(_) => None,
+                            }
+                        }
+                        Err(_) => None,
+                    };
 
-                                               if lens_tipo == LensType::Mirror {
-                                                let _ = npc_clone. formatear_pub(
-                                                    metadata_uri,
-                                                    OpenAIRespuesta {
-                                                        complecion: String::from(""),
-                                                        modelo: String::from(""),
-                                                        uso: OpenAIUso {
-                                                            prompt_tokens: 0,
-                                                            completion_tokens: 0,
-                                                            total_tokens: 0,
-                                                        }
-                                                    },
-                                                    &locale.clone(),
-                                                    None, 
-                                                    lens_tipo.clone(),
-                                                    comentario_perfil,
-                                                    comentario_pub,
-                        
-                        
-                        
-                                                   ).await ; 
-                                            } else {
-                                                match call_chat_completion_openai(&prompt, imagen.clone()).await {
-                                                    Ok (respuesta) => {
-
-                                                       
-
-                                                        let _ = npc_clone
-    .formatear_pub(
-        metadata_uri,
-        respuesta.clone(),
-        &locale,
-        imagen.as_deref(), 
-        lens_tipo.clone(),
-        comentario_perfil,
-        comentario_pub,
-    )
-    .await;
- 
-                                                    },
-                                                    Err(err) => {
-                                                        eprintln!("Error con la generación del mensaje de OpenAI: {:?}", err);
-                                                        return;
-                                                    }
-                                                }
-                                            }
-
-
-                 
-       
-            
-  
-}
-
-    Err(e) => {
-        eprintln!(
-            "Error al conectarse a Lens: {}",
-            e
-        );
-        return;
+                    match formatear_pub(
+                        Some(content),
+                        imagen,
+                        lens_tipo,
+                        "",
+                        &self.escena,
+                        &access_tokens,
+                        &self.npc.etiqueta,
+                    )
+                    .await
+                    {
+                        Ok(()) => {
+                            println!("Publication sent for publication");
+                        }
+                        Err(err) => {
+                            eprintln!("Error in sending for publication {}", err);
+                        }
+                    }
+                }
+                Err(err) => {
+                    eprintln!("Error in sending for publication {}", err);
+                }
+            }
+        }
     }
 
-
+    pub fn actualizar_tokens(&mut self, nuevos_tokens: TokensAlmacenados) {
+        self.tokens = Some(nuevos_tokens);
+    }
 }
 
-
-        
-           
-        });
-
-   
-    }
-
-    async fn formatear_pub(
-        &self,
-        metadata_uri: String,
-        respuesta: OpenAIRespuesta,
-        locale: &str,
-        imagen: Option<&str>,
-        lens_tipo: LensType,
-        comentario_perfil: U256,
-        comentario_pub: U256
-    ) -> Result<(), Box<dyn Error + Send + Sync  >>{
+async fn formatear_pub(
+    contenido: Option<String>,
+    imagen: Option<String>,
+    lens_tipo: LensType,
+    comentario_id: &str,
+    escena: &str,
+    access_token: &str,
+    etiqueta: &str,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let mut contenido_subido: Option<String> = None;
+    if contenido.is_some() {
         let mut imagen_url: Option<Imagen> = None;
         let mut enfoque = "TEXT_ONLY".to_string();
         let mut schema =
             "https://json-schemas.lens.dev/publications/text-only/3.0.0.json".to_string();
 
         if let Some(base64_imagen) = imagen {
-
             if base64_imagen.contains("ipfs://") {
                 let opcion = Imagen {
                     tipo: "image/png".to_string(),
@@ -567,7 +597,7 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
                 };
                 imagen_url = Some(opcion);
             } else {
-                match subir_ipfs_imagen(base64_imagen).await {
+                match subir_ipfs_imagen(&base64_imagen).await {
                     Ok(cid) => {
                         let opcion = Imagen {
                             tipo: "image/png".to_string(),
@@ -576,282 +606,117 @@ let (contenido, perfil, publicacion, metadata) = match lens::coger_comentario(&f
                         imagen_url = Some(opcion);
                     }
                     Err(e) => {
-                        return Err(Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >);
-                       
-             
-
+                        println!("Error en formatear la publicacion {}", e);
                     }
                 }
             }
         }
 
-
         if let Some(_) = imagen_url.as_ref() {
             enfoque = String::from("IMAGE");
             schema = "https://json-schemas.lens.dev/publications/image/3.0.0.json".to_string();
-        } 
+        }
 
-        let tags =  vec!["npcStudio".to_string(), self.escena.clone()];
+        let tags = vec!["npcStudio".to_string(), escena.to_string()];
 
-        let app_id =  "npcstudio".to_string();
-    
+        let app_id = "npcstudio".to_string();
+        let content = contenido.unwrap();
+
         let publicacion = Publicacion {
             schema,
             lens: Contenido {
                 mainContentFocus: enfoque,
-                title: respuesta.complecion.chars().take(20).collect(),
-                content: respuesta.complecion,
+                title: content.chars().take(20).collect(),
+                content,
                 appId: app_id,
                 id: Uuid::new_v4().to_string(),
                 hideFromFeed: false,
-                locale: ISO_CODES.get(locale).unwrap().to_string(),
+                locale: "en".to_string(),
                 tags,
                 image: imagen_url,
-                attributes:  vec![ 
-                    MetadataAttribute {
-                        key: "llm_info".to_string(),
-                        tipo: "String".to_string(),
-                       value: json!({
-                            "model": respuesta.modelo,
-                            "usage": respuesta.uso
-                        }).to_string()
-                    }
-                ].into(),
             },
         };
 
         let publicacion_json = to_string(&publicacion)?;
 
-        let contenido = match subir_ipfs(publicacion_json).await {
-            Ok(con) => con.Hash,
+        contenido_subido = match subir_ipfs(publicacion_json).await {
+            Ok(con) => Some(format!("ipfs://{}", con.Hash)),
             Err(e) => {
                 eprintln!("Error al subir la publicacion al IPFS: {}", e);
-                return Err(Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >);
-                       
-
+                return Err(Box::new(io::Error::new(
+                    io::ErrorKind::Other,
+                    format!("Error al subir la publicacion al IPFS {:?}", e),
+                )));
             }
         };
-        
-
-
-
-        if lens_tipo == LensType::Mirror ||  lens_tipo == LensType::Quote || lens_tipo == LensType::Comment {
-        match  lens::me_gusta(&format!("0x0{:x}-0x{:02x}", comentario_perfil, comentario_pub), &self.tokens.as_ref().unwrap().tokens.access_token).await {
-        Ok(_) => {},
-        Err(e) => {       eprintln!("Error al gustar la publicacion al IPFS: {}", e);
-        return Err(Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >);}
-       }
-        }
-
-        match self.enviar_mensaje(contenido, metadata_uri, lens_tipo, comentario_perfil, comentario_pub).await {
-            Ok(resultado) => {
-               return Ok(resultado)
-            }
-            Err(e) => {
-                eprintln!("Error al enviar el mensaje: {:?}", e);
-                Err(Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync  >)
-                       
-            }
-        }
-
-
     }
 
-    async fn enviar_mensaje(
-        &self,
-        contenido: String,
-        metadata_uri: String,
-        lens_tipo: LensType,
-        comentario_perfil: U256,
-        comentario_pub: U256
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let method;
-        let res: Result<String, Box<dyn Error + std::marker::Send + Sync>>;
-
-       if lens_tipo == LensType::Comment || lens_tipo == LensType::Quote {
-
-
-
-        let mensaje = Comment {
-            profileId: 
-            self.npc.perfil_id,
-            contentURI: String::from("ipfs://") + &contenido,
-            pointedProfileId: comentario_perfil,
-            pointedPubId: comentario_pub,
-            referrerProfileIds: vec![],
-            referrerPubIds: vec![],
-            referenceModuleData: Bytes::from(vec![0u8; 1]),
-            actionModules: vec![],
-            actionModulesInitDatas: vec![],
-            referenceModule: "0x0000000000000000000000000000000000000000"
-                .parse::<Address>()
-                .unwrap(),
-            referenceModuleInitData: Bytes::from(vec![0u8; 1]),
-        };
-
-        let mut funcion = "comment";
- 
-
-        if lens_tipo == LensType::Quote {
-            funcion = "quote";
-
-            res = lens::hacer_cita(&self.npc.etiqueta, &format!("0x0{:x}-0x{:02x}", comentario_perfil, comentario_pub)
-                
-                
-             
-            , String::from("ipfs://") + &contenido, &self.tokens.as_ref().unwrap().tokens.access_token).await.map_err(|e| {
-                Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
-            });
-        } else {
-
-   
-         res = lens::hacer_comentario(&self.npc.etiqueta, &format!("0x0{:x}-0x{:02x}", comentario_perfil, comentario_pub), String::from("ipfs://") + &contenido, &self.tokens.as_ref().unwrap().tokens.access_token).await.map_err(|e| {
-            Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
-        });
-
-
-
-        }
-
-
-
-
-         method = self
-        .lens_hub_contrato
-        .method::<_, U256>(funcion, (Token::Tuple(mensaje.into_tokens()),))?;
-
-       }else if lens_tipo == LensType::Mirror {
-
-        let mensaje = Mirror {
-            profileId: 
-            self.npc.perfil_id,
-            metadataURI: metadata_uri,
-            pointedProfileId: comentario_perfil,
-            pointedPubId: comentario_pub,
-            referrerProfileIds: vec![],
-            referrerPubIds: vec![],
-            referenceModuleData: Bytes::from(vec![0u8; 1]),
-         
-        };
-
-         method = self
-        .lens_hub_contrato
-        .method::<_, U256>("mirror", (Token::Tuple(mensaje.into_tokens()),))?;
-
-        res = lens::hacer_mirror(&self.npc.etiqueta, &format!("0x0{:x}-0x{:02x}", comentario_perfil, comentario_pub), &self.tokens.as_ref().unwrap().tokens.access_token).await.map_err(|e| {
-            Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
-        });
-
-
-       }
-       
-       
-       
-       
-       else {
-
-        let mensaje = Pub {
-            profileId:
-            self.npc.perfil_id,
-            contentURI: String::from("ipfs://") + &contenido,
-            actionModules: vec!["0x34A437A91415C36712B0D912c171c74595Be437d" .parse::<Address>()
-            .unwrap()],
-            actionModulesInitDatas: vec![
-Bytes::from_str("0x000000000000000000000000185b529b421ff60b0f2388483b757b39103cfcb1000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")?,
-              
-
-            ],
-            referenceModule: "0x0000000000000000000000000000000000000000"
-                .parse::<Address>()
-                .unwrap(),
-            referenceModuleInitData: Bytes::from(vec![0u8; 1]),
-        };
-
-         method = self
-        .lens_hub_contrato
-        .method::<_, U256>("post", (Token::Tuple(mensaje.into_tokens()),))?;
-
-        res = lens::hacer_publicacion(&self.npc.etiqueta,  String::from("ipfs://") + &contenido, &self.tokens.as_ref().unwrap().tokens.access_token).await.map_err(|e| {
-            Box::new(CustomError::new(&e.to_string())) as Box<dyn Error + Send + Sync>
-        });
-       } 
-
-       match res {
-        Ok(result) if result != "RelaySuccess" => {
-            let FunctionCall { tx, .. } = method;
-    
-            if let Some(tx_request) = tx.as_eip1559_ref() {
-                let cliente = self.lens_hub_contrato.client().clone();
-                let gas_price = U256::from(500_000_000_000u64);
-                let max_priority_fee = U256::from(25_000_000_000u64);
-                let gas_limit = U256::from(300_000);
-                let tx_cost = gas_limit * gas_price + max_priority_fee;
-    
-                let balance = cliente
-                    .clone()
-                    .get_balance(
-                        self.npc.billetera.parse::<Address>().unwrap(),
-                        None,
-                    )
-                    .await?;
-    
-                if balance < tx_cost {
-                    return Err(Box::new(CustomError::new("Fondos insuficientes para gas")));
-                }
-    
-                let req = Eip1559TransactionRequest {
-                    from: Some(self.npc.billetera.parse::<Address>().unwrap()),
-                    to: Some(NameOrAddress::Address(
-                        LENS_HUB_PROXY.parse::<Address>().unwrap(),
-                    )),
-                    gas: Some(gas_limit),
-                    value: tx_request.value,
-                    data: tx_request.data.clone(),
-                    max_priority_fee_per_gas: Some(max_priority_fee),
-                    max_fee_per_gas: Some(gas_price + max_priority_fee),
-                    chain_id: Some(Chain::Polygon.into()),
-                    ..Default::default()
-                };
-                
-                let pending_tx = cliente.send_transaction(req, None).await.map_err(|e| {
-                    eprintln!("Error al enviar la transacción: {:?}", e);
-                    Box::new(CustomError::new("Error al enviar la transacción")) as Box<dyn Error + Send + Sync>
-                })?;
-        
-                let tx_hash = pending_tx.confirmations(1).await.map_err(|e| {
-                    eprintln!("Error con la transacción: {:?}", e);
-                    Box::new(CustomError::new("Error con la transacción")) as Box<dyn Error + Send + Sync>
-                })?;
-                
-                println!("Transacción del mensaje enviada con hash: {:?}", tx_hash);
-
-                
-                Ok(())
-            } else {
-                Err(Box::new(CustomError::new("Error en Transacción")) as Box<dyn Error + Send + Sync>)
+    if lens_tipo == LensType::Mirror
+        || lens_tipo == LensType::Quote
+        || lens_tipo == LensType::Comment
+    {
+        match make_like(comentario_id).await {
+            Ok(_) => {}
+            Err(e) => {
+                eprintln!("Error al gustar la publicacion al IPFS: {}", e);
             }
         }
-        Ok(other) => {
-            eprintln!("Error al enviar el mensaje: {:?}", other);
-            Err(Box::new(CustomError::new("Error inesperado al enviar el mensaje")) as Box<dyn Error + Send + Sync>)
+    }
+
+    match enviar_mensaje(
+        contenido_subido,
+        lens_tipo,
+        comentario_id,
+        access_token,
+        etiqueta,
+    )
+    .await
+    {
+        Ok(resultado) => {
+            return {
+                println!("Message from result: {}", resultado);
+
+                Ok(())
+            }
         }
         Err(e) => {
             eprintln!("Error al enviar el mensaje: {:?}", e);
-            Err(Box::new(CustomError::new("Error al procesar el mensaje")) as Box<dyn Error + Send + Sync>)
+            return Err(Box::new(io::Error::new(
+                io::ErrorKind::Other,
+                format!("Error al enviar el mensaje {:?}", e),
+            )));
         }
     }
-    
-
- 
-    }
-
-    pub fn actualizar_tokens(&mut self, nuevos_tokens: TokensAlmacenados) {
-        self.tokens = Some(nuevos_tokens);
-    }
-    
-
-                  
 }
 
-
-
+async fn enviar_mensaje(
+    contenido: Option<String>,
+    lens_tipo: LensType,
+    comentario_id: &str,
+    access_tokens: &str,
+    etiqueta: &str,
+) -> Result<String, Box<dyn Error + Send + Sync>> {
+    if lens_tipo == LensType::Comment || lens_tipo == LensType::Quote {
+        if lens_tipo == LensType::Quote {
+            make_quote(
+                &contenido.unwrap(),
+                &etiqueta,
+                &access_tokens,
+                &comentario_id,
+            )
+            .await
+        } else {
+            make_comment(
+                &contenido.unwrap(),
+                &etiqueta,
+                &access_tokens,
+                &comentario_id,
+            )
+            .await
+        }
+    } else if lens_tipo == LensType::Mirror {
+        make_mirror(&access_tokens, &comentario_id).await
+    } else {
+        make_publication(&contenido.unwrap(), &etiqueta, &access_tokens).await
+    }
+}

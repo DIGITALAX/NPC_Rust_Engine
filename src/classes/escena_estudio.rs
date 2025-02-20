@@ -4,10 +4,9 @@ use crate::bib::types::{
 };
 use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
-use tokio::runtime::Handle;
 
 impl EscenaEstudio {
-    pub async fn new(escena: Escena, manija: Handle) -> Self {
+    pub fn new(escena: Escena) -> Self {
         let sprites = escena.sprites.clone();
         let prohibidos = escena.prohibido.clone();
         let anchura = escena.mundo.anchura
@@ -29,7 +28,6 @@ impl EscenaEstudio {
                     GameTimer::new(),
                     mapa.clone(),
                     escena.clave.to_string(),
-                    manija.clone(),
                 );
                 npc
             })

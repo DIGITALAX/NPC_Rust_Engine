@@ -1,226 +1,108 @@
-use crate::{
-    bib::{
-        ipfs::{autenticacion, cliente},
-        types::IpfsRespuesta,
-    },
-    LensTokens, API_LENS,
-};
-use base64::{engine::general_purpose::STANDARD, Engine as _};
-use ethers::{
-    signers::{LocalWallet, Signer},
-    utils::hex,
-};
-use rand::Rng;
-use reqwest::{
-    multipart::{Form, Part},
-    Client,
-};
-use serde_json::{from_str, json};
-use std::{error::Error, sync::Arc};
+use crate::bib::{types::{LensType, Prompt}, constants::INFURA_GATEWAY};
+use ethers::types::U256;
+use rand::{seq::SliceRandom, thread_rng, Rng};
+use regex::Regex;
+use reqwest::Client;
+use serde_json::Value;
+use std::error::Error;
+use strum::IntoEnumIterator;
 
 pub fn between(min: f32, max: f32) -> f32 {
     let mut rng = rand::thread_rng();
     rng.gen_range(min..=max)
 }
 
-pub async fn subir_ipfs(datos: String) -> Result<IpfsRespuesta, Box<dyn Error>> {
-    let cliente = cliente();
-    let aut_encoded = autenticacion();
+pub fn obtener_lens(registro_tipos: Vec<LensType>) -> LensType {
+    let mut rng = thread_rng();
+    let all_types: Vec<LensType> = LensType::iter().collect();
 
-    let forma = Form::new().part("file", Part::text(datos.clone()).file_name("data.json"));
+    let last_type = registro_tipos.last().copied();
 
-    let respuesta = cliente
-        .post("https://ipfs.infura.io:5001/api/v0/add")
-        .header("Authorization", format!("Basic {}", aut_encoded))
-        .multipart(forma)
-        .send()
-        .await?;
+    let available_types: Vec<LensType> = all_types
+        .into_iter()
+        .filter(|&t| Some(t) != last_type)
+        .collect();
 
-    let texto_respuesta = respuesta.text().await?;
-    let ipfs_respuesta: IpfsRespuesta = from_str(&texto_respuesta)?;
+    let selected = *available_types.choose(&mut rng).unwrap();
 
-    Ok(ipfs_respuesta)
+    selected
 }
 
-pub async fn subir_ipfs_imagen(base64_data: &str) -> Result<IpfsRespuesta, Box<dyn Error>> {
-    let cliente = cliente();
-    let aut_encoded = autenticacion();
+pub fn obtener_pagina(registro_paginas: Vec<U256>) -> u8 {
+    let mut rng = thread_rng();
+    let all_pages: Vec<u8> = (1..=54).collect();
 
-    let imagen_bytes = STANDARD.decode(base64_data)?;
+    let last_page = registro_paginas.last().copied();
 
-    let form = Form::new().part("file", Part::bytes(imagen_bytes).file_name("image.png"));
+    let available_pages: Vec<u8> = all_pages
+        .into_iter()
+        .filter(|&p| Some(U256::from(p)) != last_page)
+        .collect();
 
-    let respuesta = cliente
-        .post("https://ipfs.infura.io:5001/api/v0/add")
-        .header("Authorization", format!("Basic {}", aut_encoded))
-        .multipart(form)
-        .send()
-        .await?;
+    let selected = *available_pages.choose(&mut rng).unwrap();
 
-    let texto_respuesta = respuesta.text().await?;
-    let ipfs_respuesta: IpfsRespuesta = from_str(&texto_respuesta)?;
-
-    Ok(ipfs_respuesta)
+    selected
 }
 
-pub async fn refrescar(
-    cliente: Arc<Client>,
-    token_refrescado: &str,
-    token_autorizado: &str,
-) -> Result<LensTokens, Box<dyn std::error::Error>> {
-    let consulta = json!({
-        "query": r#"
-            mutation Refresh($request: RefreshRequest!) {
-                refresh(request: $request) {
-                    accessToken
-                    refreshToken
-                    identityToken
-                }
-            }
-        "#,
-        "variables": {
-            "request": {
-                "refreshToken": token_refrescado.to_string()
+pub fn obtener_coleccion(registro_colecciones: Vec<U256>, tamano: u8) -> u8 {
+    let mut rng = thread_rng();
+    let all_pages: Vec<u8> = (1..=tamano).collect();
+
+    let last_page = registro_colecciones.last().copied();
+
+    let available_pages: Vec<u8> = all_pages
+        .into_iter()
+        .filter(|&p| Some(U256::from(p)) != last_page)
+        .collect();
+
+    let selected = *available_pages.choose(&mut rng).unwrap();
+
+    selected
+}
+
+pub fn extract_values_prompt(
+    input: &str,
+) -> Result<(String, String), Box<dyn Error + Send + Sync>> {
+    let image_prompt_re = Regex::new(r"(?m)^Image Prompt:\s*(.+)")?;
+    let model_re = Regex::new(r"(?m)^Model:\s*(.+)")?;
+
+    let image_prompt = image_prompt_re
+        .captures(input)
+        .and_then(|cap| cap.get(1).map(|m| m.as_str()))
+        .unwrap_or_default()
+        .to_string();
+    let model = model_re
+        .captures(input)
+        .and_then(|cap| cap.get(1).map(|m| m.as_str()))
+        .unwrap_or_default()
+        .to_string();
+
+    Ok((image_prompt, model))
+}
+
+pub fn format_instructions(prompt: &Prompt) -> String {
+    format!(
+        r#"
+Custom Instructions: {}
+Lore: {}
+Knowledge: {}
+Style: {}
+Adjectives: {}
+"#,
+        prompt.custom_instructions, prompt.lore, prompt.knowledge, prompt.style, prompt.adjectives
+    )
+}
+
+
+pub async fn fetch_metadata(uri: &str) -> Option<Value> {
+    if let Some(ipfs_hash) = uri.strip_prefix("ipfs://") {
+        let client = Client::new();
+        let url = format!("{}ipfs/{}", INFURA_GATEWAY, ipfs_hash);
+        if let Ok(response) = client.get(&url).send().await {
+            if let Ok(json) = response.json::<Value>().await {
+                return Some(json);
             }
         }
-    });
-
-    let respuesta = cliente
-        .post(API_LENS)
-        .header("Authorization", format!("Bearer {}", token_autorizado))
-        .header("Content-Type", "application/json")
-        .json(&consulta)
-        .send()
-        .await?;
-
-    if respuesta.status().is_success() {
-        let json: serde_json::Value = respuesta.json().await?;
-        if let Some(autenticacion) = json["data"]["authenticate"].as_object() {
-            Ok(LensTokens {
-                access_token: autenticacion
-                    .get("accessToken")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or_default()
-                    .to_string(),
-                refresh_token: autenticacion
-                    .get("refreshToken")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or_default()
-                    .to_string(),
-                identity_token: autenticacion
-                    .get("identityToken")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or_default()
-                    .to_string(),
-            })
-        } else {
-            return Err("Estructura de respuesta inesperada.".into());
-        }
-    } else {
-        return Err(format!("Error: {}", respuesta.status()).into());
     }
-}
-
-pub async fn autenticar(
-    cliente: Arc<Client>,
-    billetera: &LocalWallet,
-    perfil_id: &str,
-) -> Result<LensTokens, Box<dyn std::error::Error>> {
-    let consulta = json!({
-        "query": r#"
-            query Challenge($request: ChallengeRequest!) {
-                challenge(request: $request) {
-                    id
-                    text
-                }
-            }
-        "#,
-        "variables": {
-            "request": {
-                "signedBy": billetera.address(),
-                "for": perfil_id.to_string(),
-            }
-        }
-    });
-
-    let respuesta = cliente
-        .post(API_LENS)
-        .header("Content-Type", "application/json")
-        .json(&consulta)
-        .send()
-        .await?;
-
-    if respuesta.status().is_success() {
-        let json: serde_json::Value = respuesta.json().await?;
-        if let Some(desafio) = json["data"]["challenge"].as_object() {
-            let firma = billetera
-                .sign_message(
-                    desafio
-                        .get("text")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or_default()
-                        .to_string(),
-                )
-                .await?;
-
-            let consulta = json!({
-                "query": r#"
-                        mutation Authenticate($request: SignedAuthChallenge!) {
-                            authenticate(request: $request) {
-                             accessToken
-                             identityToken
-                             refreshToken
-                            }
-                        }
-                    "#,
-                "variables": {
-                    "request": {
-                        "id":desafio.get("id")
-                        .and_then(|v| v.as_str())
-                        .unwrap_or_default()
-                        .to_string(),
-                        "signature": format!("0x{}", hex::encode(firma.to_vec())),
-                    }
-                }
-            });
-
-            let respuesta = cliente
-                .post(API_LENS)
-                .header("Content-Type", "application/json")
-                .json(&consulta)
-                .send()
-                .await?;
-
-            if respuesta.status().is_success() {
-                let json: serde_json::Value = respuesta.json().await?;
-                if let Some(autenticacion) = json["data"]["authenticate"].as_object() {
-                    Ok(LensTokens {
-                        access_token: autenticacion
-                            .get("accessToken")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or_default()
-                            .to_string(),
-                        refresh_token: autenticacion
-                            .get("refreshToken")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or_default()
-                            .to_string(),
-                        identity_token: autenticacion
-                            .get("identityToken")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or_default()
-                            .to_string(),
-                    })
-                } else {
-                    return Err("Estructura de respuesta inesperada.".into());
-                }
-            } else {
-                return Err(format!("Error: {}", respuesta.status()).into());
-            }
-        } else {
-            return Err("Estructura de respuesta inesperada.".into());
-        }
-    } else {
-        return Err(format!("Error: {}", respuesta.status()).into());
-    }
+    None
 }
