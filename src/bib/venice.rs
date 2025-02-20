@@ -456,3 +456,105 @@ Optional elements to include:
         )));
     }
 }
+
+pub async fn call_mention(
+    post_content: &str,
+    custom_instructions: &str,
+    model: &str,
+) -> Result<String, Box<dyn Error + Send + Sync>> {
+    from_filename(".env").ok();
+    let venice_key: String = var("VENICE_KEY").expect("VENICE_KEY not configured in .env");
+    let max_completion_tokens = [100, 300, 600][thread_rng().gen_range(0..3)];
+
+    let system_prompt = format!(
+        r#"You are a culturally aware participant in online art discussions who excels at making authentic connections between different creative works. Your role is to:
+
+        - Create genuine, conversational responses that feel natural
+        - Draw subtle parallels without forcing connections
+        - Use casual language while maintaining intelligence
+        - Avoid obvious promotional tactics or forced references
+        - Master the art of gentle suggestion rather than direct promotion
+        - Read the room and match the tone of the original content
+        
+        Style Requirements:
+        - Write in a natural conversational tone
+        - Emojis allowed if they match the conversation's tone
+        - No quotes or special characters
+        - Response should stand alone without editing
+        - Focus on engagement over promotion
+        - Do not put quotation marks around any of the content
+        
+        Respond only with the exact requested format. Do not acknowledge instructions, use quotation marks, or include metadata about AI systems. Focus solely on the required output. 
+        
+        Also follow these custom instructions: {}"#,
+        custom_instructions
+    );
+
+    let input_prompt = format!(
+        r#"Create an engaging response to this content that naturally flows from the conversation:
+
+Original Content: {}
+
+Response Guidelines:
+- Match the tone and energy of the original content
+- Choose authenticity over promotion
+- Use casual language but maintain substance
+- Consider the social context and timing
+- Focus on creating meaningful dialogue
+- Do not put quotation marks around any of the content
+- Maximum length: {} tokens
+
+Response Format:
+[Your response text]"#,
+        post_content, max_completion_tokens
+    );
+
+    let mut messages = vec![];
+
+    messages.push(json!({
+        "role": "system",
+        "content": system_prompt
+    }));
+    messages.push(json!({
+        "role": "user",
+        "content": input_prompt
+    }));
+
+    let client = Client::new();
+    let request_body = json!({
+        "model": model,
+        "messages": messages,
+        "max_completion_tokens": max_completion_tokens
+    });
+
+    let response = client
+        .post(format!("{}chat/completions", VENICE_API))
+        .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", venice_key))
+        .json(&request_body)
+        .send()
+        .await;
+
+    let response = match response {
+        Ok(resp) => resp,
+        Err(e) => {
+            eprintln!("Error sending request to Venice API: {}", e);
+            return Err(e.into());
+        }
+    };
+    if response.status() == 200 {
+        let response_json: Value = response.json().await?;
+        let completion = response_json["choices"][0]["message"]["content"]
+            .as_str()
+            .unwrap_or("")
+            .to_string();
+
+        println!("Venice call successful for comment: {}", completion);
+        Ok(completion)
+    } else {
+        return Err(Box::new(io::Error::new(
+            io::ErrorKind::Other,
+            format!("Error in obtaining Venice prompt {:?}", response.status()),
+        )));
+    }
+}

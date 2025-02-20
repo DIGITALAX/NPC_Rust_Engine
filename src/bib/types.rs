@@ -437,18 +437,6 @@ impl TryFrom<u8> for LensType {
     }
 }
 
-impl LensType {
-    pub fn as_u8(&self) -> u8 {
-        match self {
-            LensType::Catalog => 0,
-            LensType::Comment => 1,
-            LensType::Publication => 2,
-            LensType::Autograph => 3,
-            LensType::Quote => 4,
-            LensType::Mirror => 5,
-        }
-    }
-}
 
 impl Tokenizable for LensType {
     fn from_token(token: Token) -> Result<Self, ethers::abi::InvalidOutputType> {
