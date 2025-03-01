@@ -34,12 +34,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let oyente = TcpListener::bind(&addr)
         .await
         .expect("No se pudo vincular a la dirección");
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    let manija = rt.handle().clone();
 
     match handle_escenas().await {
         Ok(escenas) => {
             let escenas_creadas: HashMap<String, EscenaEstudio> = escenas
                 .iter()
-                .map(|escena| (escena.clave.clone(), EscenaEstudio::new(escena.clone())))
+                .map(|escena| {
+                    (
+                        escena.clave.clone(),
+                        EscenaEstudio::new(escena.clone(), manija.clone()),
+                    )
+                })
                 .collect();
             let mapa_escena = Arc::new(RwLock::new(escenas_creadas));
 

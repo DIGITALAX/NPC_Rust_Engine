@@ -698,7 +698,8 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 30_000_000,
+                    // publicacion_reloj: 30_000_000,
+                    publicacion_reloj: 3000,
                     amigos: vec![],
                 },
                 EmptySprite {

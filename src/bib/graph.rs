@@ -118,17 +118,21 @@ pub async fn handle_agents() -> Result<HashMap<String, HalfSprite>, Box<dyn Erro
 
     let graph_key: String = var("GRAPH_KEY").expect("GRAPH_KEY not configured in .env");
     let res = client
-        .post(format!(
-            "{}{}/subgraphs/id/8JRara6TGvHV6gKHr5rqeMUsjpAmxe6QHVv8vc23g2KY",
-            GRAPH_URI, graph_key
-        ))
+        .post(
+            "https://api.studio.thegraph.com/query/37770/triplea/version/latest
+",
+        )
+        // .post(format!(
+        //     "{}{}/subgraphs/id/QmasxL1vi53CZw6oTPtNzC46j6rRsHA9veSyhA6LChpwAR",
+        //     GRAPH_URI, graph_key
+        // ))
         .json(&query)
         .send()
         .await;
 
     match res {
         Ok(response) => {
-            let parsed: Value = response.json().await?;
+     let parsed: Value = response.json().await?;
             let empty_vec = vec![];
             let agent_createds = parsed["data"]["agentCreateds"]
                 .as_array()
@@ -232,6 +236,7 @@ pub async fn handle_agents() -> Result<HashMap<String, HalfSprite>, Box<dyn Erro
 
 pub async fn handle_escenas() -> Result<Vec<Escena>, Box<dyn Error + Send + Sync>> {
     let agents = handle_agents().await?;
+
 
     Ok(LISTA_ESCENA
         .iter()

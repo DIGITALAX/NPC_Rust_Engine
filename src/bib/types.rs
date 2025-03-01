@@ -8,6 +8,7 @@ use ethers::{
     types::U256,
 };
 use serde::{Deserialize, Serialize};
+use tokio::runtime::Handle;
 use std::{
     collections::HashMap,
     sync::{Arc, Mutex},
@@ -343,7 +344,8 @@ pub struct NPCAleatorio {
     pub registro_tipos: Vec<LensType>,
     pub registro_paginas: Vec<U256>,
     pub registro_colecciones: Vec<U256>,
-    pub ultima_mencion: String
+    pub ultima_mencion: String,
+    pub manija: Handle
 }
 
 #[derive(Clone)]

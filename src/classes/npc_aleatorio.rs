@@ -30,7 +30,7 @@ use std::{
     str::FromStr,
     sync::{Arc, Mutex},
 };
-use tokio::sync::mpsc;
+use tokio::runtime::Handle;
 use uuid::Uuid;
 
 impl NPCAleatorio {
@@ -42,6 +42,7 @@ impl NPCAleatorio {
         reloj_juego: GameTimer,
         mapa: Mapa,
         escena: String,
+        manija: Handle,
     ) -> Self {
         let autograph_data_contrato = inicializar_contrato(&sprite.etiqueta.to_string());
 
@@ -64,6 +65,7 @@ impl NPCAleatorio {
             registro_colecciones: vec![],
             registro_tipos: vec![],
             ultima_mencion: String::from(""),
+            manija,
         }
     }
 
@@ -79,6 +81,10 @@ impl NPCAleatorio {
         if self.ultimo_tiempo_comprobacion < self.npc.publicacion_reloj {
             self.ultimo_tiempo_comprobacion += delta_time;
         }
+        println!(
+            "{:?} {:?}",
+            self.ultimo_tiempo_comprobacion, self.npc.publicacion_reloj
+        );
 
         if self.ultimo_tiempo_comprobacion >= self.npc.publicacion_reloj {
             self.ultimo_tiempo_comprobacion = 0;
@@ -309,33 +315,29 @@ impl NPCAleatorio {
         }
     }
 
-    fn comprobar_actividad(&mut self) {
-        let (tx, mut rx) = mpsc::channel(1);
+    fn comprobar_actividad(&self) {
+        let mut npc_clone = Arc::new(self.clone());
         let etiqueta = self.npc.etiqueta.clone();
         let account_address = self.npc.account_address.clone();
         let tokens = self.tokens.clone();
 
-        tokio::task::spawn_blocking(move || {
-            let rt = tokio::runtime::Runtime::new().unwrap();
-            rt.block_on(async move {
-                let result = handle_tokens(&etiqueta, &account_address, tokens).await;
-                let _ = tx.send(result).await;
-            });
-        });
+        self.manija.spawn(async move {
+            match handle_tokens(&etiqueta, &account_address, tokens).await {
+                Ok(tokens) => {
+                    Arc::get_mut(&mut npc_clone)
+                        .unwrap()
+                        .actualizar_tokens(tokens);
 
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
-            if let Some(tokens_result) = rx.recv().await {
-                match tokens_result {
-                    Ok(nuevos_tokens) => {
-                        self.actualizar_tokens(nuevos_tokens.clone());
-                        self.comprobar_menciones().await;
-                        self.hacer_publicacion().await;
-                    }
-                    Err(e) => {
-                        eprintln!("Error al conectarse a Lens: {}", e);
-                    }
+                    Arc::get_mut(&mut npc_clone)
+                        .unwrap()
+                        .comprobar_menciones()
+                        .await;
+                    Arc::get_mut(&mut npc_clone)
+                        .unwrap()
+                        .hacer_publicacion()
+                        .await;
                 }
+                Err(err) => println!("Error with tokens {:?}", err),
             }
         });
     }
@@ -346,7 +348,6 @@ impl NPCAleatorio {
         match get_mentions(&access_tokens, &self.ultima_mencion).await {
             Ok(menciones) => {
                 self.ultima_mencion = menciones.last().unwrap().id.clone();
-
                 for mencion in menciones {
                     match call_mention(
                         &mencion.content,

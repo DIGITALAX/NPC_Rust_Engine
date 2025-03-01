@@ -4,15 +4,14 @@ use crate::bib::types::{
 };
 use rayon::prelude::*;
 use std::sync::{Arc, Mutex};
+use tokio::runtime::Handle;
 
 impl EscenaEstudio {
-    pub fn new(escena: Escena) -> Self {
+    pub fn new(escena: Escena, manija: Handle) -> Self {
         let sprites = escena.sprites.clone();
         let prohibidos = escena.prohibido.clone();
-        let anchura = escena.mundo.anchura
-            - ((sprites[0].anchura * sprites[0].escala.x) * sprites[0].escala.x);
-        let altura =
-            escena.mundo.altura - ((sprites[0].altura * sprites[0].escala.y) * sprites[0].escala.y);
+        let anchura = escena.mundo.anchura - ((300.0 * 0.5) * 0.5);
+        let altura = escena.mundo.altura - ((600.0 * 0.5) * 0.5);
 
         let mapa = Mapa::new(anchura as usize, altura as usize, prohibidos);
         let sillas_ocupadas = Arc::new(Mutex::new(Vec::new()));
@@ -28,6 +27,7 @@ impl EscenaEstudio {
                     GameTimer::new(),
                     mapa.clone(),
                     escena.clave.to_string(),
+                    manija.clone(),
                 );
                 npc
             })
