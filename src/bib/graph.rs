@@ -45,12 +45,10 @@ pub async fn handle_collections(
 
     let graph_key: String = var("GRAPH_KEY").expect("GRAPH_KEY not configured in .env");
     let res = client
-        .post(
-            "https://api.studio.thegraph.com/query/37770/autograph-lensv3/version/latest", // format!(
-                                                                                           // "{}{}/subgraphs/id/8JRara6TGvHV6gKHr5rqeMUsjpAmxe6QHVv8vc23g2KY",
-                                                                                           // GRAPH_URI, graph_key
-                                                                                           // )
-        )
+        .post(format!(
+            "{}{}/subgraphs/id/41wxYK53EBTYKtUAe97fHJk6mtHzm6cu9dLAC4nUiYvc",
+            GRAPH_URI, graph_key
+        ))
         .json(&query)
         .send()
         .await;
@@ -119,14 +117,10 @@ pub async fn handle_agents() -> Result<HashMap<String, HalfSprite>, Box<dyn Erro
 
     let graph_key: String = var("GRAPH_KEY").expect("GRAPH_KEY not configured in .env");
     let res = client
-        .post(
-            "https://api.studio.thegraph.com/query/37770/triplea/version/latest
-",
-        )
-        // .post(format!(
-        //     "{}{}/subgraphs/id/QmasxL1vi53CZw6oTPtNzC46j6rRsHA9veSyhA6LChpwAR",
-        //     GRAPH_URI, graph_key
-        // ))
+        .post(format!(
+            "{}{}/subgraphs/id/41wxYK53EBTYKtUAe97fHJk6mtHzm6cu9dLAC4nUiYvc",
+            GRAPH_URI, graph_key
+        ))
         .json(&query)
         .send()
         .await;
@@ -310,8 +304,12 @@ pub async fn calculate_amount(address: String) -> U256 {
         "#
     });
 
+    let graph_key: String = var("GRAPH_KEY").expect("GRAPH_KEY not configured in .env");
     let res = client
-        .post("https://api.studio.thegraph.com/query/37770/autograph-lensv3/version/latest")
+        .post(format!(
+            "{}{}/subgraphs/id/41wxYK53EBTYKtUAe97fHJk6mtHzm6cu9dLAC4nUiYvc",
+            GRAPH_URI, graph_key
+        ))
         .json(&query)
         .send()
         .await;
