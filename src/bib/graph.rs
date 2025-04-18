@@ -118,7 +118,7 @@ pub async fn handle_agents() -> Result<HashMap<String, HalfSprite>, Box<dyn Erro
     let graph_key: String = var("GRAPH_KEY").expect("GRAPH_KEY not configured in .env");
     let res = client
         .post(format!(
-            "{}{}/subgraphs/id/41wxYK53EBTYKtUAe97fHJk6mtHzm6cu9dLAC4nUiYvc",
+            "{}{}/subgraphs/id/5XK1Z5BL6TGMmpJV4irttCu4RgAePp7sPLKnPZfXVCcK",
             GRAPH_URI, graph_key
         ))
         .json(&query)
