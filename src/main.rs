@@ -105,19 +105,19 @@ async fn manejar_conexion(
                         if let Some(origen) = origen {
                             match origen.to_str() {
                                 Ok(origen_str) => {
-                                    // if origen_str == "https://www.npcstudio.xyz"
-                                    //     || origen_str == "https://npc.digitalax.xyz"
-                                    //     || origen_str
-                                    //         == "https://glorious-eft-deeply.ngrok-free.app"
-                                    //     || origen_str == "https://npcstudio.xyz"
-                                    //     || origen_str == "https://skyhunters.agentmeme.xyz"
-                                    // {
-                                    return Ok(respuesta);
-                                    // } else {
-                                    //     return Err(ErrorResponse::new(Some(
-                                    //         "Forbidden".to_string(),
-                                    //     )));
-                                    // }
+                                    if origen_str == "https://www.npcstudio.xyz"
+                                        || origen_str == "https://npc.digitalax.xyz"
+                                        || origen_str
+                                            == "https://glorious-eft-deeply.ngrok-free.app"
+                                        || origen_str == "https://npcstudio.xyz"
+                                        || origen_str == "https://skyhunters.agentmeme.xyz"
+                                    {
+                                        return Ok(respuesta);
+                                    } else {
+                                        return Err(ErrorResponse::new(Some(
+                                            "Forbidden".to_string(),
+                                        )));
+                                    }
                                 }
                                 Err(e) => {
                                     eprintln!("Error al procesar el encabezado origin: {:?}", e);
@@ -154,11 +154,10 @@ async fn manejar_conexion(
                         if tipo == "datosDeEscena"
                             || tipo == "indiceDeEscena"
                             || tipo == "datosDeEscenas"
-                            || tipo == "llamaContenido"
                         {
                             if let Some(clave) = parsed.get("clave").and_then(Value::as_str) {
-                                let mut escenas_guard = escenas.write().await;
-                                if let Some(escena) = escenas_guard.get_mut(clave) {
+                                let escenas_guard = escenas.write().await;
+                                if let Some(escena) = escenas_guard.clone().get_mut(clave) {
                                     if let Some(respuesta) = escena.request_state() {
                                         match respuesta {
                                             RespuestaTrabajadora::StateResponse {
@@ -186,41 +185,83 @@ async fn manejar_conexion(
                                                 );
                                                         break;
                                                     }
-                                                } else if tipo.trim() == "datosDeEscenas" {
-                                                    let json_respuesta = json!({
-                                                        "nombre": "datosDeEscenas",
-                                                        "datos": LISTA_ESCENA.clone()
-                                                    });
-                                                    let serialized_respuesta = to_string(
-                                                        &json_respuesta,
-                                                    )
-                                                    .unwrap_or_else(|_| {
-                                                        String::from("Error de serialización")
-                                                    });
-
-                                                    if let Err(err) = write
-                                                        .send(Message::Text(serialized_respuesta))
-                                                        .await
-                                                    {
-                                                        eprintln!(
-                                                    "Error al enviar la respuesta de los datos de las escenas: {}",
-                                                    err
-                                                );
-                                                        break;
-                                                    }
                                                 } else {
-                                                    let scene_info = LISTA_ESCENA
+                                                    let escenas_vec: Vec<SocketEscena> =
+                                                        escenas_guard
+                                                            .values()
+                                                            .filter_map(|escena_guard| {
+                                                                if let Some(scene_info) =
+                                                                    LISTA_ESCENA.iter().find(
+                                                                        |escena| {
+                                                                            escena_guard.clave
+                                                                                == escena.clave
+                                                                        },
+                                                                    )
+                                                                {
+                                                                    Some(SocketEscena {
+                                                                        clave: scene_info
+                                                                            .clave
+                                                                            .clone(),
+                                                                        mundo: scene_info
+                                                                            .mundo
+                                                                            .clone(),
+                                                                        imagen: scene_info
+                                                                            .imagen
+                                                                            .clone(),
+                                                                        prohibido: scene_info
+                                                                            .prohibido
+                                                                            .clone(),
+                                                                        profundidad: scene_info
+                                                                            .profundidad
+                                                                            .clone(),
+                                                                        sillas: scene_info
+                                                                            .sillas
+                                                                            .clone(),
+                                                                        fondo: scene_info
+                                                                            .fondo
+                                                                            .clone(),
+                                                                        objetos: scene_info
+                                                                            .objetos
+                                                                            .clone(),
+                                                                        sprites: escena_guard
+                                                                            .npcs
+                                                                            .iter()
+                                                                            .map(|npc| {
+                                                                                npc.npc.clone()
+                                                                            })
+                                                                            .collect(),
+                                                                        interactivos: scene_info
+                                                                            .interactivos
+                                                                            .clone(),
+                                                                    })
+                                                                } else {
+                                                                    None
+                                                                }
+                                                            })
+                                                            .collect();
+
+                                                    if escenas_vec
                                                         .iter()
-                                                        .find(|escena| escena.clave == clave);
-                                                    if let Some(scene_info) = scene_info {
-                                                        let json_respuesta = json!({
-                                                            "nombre": "configurarEscena",
-                                                            "datos": {
-                                                            "estados": estados,
-                                                            "escena": scene_info,
-                                                            "todoInfo": LISTA_ESCENA.clone()
-                                                            }
-                                                        });
+                                                        .find(|escena| escena.clave == clave)
+                                                        .is_some()
+                                                    {
+                                                        let json_respuesta: Value;
+                                                        if tipo.trim() == "datosDeEscenas" {
+                                                            json_respuesta = json!({
+                                                                "nombre": "datosDeEscenas",
+                                                                "datos": escenas_vec
+                                                            });
+                                                        } else {
+                                                            json_respuesta = json!({
+                                                                "nombre": "configurarEscena",
+                                                                "datos": {
+                                                                "estados": estados,
+                                                                "escena": escenas_vec.iter().find(|escena| escena.clave == clave).unwrap(),
+                                                                "todoInfo":escenas_vec
+                                                                }
+                                                            });
+                                                        }
+
                                                         let serialized_respuesta =
                                                             to_string(&json_respuesta)
                                                                 .unwrap_or_else(|_| {
@@ -236,9 +277,9 @@ async fn manejar_conexion(
                                                             .await
                                                         {
                                                             eprintln!(
-                                                        "Error al enviar la respuesta de estado de la escena: {}",
-                                                        err
-                                                    );
+                                                    "Error al enviar la respuesta de los datos de las escenas: {}",
+                                                    err
+                                                );
                                                             break;
                                                         }
                                                     }

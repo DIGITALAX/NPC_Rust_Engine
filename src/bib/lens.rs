@@ -1,6 +1,6 @@
 use crate::bib::{
-    constants::API_LENS,
-    contracts::{inicializar_api, inicializar_billetera, inicializar_proveedor},
+    constants::LENS_API,
+    contracts::initialize_api,
     types::{LensTokens, Mention, TokensAlmacenados},
 };
 use ethers::{
@@ -17,6 +17,8 @@ use std::{
     sync::Arc,
     time::{SystemTime, UNIX_EPOCH},
 };
+
+use super::contracts::{initialize_provider, initialize_wallet};
 
 async fn refresh(
     client: Arc<Client>,
@@ -47,7 +49,7 @@ async fn refresh(
     });
 
     let response = client
-        .post(API_LENS)
+        .post(LENS_API)
         .header("Authorization", format!("Bearer {}", auth_tokens))
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
@@ -111,7 +113,7 @@ pub async fn authenticate(
     });
 
     let res = client
-        .post(API_LENS)
+        .post(LENS_API)
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
         // .header("Origin", "http://localhost:3000")
@@ -163,7 +165,7 @@ pub async fn authenticate(
                     });
 
                     let response = client
-                        .post(API_LENS)
+                        .post(LENS_API)
                         .header("Content-Type", "application/json")
                         .header("Origin", "https://npc-rust-engine.onrender.com")
                         // .header("Origin", "http://localhost:3000")
@@ -215,13 +217,19 @@ pub async fn handle_tokens(
     account_address: &str,
     tokens: Option<TokensAlmacenados>,
 ) -> Result<TokensAlmacenados, Box<dyn Error + Send + Sync>> {
-    let client = inicializar_api();
+    let client = initialize_api();
 
-    let wallet = inicializar_billetera(private_key);
+    let wallet = match initialize_wallet(private_key) {
+        Some(wallet) => wallet,
+        None => {
+            eprintln!("Wallet initialization failed. Skipping agent tokens.");
+            return Err("Wallet initialization failed. Skipping agent tokens.".into());
+        }
+    };
 
     if let Some(saved) = tokens {
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-        let expiry: u64 = saved.expira_en.try_into().unwrap();
+        let expiry: u64 = saved.expiry.try_into().unwrap();
         if now < (expiry - 3600) {
             return Ok(saved);
         } else {
@@ -233,8 +241,7 @@ pub async fn handle_tokens(
             .await?;
 
             return Ok(TokensAlmacenados {
-                expira_en: (SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() + 30 * 60)
-                    as i64,
+                expiry: (SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() + 30 * 60) as i64,
                 tokens: new_tokens,
             });
         }
@@ -242,7 +249,7 @@ pub async fn handle_tokens(
         let new_tokens = authenticate(client, &wallet, account_address).await?;
 
         return Ok(TokensAlmacenados {
-            expira_en: (SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() + 30 * 60) as i64,
+            expiry: (SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() + 30 * 60) as i64,
             tokens: new_tokens,
         });
     }
@@ -253,9 +260,20 @@ pub async fn make_publication(
     private_key: &str,
     auth_tokens: &str,
 ) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let client = inicializar_api();
+    let client = initialize_api();
 
-    let wallet = inicializar_billetera(private_key);
+    let wallet = match initialize_wallet(private_key) {
+        Some(wallet) => wallet,
+        None => {
+            eprintln!("Wallet initialization failed. Skipping publication.");
+            return Err("Wallet initialization failed. Skipping publication.".into());
+        }
+    };
+
+    let request = json!({
+        "contentUri": content,
+
+    });
 
     let query = json!({
         "query": r#"
@@ -284,15 +302,12 @@ pub async fn make_publication(
             }
         "#,
         "variables": {
-                "request":  {
-                    "contentUri": content,
-
-                }
+                "request": request
         }
     });
 
     let response = client
-        .post(API_LENS)
+        .post(LENS_API)
         .header("Authorization", format!("Bearer {}", auth_tokens))
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
@@ -341,7 +356,7 @@ pub async fn make_publication(
                 .and_then(|v| v.as_u64())
                 .ok_or("Invalid chainId")?;
 
-            let provider = inicializar_proveedor();
+            let provider = initialize_provider();
             let current_nonce = provider
                 .get_transaction_count(wallet.address(), None)
                 .await?;
@@ -378,7 +393,7 @@ pub async fn make_publication(
 }
 
 async fn poll(hash: &str, auth_tokens: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let client = inicializar_api();
+    let client = initialize_api();
     let query = json!({
         "query": r#"
             query TransactionStatus($request: TransactionStatusRequest!) {
@@ -408,7 +423,7 @@ async fn poll(hash: &str, auth_tokens: &str) -> Result<String, Box<dyn Error + S
     });
 
     let response = client
-        .post(API_LENS)
+        .post(LENS_API)
         .header("Authorization", format!("Bearer {}", auth_tokens))
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
@@ -438,7 +453,7 @@ async fn poll(hash: &str, auth_tokens: &str) -> Result<String, Box<dyn Error + S
 }
 
 pub async fn handle_lens_account(wallet: &str, username: bool) -> Result<String, Box<dyn Error>> {
-    let client = inicializar_api();
+    let client = initialize_api();
     let query = json!({
         "query": r#"
             query AccountsAvailable($request: AccountsAvailableRequest!) {
@@ -473,7 +488,7 @@ pub async fn handle_lens_account(wallet: &str, username: bool) -> Result<String,
     });
 
     let response = client
-        .post(API_LENS)
+        .post(LENS_API)
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
         // .header("Origin", "http://localhost:3000")
@@ -483,7 +498,6 @@ pub async fn handle_lens_account(wallet: &str, username: bool) -> Result<String,
 
     if response.status().is_success() {
         let json: Value = response.json().await?;
-
         if let Some(items) = json["data"]["accountsAvailable"]["items"].as_array() {
             for item in items {
                 if username {
@@ -516,9 +530,15 @@ pub async fn make_comment(
     auth_tokens: &str,
     comment_id: &str,
 ) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let client = inicializar_api();
+    let client = initialize_api();
 
-    let wallet = inicializar_billetera(private_key);
+    let wallet = match initialize_wallet(private_key) {
+        Some(wallet) => wallet,
+        None => {
+            eprintln!("Wallet initialization failed. Skipping comment.");
+            return Err("Wallet initialization failed. Skipping comment.".into());
+        }
+    };
 
     let query = json!({
         "query": r#"
@@ -557,7 +577,7 @@ pub async fn make_comment(
     });
 
     let response = client
-        .post(API_LENS)
+        .post(LENS_API)
         .header("Authorization", format!("Bearer {}", auth_tokens))
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
@@ -607,7 +627,7 @@ pub async fn make_comment(
                 .and_then(|v| v.as_u64())
                 .ok_or("Invalid chainId")?;
 
-            let provider = inicializar_proveedor();
+            let provider = initialize_provider();
             let current_nonce = provider
                 .get_transaction_count(wallet.address(), None)
                 .await?;
@@ -649,9 +669,15 @@ pub async fn make_quote(
     auth_tokens: &str,
     quote_id: &str,
 ) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let client = inicializar_api();
+    let client = initialize_api();
 
-    let wallet = inicializar_billetera(private_key);
+    let wallet = match initialize_wallet(private_key) {
+        Some(wallet) => wallet,
+        None => {
+            eprintln!("Wallet initialization failed. Skipping quote.");
+            return Err("Wallet initialization failed. Skipping quote.".into());
+        }
+    };
 
     let query = json!({
         "query": r#"
@@ -690,7 +716,7 @@ pub async fn make_quote(
     });
 
     let response = client
-        .post(API_LENS)
+        .post(LENS_API)
         .header("Authorization", format!("Bearer {}", auth_tokens))
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
@@ -740,7 +766,7 @@ pub async fn make_quote(
                 .and_then(|v| v.as_u64())
                 .ok_or("Invalid chainId")?;
 
-            let provider = inicializar_proveedor();
+            let provider = initialize_provider();
             let current_nonce = provider
                 .get_transaction_count(wallet.address(), None)
                 .await?;
@@ -779,7 +805,7 @@ pub async fn make_quote(
 pub async fn find_comment(
     account_address: &str,
 ) -> Result<(String, String), Box<dyn Error + Send + Sync>> {
-    let client = inicializar_api();
+    let client = initialize_api();
     let query = json!({
         "query": r#"
         query Posts($request: PostsRequest!) {
@@ -831,7 +857,7 @@ pub async fn find_comment(
     });
 
     let res = client
-        .post(API_LENS)
+        .post(LENS_API)
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
         .json(&query)
@@ -880,7 +906,7 @@ pub async fn find_comment(
 }
 
 pub async fn make_like(gusta_on: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let client = inicializar_api();
+    let client = initialize_api();
     let consulta = json!({
         "query": r#"
             mutation AddReaction($request: AddReactionRequest!) {
@@ -896,7 +922,7 @@ pub async fn make_like(gusta_on: &str) -> Result<String, Box<dyn std::error::Err
     });
 
     let res = client
-        .post(API_LENS)
+        .post(LENS_API)
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
         .json(&consulta)
@@ -914,7 +940,7 @@ pub async fn make_mirror(
     auth_tokens: &str,
     mirror_id: &str,
 ) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let client = inicializar_api();
+    let client = initialize_api();
     let query = json!({
         "query": r#"
             mutation repost($request: CreateRepostRequest!)   {
@@ -950,7 +976,7 @@ pub async fn make_mirror(
     });
 
     let response = client
-        .post(API_LENS)
+        .post(LENS_API)
         .header("Authorization", format!("Bearer {}", auth_tokens))
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
@@ -970,7 +996,7 @@ pub async fn get_mentions(
     auth_tokens: &str,
     ultima_mencion: &str,
 ) -> Result<Vec<Mention>, Box<dyn Error + Send + Sync>> {
-    let client = inicializar_api();
+    let client = initialize_api();
     let query = json!({
         "query": r#"
             mutation Notifications($request: NotificationRequest!)   {
@@ -1011,7 +1037,7 @@ pub async fn get_mentions(
     });
 
     let response = client
-        .post(API_LENS)
+        .post(LENS_API)
         .header("Authorization", format!("Bearer {}", auth_tokens))
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")

@@ -1,8 +1,9 @@
 use crate::{
     bib::{
-        contracts::inicializar_contrato,
-        graph::handle_collections,
-        ipfs::{subir_ipfs, subir_ipfs_imagen},
+        constants::{LENS_CHAIN_ID, SPECTATOR_REWARDS},
+        contracts::initialize_contracts,
+        graph::{calculate_amount, handle_collections},
+        ipfs::{subir_ipfs_imagen, upload_lens_storage},
         lens::{
             find_comment, get_mentions, handle_tokens, make_comment, make_like, make_mirror,
             make_publication, make_quote,
@@ -19,7 +20,13 @@ use crate::{
     },
     TokensAlmacenados,
 };
-use ethers::{prelude::*, types::U256};
+use ethers::{
+    contract::FunctionCall,
+    middleware::{Middleware, SignerMiddleware},
+    providers::{Http, Provider},
+    signers::LocalWallet,
+    types::{Address, Eip1559TransactionRequest, NameOrAddress, H256, U256},
+};
 use pathfinding::prelude::astar;
 use rand::{thread_rng, Rng};
 use serde_json::to_string;
@@ -43,29 +50,40 @@ impl NPCAleatorio {
         mapa: Mapa,
         escena: String,
         manija: Handle,
-    ) -> Self {
-        let autograph_data_contrato = inicializar_contrato(&sprite.etiqueta.to_string());
+    ) -> Option<Self> {
+        let contratos = initialize_contracts(&sprite.etiqueta.to_string());
 
-        NPCAleatorio {
-            reloj_juego,
-            sillas_ocupadas,
-            sillas,
-            mundo,
-            movimientos_max: sprite.movimientos_max,
-            caminos: Vec::new(),
-            npc: sprite,
-            mapa,
-            contador: 0.0,
-            silla_cerca: None,
-            ultimo_tiempo_comprobacion: 0,
-            autograph_data_contrato,
-            escena,
-            tokens: None,
-            registro_paginas: vec![],
-            registro_colecciones: vec![],
-            registro_tipos: vec![],
-            ultima_mencion: String::from(""),
-            manija,
+        match contratos {
+            Some((autograph_catalog_contrato, spectator_rewards_contrato)) => Some(NPCAleatorio {
+                reloj_juego,
+                reloj_au: 0,
+                sillas_ocupadas,
+                sillas,
+                mundo,
+                movimientos_max: sprite.movimientos_max,
+                caminos: Vec::new(),
+                npc: sprite,
+                mapa,
+                contador: 0.0,
+                silla_cerca: None,
+                ultimo_tiempo_comprobacion: 0,
+                spectator_rewards_contrato,
+                autograph_catalog_contrato,
+                escena,
+                tokens: None,
+                registro_paginas: vec![],
+                registro_colecciones: vec![],
+                registro_tipos: vec![],
+                ultima_mencion: String::from(""),
+                manija,
+            }),
+            None => {
+                eprintln!(
+                    "Failed to initialize contracts for agent with sprite: {}",
+                    sprite.etiqueta.to_string()
+                );
+                None
+            }
         }
     }
 
@@ -81,10 +99,15 @@ impl NPCAleatorio {
         if self.ultimo_tiempo_comprobacion < self.npc.publicacion_reloj {
             self.ultimo_tiempo_comprobacion += delta_time;
         }
-        println!(
-            "{:?} {:?}",
-            self.ultimo_tiempo_comprobacion, self.npc.publicacion_reloj
-        );
+
+        // if self.reloj_au < 604_800_000 {
+        //     self.reloj_au += delta_time;
+        // }
+
+        // if self.reloj_au >= 604_800_000 {
+        //     self.add_au_agent();
+        //     self.reloj_au = 0;
+        // }
 
         if self.ultimo_tiempo_comprobacion >= self.npc.publicacion_reloj {
             self.ultimo_tiempo_comprobacion = 0;
@@ -342,6 +365,161 @@ impl NPCAleatorio {
         });
     }
 
+    fn add_au_agent(&self) {
+        let npc_clone = Arc::new(self.clone());
+
+        self.manija.spawn(async move {
+            let amount = calculate_amount(npc_clone.npc.billetera.clone()).await;
+
+            if amount > U256::from(0) {
+                let method = npc_clone
+                    .spectator_rewards_contrato
+                    .method::<U256, H256>("addAgentAU", amount);
+
+                match method {
+                    Ok(call) => {
+                        let FunctionCall { tx, .. } = call;
+
+                        if let Some(tx_request) = tx.as_eip1559_ref() {
+                            let gas_price = U256::from(500_000_000_000u64);
+                            let max_priority_fee = U256::from(25_000_000_000u64);
+                            let gas_limit = U256::from(300_000);
+
+                            let client = npc_clone.spectator_rewards_contrato.client().clone();
+                            let chain_id = *LENS_CHAIN_ID;
+                            let req = Eip1559TransactionRequest {
+                                from: Some(npc_clone.npc.billetera.parse::<Address>().unwrap()),
+                                to: Some(NameOrAddress::Address(
+                                    SPECTATOR_REWARDS.parse::<Address>().unwrap(),
+                                )),
+                                gas: Some(gas_limit),
+                                value: tx_request.value,
+                                data: tx_request.data.clone(),
+                                max_priority_fee_per_gas: Some(max_priority_fee),
+                                max_fee_per_gas: Some(gas_price + max_priority_fee),
+                                chain_id: Some(chain_id.into()),
+                                ..Default::default()
+                            };
+
+                            let pending_tx = match client.send_transaction(req, None).await {
+                                Ok(tx) => {
+                                    let tx_hash = match tx.confirmations(1).await {
+                                        Ok(hash) => {
+                                            println!(
+                                                "Agent {} TX Hash: {:?}",
+                                                npc_clone.npc.id, hash
+                                            );
+
+                                            match npc_clone.agent_pay().await {
+                                                Ok(()) => {
+                                                    println!(
+                                                        "Agent AU distributed for {}",
+                                                        npc_clone.npc.etiqueta
+                                                    );
+                                                }
+                                                Err(err) => {
+                                                    println!("Error with tokens {:?}", err);
+                                                }
+                                            }
+                                        }
+                                        Err(e) => {
+                                            eprintln!(
+                                                "Error with transaction confirmation: {:?}",
+                                                e
+                                            );
+                                        }
+                                    };
+                                }
+                                Err(e) => {
+                                    eprintln!(
+                                        "Error sending the transaction for addAgentAU: {:?}",
+                                        e
+                                    );
+                                }
+                            };
+                        } else {
+                            eprintln!("Error in sending Transaction");
+                        }
+                    }
+
+                    Err(err) => {
+                        eprintln!("Error in create method for payRent: {:?}", err);
+                    }
+                }
+            } else {
+                println!("No AU calculated");
+            }
+        });
+    }
+
+    async fn agent_pay(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let method = self
+            .spectator_rewards_contrato
+            .method::<(), H256>("agentPayAU", ());
+
+        match method {
+            Ok(call) => {
+                let FunctionCall { tx, .. } = call;
+
+                if let Some(tx_request) = tx.as_eip1559_ref() {
+                    let gas_price = U256::from(500_000_000_000u64);
+                    let max_priority_fee = U256::from(25_000_000_000u64);
+                    let gas_limit = U256::from(300_000);
+
+                    let client = self.spectator_rewards_contrato.client().clone();
+                    let chain_id = *LENS_CHAIN_ID;
+                    let req = Eip1559TransactionRequest {
+                        from: Some(self.npc.billetera.parse::<Address>().unwrap()),
+                        to: Some(NameOrAddress::Address(
+                            SPECTATOR_REWARDS.parse::<Address>().unwrap(),
+                        )),
+                        gas: Some(gas_limit),
+                        value: tx_request.value,
+                        data: tx_request.data.clone(),
+                        max_priority_fee_per_gas: Some(max_priority_fee),
+                        max_fee_per_gas: Some(gas_price + max_priority_fee),
+                        chain_id: Some(chain_id.into()),
+                        ..Default::default()
+                    };
+
+                    let pending_tx = match client.send_transaction(req, None).await {
+                        Ok(tx) => tx,
+                        Err(e) => {
+                            eprintln!("Error sending the transaction for agentPayAU: {:?}", e);
+                            Err(Box::new(e))?
+                        }
+                    };
+
+                    let tx_hash = match pending_tx.confirmations(1).await {
+                        Ok(hash) => hash,
+                        Err(e) => {
+                            eprintln!("Error with transaction confirmation: {:?}", e);
+                            Err(Box::new(e))?
+                        }
+                    };
+
+                    println!("Agent {} TX Hash: {:?}", self.npc.id, tx_hash);
+
+                    Ok(())
+                } else {
+                    eprintln!("Error in sending Transaction");
+                    Err(Box::new(io::Error::new(
+                        io::ErrorKind::Other,
+                        format!("Error in sending Transaction"),
+                    )))
+                }
+            }
+
+            Err(err) => {
+                eprintln!("Error in create method for agent_pay: {:?}", err);
+                Err(Box::new(io::Error::new(
+                    io::ErrorKind::Other,
+                    format!("Error in create method for agent_pay {:?}", err),
+                )))
+            }
+        }
+    }
+
     async fn comprobar_menciones(&mut self) {
         let access_tokens = self.tokens.clone().unwrap().tokens.access_token;
 
@@ -418,7 +596,7 @@ impl NPCAleatorio {
                 self.registro_paginas.push(U256::from(pagina));
 
                 let metodo = self
-                    .autograph_data_contrato
+                    .autograph_catalog_contrato
                     .method::<_, String>("getAutographPage", pagina);
 
                 match metodo {
@@ -619,8 +797,7 @@ async fn formatear_pub(
     if contenido.is_some() {
         let mut imagen_url: Option<Imagen> = None;
         let mut enfoque = "TEXT_ONLY".to_string();
-        let mut schema =
-            "https://json-schemas.lens.dev/publications/text-only/3.0.0.json".to_string();
+        let mut schema = "https://json-schemas.lens.dev/posts/text-only/3.0.0.json".to_string();
 
         if let Some(base64_imagen) = imagen {
             if base64_imagen.contains("ipfs://") {
@@ -647,12 +824,11 @@ async fn formatear_pub(
 
         if let Some(_) = imagen_url.as_ref() {
             enfoque = String::from("IMAGE");
-            schema = "https://json-schemas.lens.dev/publications/image/3.0.0.json".to_string();
+            schema = "https://json-schemas.lens.dev/posts/image/3.0.0.json".to_string();
         }
 
-        let tags = vec!["npcStudio".to_string(), escena.to_string()];
+        let tags = vec!["npcStudio".to_string(), escena.to_string().replace(" ", "")];
 
-        let app_id = "npcstudio".to_string();
         let content = contenido.unwrap();
 
         let publicacion = Publicacion {
@@ -661,9 +837,7 @@ async fn formatear_pub(
                 mainContentFocus: enfoque,
                 title: content.chars().take(20).collect(),
                 content,
-                appId: app_id,
                 id: Uuid::new_v4().to_string(),
-                hideFromFeed: false,
                 locale: "en".to_string(),
                 tags,
                 image: imagen_url,
@@ -672,13 +846,13 @@ async fn formatear_pub(
 
         let publicacion_json = to_string(&publicacion)?;
 
-        contenido_subido = match subir_ipfs(publicacion_json).await {
-            Ok(con) => Some(format!("ipfs://{}", con.Hash)),
+        contenido_subido = match upload_lens_storage(publicacion_json).await {
+            Ok(con) => Some(con),
             Err(e) => {
-                eprintln!("Error al subir la publicacion al IPFS: {}", e);
+                eprintln!("Error uploading content to Lens Storage: {}", e);
                 return Err(Box::new(io::Error::new(
                     io::ErrorKind::Other,
-                    format!("Error al subir la publicacion al IPFS {:?}", e),
+                    format!("Error uploading content to Lens Storage: {}", e),
                 )));
             }
         };

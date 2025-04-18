@@ -1,12 +1,17 @@
+use std::sync::LazyLock;
+
+use crate::bib::types::EmptyEscena;
 use crate::bib::types::{
     Articulo, AutographType, Coordenada, Direccion, EmptySprite, Escala, Fondo, Interactivo,
     Prohibido, Silla, Talla,
 };
 use once_cell::sync::Lazy;
 
-use super::types::EmptyEscena;
-
-pub static AUTOGRAPH_DATA: &'static str = "0xd52dA212D5C7Ec8f7Bb3594372530b19f3e5f37E";
+pub static LENS_CHAIN_ID: LazyLock<u64> = LazyLock::new(|| 232);
+pub static LENS_API: &'static str = "https://api.lens.xyz/graphql";
+pub static LENS_RPC_URL: &'static str = "https://rpc.lens.xyz";
+pub static AUTOGRAPH_CATALOG: &'static str = "0x928F1B622389038552dE950E3928CBc44BC4d409";
+pub static SPECTATOR_REWARDS: &'static str = "0xEBF04050D02F3Fa1a9428170e2E42e9608280a12";
 pub static INFURA_GATEWAY: &'static str = "https://thedial.infura-ipfs.io";
 pub static VENICE_API: &'static str = "https://api.venice.ai/api/v1/";
 pub static GRAPH_URI: &str = "https://gateway-arbitrum.network.thegraph.com/api/";
@@ -17,7 +22,7 @@ pub static MODELS: &[&str] = &[
     "fluently-xl",
     "pony-realism",
 ];
-pub static SAMPLE_PROMPT:&'static str = "A surreal, liminal retro anime line art scene of a (pixel art:1.3) inspired (illustration:1.3) depicting the (interior view:1.3) of modern NYC MTA subway doors, The doors are composed of sleek brushed silver metallic panels with smooth ridges, featuring two rounded rectangular glass windows framed with black rubber trims, Below each window, blue rectangular stickers display a green circular 'yes' symbol on the left and bold white horizontal text on a single line reading 'I <3 Web3' in a clean sans-serif font, underneath a solid white line above the text, striking scratch-graffiti tags are etched roughly into the glass windows, and small marker-style graffiti tags adorn the metallic panels below the stickers. The perspective is symmetrical and straight-on, capturing the gritty urban aesthetic with realistic grime, wear, and imperfections. The background includes muted orange, yellow, and beige seating and metallic poles, illuminated by soft, cool white subway lighting. The illustration blends sharp, clean details with pixel-art-inspired textures, creating a retro-modern urban aesthetic.";
+pub static SAMPLE_PROMPT:&'static str = "A hyper-detailed, painterly portrait of an anthropomorphic white cat standing upright, with soft fur rendered in fine, realistic brushstrokes. Its luminous yellow-green eyes are large and expressive, reflecting ambient light with subtle catch highlights. The cat wears an elaborate, mid-length cloak with finely embroidered floral patterns—wildflowers, vines, and gold-thread filigree—that flow naturally around the fabric folds. The fabric texture is tactile, slightly weathered linen layered over silk, with subtle fringe and hand-sewn imperfections. Rich sky-blue and ochre accents line the collar and edges, knotted at the neck with a small ornate clasp. The cat gently holds a sleek, matte-black handheld video game console—contrasting yet harmonizing with the surrounding natural motif. The device glows faintly, its screen casting a cool modern light across the paws. The cat is seen from a low angle, looking down at the device with a curious and slightly mischievous expression, as if it has just discovered a hidden level. The background is a deep velvet blue, softly gradiented with painterly clouding and blurred wildflower stalks rising into shadow. The lighting is diffuse and natural, like early evening after rain—subtle volumetric softness, no hard shadows. The scene is framed like a formal oil portrait, with a shallow depth of field and atmospheric occlusion around the edges. The style is reminiscent of Studio Ghibli meets classical European storybook illustration, with a touch of surreal whimsy. The overall effect is enchanting, gentle, and slightly uncanny—a quiet tension between timeless forest nobility and portable technology. The scene is set in a serene, mystical forest clearing, with the faint sound of a distant waterfall and the soft rustling of leaves, evoking a sense of tranquility and wonder.";
 pub static STYLE_PRESETS: &[&str] = &[
     "Analog Film",
     "Line Art",
@@ -50,8 +55,6 @@ pub static STYLE_PRESETS: &[&str] = &[
     "Silhouette",
     "Tilt-Shift",
 ];
-
-pub static API_LENS: &'static str = "https://api-v2.lens.dev";
 
 pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
     [
@@ -163,16 +166,6 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     sitio: Coordenada { x: 200, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmdqbEB18L9XBNaHGuqX6BmzDGU7YPyZR5Tc6x2jZhtGA6"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 500, y: 450 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
                     escala: Escala { x: 1.0, y: 1.0 },
                     profundidad: None,
                 },
@@ -576,26 +569,6 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     profundidad: None,
                 },
                 Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 200, y: 600 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 850, y: 500 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
                     etiqueta: String::from("SHIRT"),
                     disenadores: vec![
                         String::from("0x96b891b29e0c2884c3dbc8d1fed1bba99c0f80b2"),
@@ -698,8 +671,8 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    // publicacion_reloj: 30_000_000,
-                    publicacion_reloj: 3000,
+                    publicacion_reloj: 30_000_000,
+                    // publicacion_reloj: 3000,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -959,26 +932,6 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     sitio: Coordenada { x: 1390, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmdqbEB18L9XBNaHGuqX6BmzDGU7YPyZR5Tc6x2jZhtGA6"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 200, y: 600 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 850, y: 500 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
                     escala: Escala { x: 1.0, y: 1.0 },
                     profundidad: None,
                 },
@@ -1379,26 +1332,6 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     sitio: Coordenada { x: 1390, y: 100 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmdqbEB18L9XBNaHGuqX6BmzDGU7YPyZR5Tc6x2jZhtGA6"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 800, y: 600 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 850, y: 1100 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
                     escala: Escala { x: 1.0, y: 1.0 },
                     profundidad: None,
                 },
@@ -1844,26 +1777,6 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     profundidad: None,
                 },
                 Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 800, y: 600 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 850, y: 1100 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
                     etiqueta: String::from("SHIRT"),
                     disenadores: vec![
                         String::from("0x2d74088a58297ee92141934d7d7ee8d0bdad41e4"),
@@ -2262,26 +2175,6 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     sitio: Coordenada { x: 1390, y: 150 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmdqbEB18L9XBNaHGuqX6BmzDGU7YPyZR5Tc6x2jZhtGA6"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 800, y: 600 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 850, y: 900 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
                     escala: Escala { x: 1.0, y: 1.0 },
                     profundidad: None,
                 },
@@ -2793,26 +2686,6 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     profundidad: None,
                 },
                 Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 800, y: 1250 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 1750, y: 1100 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
                     etiqueta: String::from("SHIRT"),
                     disenadores: vec![
                         String::from("0x7b5d1109d4e870a1a7f3cd862098550bf6bbc983"),
@@ -3282,26 +3155,6 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     sitio: Coordenada { x: 1000, y: 300 },
                     talla: Coordenada { x: 60, y: 80 },
                     uri: String::from("QmdqbEB18L9XBNaHGuqX6BmzDGU7YPyZR5Tc6x2jZhtGA6"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 800, y: 700 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
-                    escala: Escala { x: 1.0, y: 1.0 },
-                    profundidad: None,
-                },
-                Interactivo {
-                    etiqueta: String::from("MIX"),
-                    disenadores: vec![String::from("")],
-                    tipo: AutographType::Mix,
-                    sitio: Coordenada { x: 240, y: 300 },
-                    talla: Coordenada { x: 60, y: 80 },
-                    uri: String::from("QmZZn4pQXm3buXPQTRrQGjFN5S7mhAgfrJS4MG8QNMoHjA"),
                     escala: Escala { x: 1.0, y: 1.0 },
                     profundidad: None,
                 },

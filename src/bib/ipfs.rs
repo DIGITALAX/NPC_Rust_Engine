@@ -8,7 +8,7 @@ use reqwest::{
     multipart::{Form, Part},
     Client,
 };
-use serde_json::from_str;
+use serde_json::{from_str, Value};
 use std::{
     env,
     error::Error,
@@ -21,6 +21,8 @@ use tokio::{
 use uuid::Uuid;
 
 static CLIENTE: OnceLock<Arc<Client>> = OnceLock::new();
+
+
 
 pub fn cliente() -> Arc<Client> {
     CLIENTE
@@ -39,30 +41,11 @@ pub fn autenticacion() -> String {
     STANDARD.encode(aut)
 }
 
-pub async fn subir_ipfs(datos: String) -> Result<IpfsRespuesta, Box<dyn Error>> {
-    let cliente = cliente();
-    let aut_encoded = autenticacion();
-
-    let forma = Form::new().part("file", Part::text(datos.clone()).file_name("data.json"));
-
-    let respuesta = cliente
-        .post("https://ipfs.infura.io:5001/api/v0/add")
-        .header("Authorization", format!("Basic {}", aut_encoded))
-        .multipart(forma)
-        .send()
-        .await?;
-
-    let texto_respuesta = respuesta.text().await?;
-    let ipfs_respuesta: IpfsRespuesta = from_str(&texto_respuesta)?;
-
-    Ok(ipfs_respuesta)
-}
-
 pub async fn subir_ipfs_imagen(base64_str: &str) -> Result<IpfsRespuesta, Box<dyn Error>> {
     let base64_data = base64_str.split(',').last().unwrap_or(base64_str);
     let image_bytes = general_purpose::STANDARD.decode(base64_data)?;
-    // let path = format!("/var/data/{}.png", Uuid::new_v4());
-    let path = format!("var/data/{}.png", Uuid::new_v4());
+    let path = format!("/var/data/{}.png", Uuid::new_v4());
+    // let path = format!("var/data/{}.png", Uuid::new_v4());
     let file_result = OpenOptions::new()
         .write(true)
         .create(true)
@@ -119,4 +102,34 @@ pub async fn subir_ipfs_imagen(base64_str: &str) -> Result<IpfsRespuesta, Box<dy
             Err(Box::new(err))
         }
     }
+}
+
+
+pub async fn upload_lens_storage(data: String) -> Result<String, Box<dyn Error>> {
+    let client = cliente();
+    // let storage_key = get_storage_key().await?;
+    let url = format!("https://api.grove.storage/?chain_id=232");
+
+    let response = client
+        .post(url)
+        .header("Content-Type", "application/json")
+        .body(data)
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        let error_text = response.text().await?;
+        return Err(format!("Error uploading to Lens Storage: {}", error_text).into());
+    }
+
+    let text_response = response.text().await?;
+    let json_response: Value = from_str(&text_response)?;
+
+    if let Some(uri) = json_response.get(0).and_then(|item| item.get("uri")) {
+        if let Some(uri_str) = uri.as_str() {
+            return Ok(uri_str.to_string());
+        }
+    }
+
+    Err("Couldn't get URI.".into())
 }

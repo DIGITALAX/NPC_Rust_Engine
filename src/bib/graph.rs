@@ -22,14 +22,13 @@ pub async fn handle_collections(
 
     let query = json!({
         "query": r#"
-        query(id: String!) {
-            agentAssigneds(where: {id: $id}) {
+        query(npc: String!) {
+            agentCollections(where: {npc: $npc}) {
                 collections {
                    collectionId
                    metadata {
-                        image
+                        images
                         description
-                        title
                    }
                 }
             }
@@ -38,7 +37,7 @@ pub async fn handle_collections(
         "variables": {
             "request": {
                 "where": {
-                    "id": [address]
+                    "npc": address
                 }
             }
         }
@@ -46,10 +45,12 @@ pub async fn handle_collections(
 
     let graph_key: String = var("GRAPH_KEY").expect("GRAPH_KEY not configured in .env");
     let res = client
-        .post(format!(
-            "{}{}/subgraphs/id/8JRara6TGvHV6gKHr5rqeMUsjpAmxe6QHVv8vc23g2KY",
-            GRAPH_URI, graph_key
-        ))
+        .post(
+            "https://api.studio.thegraph.com/query/37770/autograph-lensv3/version/latest", // format!(
+                                                                                           // "{}{}/subgraphs/id/8JRara6TGvHV6gKHr5rqeMUsjpAmxe6QHVv8vc23g2KY",
+                                                                                           // GRAPH_URI, graph_key
+                                                                                           // )
+        )
         .json(&query)
         .send()
         .await;
@@ -58,11 +59,11 @@ pub async fn handle_collections(
         Ok(response) => {
             let parsed: Value = response.json().await?;
             let empty_vec = vec![];
-            let agent_assigned = &parsed["data"]["agentAssigneds"]
+            let agent_collections = &parsed["data"]["agentCollections"]
                 .as_array()
                 .unwrap_or(&empty_vec)[0];
 
-            let colecciones = agent_assigned["collections"]
+            let colecciones = agent_collections["collections"]
                 .as_array()
                 .unwrap_or(&empty_vec);
             let mut coleccion = Coleccion {
@@ -75,7 +76,7 @@ pub async fn handle_collections(
                 let elegido = obtener_coleccion(registro_colecciones, colecciones.len() as u8);
 
                 coleccion = Coleccion {
-                    imagen: colecciones[elegido as usize]["metadata"]["image"].to_string(),
+                    imagen: colecciones[elegido as usize]["metadata"]["images"][0].to_string(),
                     descripcion: colecciones[elegido as usize]["metadata"]["description"]
                         .to_string(),
                     coleccion_id: colecciones[elegido as usize]["collectionId"].to_string(),
@@ -132,7 +133,7 @@ pub async fn handle_agents() -> Result<HashMap<String, HalfSprite>, Box<dyn Erro
 
     match res {
         Ok(response) => {
-     let parsed: Value = response.json().await?;
+            let parsed: Value = response.json().await?;
             let empty_vec = vec![];
             let agent_createds = parsed["data"]["agentCreateds"]
                 .as_array()
@@ -154,10 +155,10 @@ pub async fn handle_agents() -> Result<HashMap<String, HalfSprite>, Box<dyn Erro
                     .and_then(|w| w.as_str())
                     .unwrap_or("")
                     .to_string();
+
                 let account_address = handle_lens_account(&billetera, false)
                     .await
                     .unwrap_or_default();
-
                 let metadata = agent_created["metadata"].clone();
                 let is_metadata_empty = metadata.is_null()
                     || metadata.as_object().map(|o| o.is_empty()).unwrap_or(false);
@@ -237,7 +238,6 @@ pub async fn handle_agents() -> Result<HashMap<String, HalfSprite>, Box<dyn Erro
 pub async fn handle_escenas() -> Result<Vec<Escena>, Box<dyn Error + Send + Sync>> {
     let agents = handle_agents().await?;
 
-
     Ok(LISTA_ESCENA
         .iter()
         .map(|escena| Escena {
@@ -280,4 +280,102 @@ pub async fn handle_escenas() -> Result<Vec<Escena>, Box<dyn Error + Send + Sync
                 .collect(),
         })
         .collect())
+}
+
+pub async fn calculate_amount(address: String) -> U256 {
+    let client = Client::new();
+    let query = serde_json::json!({
+        "query": r#"
+            query {
+                agentScores_collection {
+                    npc
+                    scores {
+                        metadata {
+                            comment
+                            model
+                            scene
+                            chatContext
+                            appearance
+                            personality
+                            training
+                            lora
+                            collections
+                            spriteSheet
+                            tokenizer
+                            global
+                        }
+                    }
+                }
+            }
+        "#
+    });
+
+    let res = client
+        .post("https://api.studio.thegraph.com/query/37770/autograph-lensv3/version/latest")
+        .json(&query)
+        .send()
+        .await;
+
+    match res {
+        Ok(response) => match response.json::<Value>().await {
+            Ok(parsed) => {
+                let mut agent_totals: HashMap<String, f64> = HashMap::new();
+                let mut global_total = 0.0;
+
+                let empty_vec = vec![];
+                let agents = parsed["data"]["agentScores_collection"]
+                    .as_array()
+                    .unwrap_or(&empty_vec);
+
+                for agent in agents {
+                    let npc = agent["npc"].as_str().unwrap_or("").to_string();
+                    let scores = agent["scores"].as_array().unwrap_or(&empty_vec);
+
+                    let mut agent_score_total = 0.0;
+
+                    for score in scores {
+                        if let Some(metadata) = score.get("metadata") {
+                            let mut score_total = 0.0;
+
+                            if let Some(obj) = metadata.as_object() {
+                                for (key, value) in obj {
+                                    if key == "comment" {
+                                        continue;
+                                    }
+
+                                    if let Some(v) = value.as_str() {
+                                        if let Ok(num) = v.parse::<f64>() {
+                                            score_total += num;
+                                        }
+                                    }
+                                }
+                            }
+
+                            agent_score_total += score_total;
+                        }
+                    }
+
+                    global_total += agent_score_total;
+                    agent_totals.insert(npc, agent_score_total);
+                }
+
+                if global_total == 0.0 {
+                    return U256::from(0);
+                }
+                let this_agent_score = agent_totals.get(&address).cloned().unwrap_or(0.0);
+                let percentage = this_agent_score / global_total;
+
+                let amount_scaled = percentage * 100.0 * 1e18;
+                U256::from(amount_scaled as u128)
+            }
+            Err(err) => {
+                eprintln!("Error parsing JSON: {}", err);
+                U256::from(0)
+            }
+        },
+        Err(err) => {
+            eprintln!("Error with graph response: {}", err);
+            U256::from(0)
+        }
+    }
 }

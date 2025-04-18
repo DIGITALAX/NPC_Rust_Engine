@@ -8,12 +8,13 @@ use ethers::{
     types::U256,
 };
 use serde::{Deserialize, Serialize};
-use tokio::runtime::Handle;
 use std::{
     collections::HashMap,
+    fmt,
     sync::{Arc, Mutex},
 };
 use strum::EnumIter;
+use tokio::runtime::Handle;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct Coordenada {
@@ -219,6 +220,20 @@ pub struct EmptyEscena {
     pub interactivos: Vec<Interactivo>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct SocketEscena {
+    pub clave: String,
+    pub mundo: Talla,
+    pub imagen: String,
+    pub prohibido: Vec<Prohibido>,
+    pub profundidad: Vec<Articulo>,
+    pub sillas: Vec<Silla>,
+    pub fondo: Fondo,
+    pub objetos: Vec<Articulo>,
+    pub sprites: Vec<Sprite>,
+    pub interactivos: Vec<Interactivo>,
+}
+
 #[derive(Clone)]
 pub struct GameTimer {
     pub ticks: u32,
@@ -286,7 +301,7 @@ pub enum RespuestaTrabajadora<'a> {
 pub struct Mention {
     pub content: String,
     pub id: String,
-    pub post_id: String
+    pub post_id: String,
 }
 
 #[derive(Clone, Debug)]
@@ -330,11 +345,18 @@ pub struct NPCAleatorio {
     pub sillas_ocupadas: Arc<Mutex<Vec<Silla>>>,
     pub contador: f32,
     pub reloj_juego: GameTimer,
+    pub reloj_au: u64,
     pub silla_cerca: Option<Coordenada>,
     pub mapa: Mapa,
     pub escena: String,
     pub ultimo_tiempo_comprobacion: u64,
-    pub autograph_data_contrato: Arc<
+    pub spectator_rewards_contrato: Arc<
+    ContractInstance<
+        Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
+        SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
+    >,
+>,
+    pub autograph_catalog_contrato: Arc<
         ContractInstance<
             Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
             SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
@@ -345,7 +367,7 @@ pub struct NPCAleatorio {
     pub registro_paginas: Vec<U256>,
     pub registro_colecciones: Vec<U256>,
     pub ultima_mencion: String,
-    pub manija: Handle
+    pub manija: Handle,
 }
 
 #[derive(Clone)]
@@ -365,9 +387,24 @@ impl Clone for EngineWrapper {
     }
 }
 
-impl std::fmt::Debug for NPCAleatorio {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "NPCAleatorio {{ /* campos personalizados aquí */ }}")
+impl fmt::Debug for NPCAleatorio {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("NPCAleatorio")
+            .field("escena", &self.escena)
+            .field("npc", &self.npc)
+            .field("contador", &self.contador)
+            .field("movimientos_max", &self.movimientos_max)
+            .field("silla_cerca", &self.silla_cerca)
+            .field(
+                "ultimo_tiempo_comprobacion",
+                &self.ultimo_tiempo_comprobacion,
+            )
+            .field("tokens", &self.tokens)
+            .field("registro_tipos", &self.registro_tipos)
+            .field("registro_paginas", &self.registro_paginas)
+            .field("registro_colecciones", &self.registro_colecciones)
+            .field("ultima_mencion", &self.ultima_mencion)
+            .finish()
     }
 }
 
@@ -390,9 +427,7 @@ pub struct Contenido {
     pub mainContentFocus: String,
     pub title: String,
     pub content: String,
-    pub appId: String,
     pub id: String,
-    pub hideFromFeed: bool,
     pub locale: String,
     pub tags: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -439,7 +474,6 @@ impl TryFrom<u8> for LensType {
     }
 }
 
-
 impl Tokenizable for LensType {
     fn from_token(token: Token) -> Result<Self, ethers::abi::InvalidOutputType> {
         match token {
@@ -477,7 +511,7 @@ pub struct LensTokens {
 #[derive(Debug, Clone)]
 pub struct TokensAlmacenados {
     pub tokens: LensTokens,
-    pub expira_en: i64,
+    pub expiry: i64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

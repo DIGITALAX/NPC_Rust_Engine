@@ -18,7 +18,7 @@ impl EscenaEstudio {
 
         let npcs: Vec<NPCAleatorio> = sprites
             .iter()
-            .map(|sprite| {
+            .filter_map(|sprite| {
                 let npc = NPCAleatorio::new(
                     sprite.clone(),
                     Arc::clone(&sillas_ocupadas),
@@ -48,7 +48,6 @@ impl EscenaEstudio {
 
     pub fn request_state(&mut self) -> Option<RespuestaTrabajadora> {
         let mut estados: Vec<&Vec<Estado>> = Vec::new();
-
         for npc in &mut self.npcs {
             estados.push(npc.conseguir_estado());
         }
