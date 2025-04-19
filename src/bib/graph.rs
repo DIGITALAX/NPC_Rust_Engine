@@ -46,7 +46,7 @@ pub async fn handle_collections(
     let graph_key: String = var("GRAPH_KEY").expect("GRAPH_KEY not configured in .env");
     let res = client
         .post(format!(
-            "{}{}/subgraphs/id/41wxYK53EBTYKtUAe97fHJk6mtHzm6cu9dLAC4nUiYvc",
+            "{}{}/subgraphs/id/QmSXPWmBFwczHUh6XavV6Rp8RpmtPKAu3HMxaxg6EDD6xx",
             GRAPH_URI, graph_key
         ))
         .json(&query)
@@ -307,7 +307,7 @@ pub async fn calculate_amount(address: String) -> U256 {
     let graph_key: String = var("GRAPH_KEY").expect("GRAPH_KEY not configured in .env");
     let res = client
         .post(format!(
-            "{}{}/subgraphs/id/41wxYK53EBTYKtUAe97fHJk6mtHzm6cu9dLAC4nUiYvc",
+            "{}{}/subgraphs/id/QmSXPWmBFwczHUh6XavV6Rp8RpmtPKAu3HMxaxg6EDD6xx",
             GRAPH_URI, graph_key
         ))
         .json(&query)
