@@ -3,6 +3,7 @@ use crate::bib::{
     contracts::initialize_api,
     types::{LensTokens, Mention, TokensAlmacenados},
 };
+use dotenv::{from_filename, var};
 use ethers::{
     providers::Middleware,
     signers::{LocalWallet, Signer},
@@ -48,9 +49,13 @@ async fn refresh(
         }
     });
 
+    from_filename(".env").ok();
+    let server_key: String = var("SERVER_KEY").expect("SERVER_KEY not configured in .env");
+
     let response = client
         .post(LENS_API)
         .header("Authorization", format!("Bearer {}", auth_tokens))
+        .header("x-api-key", server_key)
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
         // .header("Origin", "http://localhost:3000")
@@ -112,9 +117,13 @@ pub async fn authenticate(
         }
     });
 
+    from_filename(".env").ok();
+    let server_key: String = var("SERVER_KEY").expect("SERVER_KEY not configured in .env");
+
     let res = client
         .post(LENS_API)
         .header("Content-Type", "application/json")
+        .header("x-api-key", server_key)
         .header("Origin", "https://npc-rust-engine.onrender.com")
         // .header("Origin", "http://localhost:3000")
         .json(&mutation)
@@ -164,8 +173,13 @@ pub async fn authenticate(
                         }
                     });
 
+                    from_filename(".env").ok();
+                    let server_key: String =
+                        var("SERVER_KEY").expect("SERVER_KEY not configured in .env");
+
                     let response = client
                         .post(LENS_API)
+                        .header("x-api-key", server_key)
                         .header("Content-Type", "application/json")
                         .header("Origin", "https://npc-rust-engine.onrender.com")
                         // .header("Origin", "http://localhost:3000")
@@ -306,8 +320,12 @@ pub async fn make_publication(
         }
     });
 
+    from_filename(".env").ok();
+    let server_key: String = var("SERVER_KEY").expect("SERVER_KEY not configured in .env");
+
     let response = client
         .post(LENS_API)
+        .header("x-api-key", server_key)
         .header("Authorization", format!("Bearer {}", auth_tokens))
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
@@ -422,9 +440,13 @@ async fn poll(hash: &str, auth_tokens: &str) -> Result<String, Box<dyn Error + S
         }
     });
 
+    from_filename(".env").ok();
+    let server_key: String = var("SERVER_KEY").expect("SERVER_KEY not configured in .env");
+
     let response = client
         .post(LENS_API)
         .header("Authorization", format!("Bearer {}", auth_tokens))
+        .header("x-api-key", server_key)
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
         // .header("Origin", "http://localhost:3000")
@@ -487,8 +509,12 @@ pub async fn handle_lens_account(wallet: &str, username: bool) -> Result<String,
         }
     });
 
+    from_filename(".env").ok();
+    let server_key: String = var("SERVER_KEY").expect("SERVER_KEY not configured in .env");
+
     let response = client
         .post(LENS_API)
+        .header("x-api-key", server_key)
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
         // .header("Origin", "http://localhost:3000")
@@ -576,8 +602,12 @@ pub async fn make_comment(
         }
     });
 
+    from_filename(".env").ok();
+    let server_key: String = var("SERVER_KEY").expect("SERVER_KEY not configured in .env");
+
     let response = client
         .post(LENS_API)
+        .header("x-api-key", server_key)
         .header("Authorization", format!("Bearer {}", auth_tokens))
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
@@ -715,9 +745,13 @@ pub async fn make_quote(
         }
     });
 
+    from_filename(".env").ok();
+    let server_key: String = var("SERVER_KEY").expect("SERVER_KEY not configured in .env");
+
     let response = client
         .post(LENS_API)
         .header("Authorization", format!("Bearer {}", auth_tokens))
+        .header("x-api-key", server_key)
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
         // .header("Origin", "http://localhost:3000")
@@ -803,6 +837,7 @@ pub async fn make_quote(
 }
 
 pub async fn find_comment(
+    auth_tokens: &str,
     account_address: &str,
 ) -> Result<(String, String), Box<dyn Error + Send + Sync>> {
     let client = initialize_api();
@@ -856,9 +891,14 @@ pub async fn find_comment(
         }
     });
 
+    from_filename(".env").ok();
+    let server_key: String = var("SERVER_KEY").expect("SERVER_KEY not configured in .env");
+
     let res = client
         .post(LENS_API)
         .header("Content-Type", "application/json")
+        .header("Authorization", format!("Bearer {}", auth_tokens))
+        .header("x-api-key", server_key)
         .header("Origin", "https://npc-rust-engine.onrender.com")
         .json(&query)
         .send()
@@ -905,7 +945,10 @@ pub async fn find_comment(
     }
 }
 
-pub async fn make_like(gusta_on: &str) -> Result<String, Box<dyn std::error::Error>> {
+pub async fn make_like(
+    auth_tokens: &str,
+    gusta_on: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
     let client = initialize_api();
     let consulta = json!({
         "query": r#"
@@ -921,9 +964,14 @@ pub async fn make_like(gusta_on: &str) -> Result<String, Box<dyn std::error::Err
         }
     });
 
+    from_filename(".env").ok();
+    let server_key: String = var("SERVER_KEY").expect("SERVER_KEY not configured in .env");
+
     let res = client
         .post(LENS_API)
+        .header("Authorization", format!("Bearer {}", auth_tokens))
         .header("Content-Type", "application/json")
+        .header("x-api-key", server_key)
         .header("Origin", "https://npc-rust-engine.onrender.com")
         .json(&consulta)
         .send()
@@ -975,9 +1023,13 @@ pub async fn make_mirror(
         }
     });
 
+    from_filename(".env").ok();
+    let server_key: String = var("SERVER_KEY").expect("SERVER_KEY not configured in .env");
+
     let response = client
         .post(LENS_API)
         .header("Authorization", format!("Bearer {}", auth_tokens))
+        .header("x-api-key", server_key)
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
         // .header("Origin", "http://localhost:3000")
@@ -1036,9 +1088,13 @@ pub async fn get_mentions(
         }
     });
 
+    from_filename(".env").ok();
+    let server_key: String = var("SERVER_KEY").expect("SERVER_KEY not configured in .env");
+
     let response = client
         .post(LENS_API)
         .header("Authorization", format!("Bearer {}", auth_tokens))
+        .header("x-api-key", server_key)
         .header("Content-Type", "application/json")
         .header("Origin", "https://npc-rust-engine.onrender.com")
         .json(&query)

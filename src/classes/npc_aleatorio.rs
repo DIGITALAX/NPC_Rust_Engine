@@ -661,13 +661,14 @@ impl NPCAleatorio {
             || lens_tipo == LensType::Quote
             || lens_tipo == LensType::Mirror
         {
-            let (contenido, comentario_id) = match find_comment(&account_address).await {
-                Ok(result) => result,
-                Err(e) => {
-                    eprintln!("Error al encontrar el comentario: {}", e);
-                    return;
-                }
-            };
+            let (contenido, comentario_id) =
+                match find_comment(&access_tokens, &account_address).await {
+                    Ok(result) => result,
+                    Err(e) => {
+                        eprintln!("Error al encontrar el comentario: {}", e);
+                        return;
+                    }
+                };
 
             if lens_tipo != LensType::Mirror {
                 match call_comment_completion(
@@ -862,7 +863,7 @@ async fn formatear_pub(
         || lens_tipo == LensType::Quote
         || lens_tipo == LensType::Comment
     {
-        match make_like(comentario_id).await {
+        match make_like(access_token, comentario_id).await {
             Ok(_) => {}
             Err(e) => {
                 eprintln!("Error al gustar la publicacion al IPFS: {}", e);
