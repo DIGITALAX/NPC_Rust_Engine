@@ -1104,6 +1104,8 @@ pub async fn get_mentions(
     if response.status().is_success() {
         let json: Value = response.json().await?;
 
+        println!("Notifications Json: {}", json);
+
         if let Some(mentions) = json["data"]["notifications"]["items"].as_array() {
             if !mentions.is_empty() {
                 Ok(mentions
@@ -1119,7 +1121,8 @@ pub async fn get_mentions(
                 return Err("Error: Unexpected Structure for notifications".into());
             }
         } else {
-            return Err("Error: with notifications data".into());
+            eprintln!("Error: with notifications data");
+            return Ok(Vec::new());
         }
     } else {
         return Err(format!("Error: {}", response.status()).into());
