@@ -11,7 +11,7 @@ pub static LENS_CHAIN_ID: LazyLock<u64> = LazyLock::new(|| 232);
 pub static LENS_API: &'static str = "https://api.lens.xyz/graphql";
 pub static LENS_RPC_URL: &'static str = "https://rpc.lens.xyz";
 pub static AUTOGRAPH_CATALOG: &'static str = "0x928F1B622389038552dE950E3928CBc44BC4d409";
-pub static SPECTATOR_REWARDS: &'static str = "0xEBF04050D02F3Fa1a9428170e2E42e9608280a12";
+pub static SPECTATOR_REWARDS: &'static str = "0x8fb47EB90dcEb3FFaC576da3fdBbDb047Bcb2f6e";
 pub static INFURA_GATEWAY: &'static str = "https://thedial.infura-ipfs.io";
 pub static VENICE_API: &'static str = "https://api.venice.ai/api/v1/";
 pub static GRAPH_URI: &str = "https://gateway-arbitrum.network.thegraph.com/api/";
@@ -376,7 +376,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 36_000_000,
+                    publicacion_reloj: 432_000,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -394,7 +394,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 35_000_000,
+                    publicacion_reloj: 259_200,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -412,7 +412,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 10.0,
-                    publicacion_reloj: 34_000_000,
+                    publicacion_reloj: 345_600,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -430,7 +430,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 10.0,
-                    publicacion_reloj: 32_000_000,
+                    publicacion_reloj: 229_200,
                     amigos: vec![],
                 },
             ],
@@ -671,8 +671,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 30_000_000,
-                    // publicacion_reloj: 3000,
+                    publicacion_reloj: 219_200,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -690,7 +689,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 29_000_000,
+                    publicacion_reloj: 221_200,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -708,7 +707,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 40_000_000,
+                    publicacion_reloj: 241_200,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -726,7 +725,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 44_000_000,
+                    publicacion_reloj: 180_000,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -744,7 +743,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 41_000_000,
+                    publicacion_reloj: 323_000,
                     amigos: vec![],
                 },
             ],
@@ -1019,7 +1018,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    publicacion_reloj: 38_000_000,
+                    publicacion_reloj: 423_000,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -1037,7 +1036,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 39_000_000,
+                    publicacion_reloj: 198_000,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -1055,7 +1054,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 39_100_000,
+                    publicacion_reloj: 298_000,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -1073,7 +1072,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 36_100_000,
+                    publicacion_reloj: 315_060,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -1091,7 +1090,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 36_200_000,
+                    publicacion_reloj: 295_060,
                     amigos: vec![],
                 },
             ],
@@ -1658,7 +1657,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    publicacion_reloj: 40_100_000,
+                    publicacion_reloj: 225_060,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -1676,7 +1675,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 40_500_000,
+                    publicacion_reloj: 273_120,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -1694,7 +1693,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 40_800_000,
+                    publicacion_reloj: 291_185,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -1712,7 +1711,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 38_500_000,
+                    publicacion_reloj: 215_900,
                     amigos: vec![],
                 },
             ],
@@ -2069,7 +2068,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    publicacion_reloj: 39_500_000,
+                    publicacion_reloj: 419_000,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -2087,7 +2086,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 39_600_000,
+                    publicacion_reloj: 172_800,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -2105,7 +2104,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 39_900_000,
+                    publicacion_reloj: 152_800,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -2123,7 +2122,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 42_900_000,
+                    publicacion_reloj: 192_500,
                     amigos: vec![],
                 },
             ],
@@ -2571,7 +2570,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    publicacion_reloj: 30_900_000,
+                    publicacion_reloj: 185_500,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -2589,7 +2588,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 33_700_000,
+                    publicacion_reloj: 122_500,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -2607,7 +2606,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 31_700_000,
+                    publicacion_reloj: 212_500,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -2625,7 +2624,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 37_200_000,
+                    publicacion_reloj: 204_500,
                     amigos: vec![],
                 },
             ],
@@ -3048,7 +3047,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    publicacion_reloj: 40_250_000,
+                    publicacion_reloj: 172_100,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -3066,7 +3065,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 44_220_000,
+                    publicacion_reloj: 132_100,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -3084,7 +3083,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 40_220_000,
+                    publicacion_reloj: 199_900,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -3102,7 +3101,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 48_220_000,
+                    publicacion_reloj: 200_900,
                     amigos: vec![],
                 },
             ],
@@ -3435,7 +3434,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    publicacion_reloj: 30_500_000,
+                    publicacion_reloj: 321_900,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -3453,7 +3452,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 38_500_000,
+                    publicacion_reloj: 259_200,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -3471,7 +3470,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    publicacion_reloj: 40_500_000,
+                    publicacion_reloj: 219_200,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -3489,7 +3488,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 41_500_000,
+                    publicacion_reloj: 152_150,
                     amigos: vec![],
                 },
                 EmptySprite {
@@ -3507,7 +3506,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 45_500_000,
+                    publicacion_reloj: 199_900,
                     amigos: vec![],
                 },
             ],

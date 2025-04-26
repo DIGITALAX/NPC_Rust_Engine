@@ -22,8 +22,6 @@ use uuid::Uuid;
 
 static CLIENTE: OnceLock<Arc<Client>> = OnceLock::new();
 
-
-
 pub fn cliente() -> Arc<Client> {
     CLIENTE
         .get_or_init(|| {
@@ -104,7 +102,6 @@ pub async fn subir_ipfs_imagen(base64_str: &str) -> Result<IpfsRespuesta, Box<dy
     }
 }
 
-
 pub async fn upload_lens_storage(data: String) -> Result<String, Box<dyn Error>> {
     let client = cliente();
     // let storage_key = get_storage_key().await?;
@@ -132,4 +129,23 @@ pub async fn upload_lens_storage(data: String) -> Result<String, Box<dyn Error>>
     }
 
     Err("Couldn't get URI.".into())
+}
+
+pub async fn upload_ipfs(data: String) -> Result<IpfsRespuesta, Box<dyn Error + Send + Sync>> {
+    let cliente = cliente();
+    let aut_encoded = autenticacion();
+
+    let form: Form = Form::new().part("file", Part::text(data.clone()).file_name("data.json"));
+
+    let response = cliente
+        .post("https://ipfs.infura.io:5001/api/v0/add")
+        .header("Authorization", format!("Basic {}", aut_encoded))
+        .multipart(form)
+        .send()
+        .await?;
+
+    let text_response = response.text().await?;
+    let ipfs_response: IpfsRespuesta = from_str(&text_response)?;
+
+    Ok(ipfs_response)
 }

@@ -281,22 +281,30 @@ pub async fn calculate_amount(address: String) -> U256 {
     let query = serde_json::json!({
         "query": r#"
             query {
-                agentScores_collection {
-                    npc
-                    scores {
-                        metadata {
-                            comment
-                            model
-                            scene
-                            chatContext
-                            appearance
-                            personality
-                            training
-                            lora
-                            collections
-                            spriteSheet
-                            tokenizer
-                            global
+                agents {
+                    id
+                    address
+                    au
+                    auTotal
+                    cycleSpectators
+                    activity {
+                        id
+                        data
+                        spectator
+                        blockTimestamp
+                        spectateMetadata {
+                        comment
+                        model
+                        scene
+                        chatContext
+                        appearance
+                        collections
+                        personality
+                        training
+                        tokenizer
+                        lora
+                        spriteSheet
+                        global
                         }
                     }
                 }
@@ -307,7 +315,7 @@ pub async fn calculate_amount(address: String) -> U256 {
     let graph_key: String = var("GRAPH_KEY").expect("GRAPH_KEY not configured in .env");
     let res = client
         .post(format!(
-            "{}{}/subgraphs/id/41wxYK53EBTYKtUAe97fHJk6mtHzm6cu9dLAC4nUiYvc",
+            "{}{}/subgraphs/id/2gspF99UDwMQFt3dcVeTogWcMWPspQFFDf828Zv2RNMH",
             GRAPH_URI, graph_key
         ))
         .json(&query)
@@ -321,18 +329,16 @@ pub async fn calculate_amount(address: String) -> U256 {
                 let mut global_total = 0.0;
 
                 let empty_vec = vec![];
-                let agents = parsed["data"]["agentScores_collection"]
-                    .as_array()
-                    .unwrap_or(&empty_vec);
+                let agents = parsed["data"]["agents"].as_array().unwrap_or(&empty_vec);
 
                 for agent in agents {
-                    let npc = agent["npc"].as_str().unwrap_or("").to_string();
-                    let scores = agent["scores"].as_array().unwrap_or(&empty_vec);
+                    let npc = agent["address"].as_str().unwrap_or("").to_string();
+                    let scores = agent["activity"].as_array().unwrap_or(&empty_vec);
 
                     let mut agent_score_total = 0.0;
 
                     for score in scores {
-                        if let Some(metadata) = score.get("metadata") {
+                        if let Some(metadata) = score.get("spectateMetadata") {
                             let mut score_total = 0.0;
 
                             if let Some(obj) = metadata.as_object() {
@@ -376,4 +382,131 @@ pub async fn calculate_amount(address: String) -> U256 {
             U256::from(0)
         }
     }
+}
+
+pub async fn handle_agent_info(agent: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
+    let mut first_activity: Value = Value::Null;
+    let mut info: Value = Value::Null;
+
+    let client = Client::new();
+    let graph_key: String = var("GRAPH_KEY").expect("GRAPH_KEY not configured in .env");
+
+    let query_activity = serde_json::json!({
+        "query": r#"
+            query($address: String!) {
+                agents(where: {address: $address}) {
+                    address
+                    au
+                    auTotal
+                    cycleSpectators
+                    activity {
+                        id
+                        data
+                        spectator
+                        blockTimestamp
+                        spectateMetadata {
+                            comment
+                            model
+                            scene
+                            chatContext
+                            appearance
+                            collections
+                            personality
+                            training
+                            tokenizer
+                            lora
+                            spriteSheet
+                            global
+                        }
+                    }
+                }
+            }
+        "#,
+        "variables": {
+            "address": agent
+        }
+    });
+
+    let res = client
+        .post(format!(
+            "{}{}/subgraphs/id/2gspF99UDwMQFt3dcVeTogWcMWPspQFFDf828Zv2RNMH",
+            GRAPH_URI, graph_key
+        ))
+        .json(&query_activity)
+        .send()
+        .await?;
+
+    let parsed: Value = res.json().await?;
+    let empty_vec = vec![];
+    let first_agent = parsed["data"]["agents"]
+        .as_array()
+        .unwrap_or(&empty_vec)
+        .first();
+
+    if let Some(agent_data) = first_agent {
+        let activities = agent_data["activity"].as_array().unwrap_or(&empty_vec);
+        if let Some(activity) = activities.first() {
+            first_activity = activity.clone();
+        }
+
+        let query_agents = json!({
+            "query": r#"
+                query {
+                    agentCreateds(first: 100, where: { studio: true }) {
+                        wallets
+                        SkyhuntersAgentManager_id
+                        creator
+                        uri
+                        metadata {
+                            title
+                            bio
+                            lore
+                            adjectives
+                            style
+                            knowledge
+                            messageExamples
+                            model
+                            cover
+                            customInstructions
+                        }
+                    }
+                }
+            "#
+        });
+
+        let res2 = client
+            .post(format!(
+                "{}{}/subgraphs/id/5XK1Z5BL6TGMmpJV4irttCu4RgAePp7sPLKnPZfXVCcK",
+                GRAPH_URI, graph_key
+            ))
+            .json(&query_agents)
+            .send()
+            .await?;
+
+        let parsed2: Value = res2.json().await?;
+        let agents_created = parsed2["data"]["agentCreateds"]
+            .as_array()
+            .unwrap_or(&empty_vec);
+
+        let matching_agent = agents_created.iter().find(|agent_obj| {
+            agent_obj["wallets"]
+                .as_array()
+                .unwrap_or(&vec![])
+                .iter()
+                .filter_map(|wallet| wallet.as_str())
+                .any(|wallet_str| wallet_str.to_lowercase() == agent.to_lowercase())
+        });
+        if let Some(found_agent) = matching_agent {
+            info = found_agent.clone();
+        } else {
+            return Err("No matching agent found".into());
+        }
+    } else {
+        return Err("No agent found".into());
+    }
+
+    Ok(serde_json::to_string(&json!({
+        "latest_score": first_activity,
+        "info": info,
+    }))?)
 }

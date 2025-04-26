@@ -3,7 +3,7 @@ use crate::{
         constants::{LENS_CHAIN_ID, SPECTATOR_REWARDS},
         contracts::initialize_contracts,
         graph::{calculate_amount, handle_collections},
-        ipfs::{subir_ipfs_imagen, upload_lens_storage},
+        ipfs::{subir_ipfs_imagen, upload_ipfs, upload_lens_storage},
         lens::{
             find_comment, get_mentions, handle_tokens, make_comment, make_like, make_mirror,
             make_publication, make_quote,
@@ -15,7 +15,7 @@ use crate::{
         utils::{between, format_instructions, obtener_lens, obtener_pagina},
         venice::{
             call_chat_completion, call_comment_completion, call_gen_image, call_mention,
-            call_prompt, call_publication_completion,
+            call_prompt, call_publication_completion, call_spectate,
         },
     },
     TokensAlmacenados,
@@ -25,7 +25,7 @@ use ethers::{
     middleware::{Middleware, SignerMiddleware},
     providers::{Http, Provider},
     signers::LocalWallet,
-    types::{Address, Eip1559TransactionRequest, NameOrAddress, H256, U256},
+    types::{Address, Eip1559TransactionRequest, NameOrAddress, H160, H256, U256},
 };
 use pathfinding::prelude::astar;
 use rand::{thread_rng, Rng};
@@ -100,18 +100,19 @@ impl NPCAleatorio {
             self.ultimo_tiempo_comprobacion += delta_time;
         }
 
-        // if self.reloj_au < 604_800_000 {
-        //     self.reloj_au += delta_time;
-        // }
+        if self.reloj_au < 604_800_000 {
+            self.reloj_au += delta_time;
+        }
 
-        // if self.reloj_au >= 604_800_000 {
-        //     self.add_au_agent();
-        //     self.reloj_au = 0;
-        // }
+        if self.reloj_au >= 604_800_000 {
+            self.add_au_agent();
+            self.reloj_au = 0;
+        }
 
         if self.ultimo_tiempo_comprobacion >= self.npc.publicacion_reloj {
             self.ultimo_tiempo_comprobacion = 0;
             self.comprobar_actividad();
+            self.agent_spectate();
         }
     }
 
@@ -338,6 +339,103 @@ impl NPCAleatorio {
         }
     }
 
+    fn agent_spectate(&self) {
+        let npc_clone = Arc::new(self.clone());
+
+        self.manija.spawn(async move {
+            let chosen_agent =
+                &npc_clone.npc.amigos[thread_rng().gen_range(0..npc_clone.npc.amigos.len())];
+
+            match call_spectate(
+                &chosen_agent,
+                &format_instructions(&npc_clone.npc.prompt),
+                &npc_clone.npc.prompt.model,
+            )
+            .await
+            {
+                Ok(data) => match upload_ipfs(data).await {
+                    Ok(ipfs) => {
+                        let method = npc_clone
+                            .spectator_rewards_contrato
+                            .method::<(String, Address), H256>(
+                                "spectate",
+                                (
+                                    format!("ipfs://{}", ipfs.Hash),
+                                    H160::from_str(&chosen_agent).unwrap(),
+                                ),
+                            );
+
+                        match method {
+                            Ok(call) => {
+                                let FunctionCall { tx, .. } = call;
+
+                                if let Some(tx_request) = tx.as_eip1559_ref() {
+                                    let gas_price = U256::from(500_000_000_000u64);
+                                    let max_priority_fee = U256::from(25_000_000_000u64);
+                                    let gas_limit = U256::from(300_000);
+
+                                    let client =
+                                        npc_clone.spectator_rewards_contrato.client().clone();
+                                    let chain_id = *LENS_CHAIN_ID;
+                                    let req = Eip1559TransactionRequest {
+                                        from: Some(
+                                            npc_clone.npc.billetera.parse::<Address>().unwrap(),
+                                        ),
+                                        to: Some(NameOrAddress::Address(
+                                            SPECTATOR_REWARDS.parse::<Address>().unwrap(),
+                                        )),
+                                        gas: Some(gas_limit),
+                                        value: tx_request.value,
+                                        data: tx_request.data.clone(),
+                                        max_priority_fee_per_gas: Some(max_priority_fee),
+                                        max_fee_per_gas: Some(gas_price + max_priority_fee),
+                                        chain_id: Some(chain_id.into()),
+                                        ..Default::default()
+                                    };
+
+                                    match client.send_transaction(req, None).await {
+                                        Ok(tx) => {
+                                            match tx.confirmations(1).await {
+                                                Ok(hash) => {
+                                                    println!(
+                                                        "Spectate {} TX Hash: {:?} on Agent {}",
+                                                        npc_clone.npc.id, hash, chosen_agent
+                                                    );
+                                                }
+                                                Err(e) => {
+                                                    eprintln!(
+                                                        "Error with transaction confirmation: {:?}",
+                                                        e
+                                                    );
+                                                }
+                                            };
+                                        }
+                                        Err(e) => {
+                                            eprintln!(
+                                                "Error sending the transaction for spectate: {:?}",
+                                                e
+                                            );
+                                        }
+                                    };
+                                } else {
+                                    eprintln!("Error in sending Transaction");
+                                }
+                            }
+
+                            Err(err) => {
+                                eprintln!("Error in create method for spectate: {:?}", err);
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        eprintln!("Error with IPFS upload for spectate: {}", err)
+                    }
+                },
+                Err(err) => println!("Error with calling venice spectate {:?}", err),
+            }
+        });
+    }
+
     fn comprobar_actividad(&self) {
         let mut npc_clone = Arc::new(self.clone());
         let etiqueta = self.npc.etiqueta.clone();
@@ -401,9 +499,9 @@ impl NPCAleatorio {
                                 ..Default::default()
                             };
 
-                            let pending_tx = match client.send_transaction(req, None).await {
+                            match client.send_transaction(req, None).await {
                                 Ok(tx) => {
-                                    let tx_hash = match tx.confirmations(1).await {
+                                    match tx.confirmations(1).await {
                                         Ok(hash) => {
                                             println!(
                                                 "Agent {} TX Hash: {:?}",

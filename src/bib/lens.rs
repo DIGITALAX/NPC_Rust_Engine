@@ -1051,7 +1051,7 @@ pub async fn get_mentions(
     let client = initialize_api();
     let query = json!({
         "query": r#"
-            mutation Notifications($request: NotificationRequest!)   {
+            query Notifications($request: NotificationRequest!)   {
                 notifications(request: $request) {
                    ... on MentionNotification {
                     __typename

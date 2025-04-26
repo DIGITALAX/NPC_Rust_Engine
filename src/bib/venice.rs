@@ -6,8 +6,10 @@ use std::{error::Error, io};
 
 use crate::bib::{
     constants::{MODELS, NEGATIVE_PROMPT, SAMPLE_PROMPT, STYLE_PRESETS, VENICE_API},
-    utils::extract_values_prompt,
+    utils::{extract_values_prompt, extract_values_spectate},
 };
+
+use super::graph::handle_agent_info;
 
 pub async fn call_chat_completion(
     description: &str,
@@ -556,5 +558,129 @@ Response Format:
             io::ErrorKind::Other,
             format!("Error in obtaining Venice prompt {:?}", response.status()),
         )));
+    }
+}
+
+pub async fn call_spectate(
+    agent: &str,
+    custom_instructions: &str,
+    model: &str,
+) -> Result<String, Box<dyn Error + Send + Sync>> {
+    from_filename(".env").ok();
+    let venice_key: String = var("VENICE_KEY").expect("VENICE_KEY not configured in .env");
+
+    match handle_agent_info(agent).await {
+        Ok(agent_information) => {
+            let system_prompt = format!(
+                r#"As a meticulous evaluator of on-chain agent performance, you will assess the agent's activity with precision and objectivity, adhering strictly to the evaluation format provided in the input prompt. Your assessment will deliver fair, calculated scores and thoughtful commentary that contextualizes the agent's actions relative to its designated goal, ensuring a comprehensive yet balanced evaluation that neither understates achievements nor overlooks shortcomings in the agent's operational effectiveness.
+        
+        Also follow these custom instructions: {}"#,
+                custom_instructions
+            );
+
+            let input_prompt = format!(
+                r#"Score the activity and performance of the given agent. Your response must follow this exact format with no deviations or additional text:
+    
+        Comment: [Overall Comment on the agent's activity and performance, giving a judgement and evaluation - MAX 500 WORDS]
+            
+        Model: [SINGLE NUMBER BETWEEN 0-100. 0 is the lowest score. 100 is the highest score. You are scoring how well the llm model used performs]
+
+        Scene: [SINGLE NUMBER BETWEEN 0-100. 0 is the lowest score. 100 is the highest score. You are scoring how well the agent scene performs]
+
+        ChatContext: [SINGLE NUMBER BETWEEN 0-100. 0 is the lowest score. 100 is the highest score. You are scoring how well the agent chat context performs]
+
+        Appearance: [SINGLE NUMBER BETWEEN 0-100. 0 is the lowest score. 100 is the highest score. You are scoring how well the agent appearance performs]
+    
+        Personality: [SINGLE NUMBER BETWEEN 0-100. 0 is the lowest score. 100 is the highest score. You are scoring how well the agent personality performs]
+
+        Collections: [SINGLE NUMBER BETWEEN 0-100. 0 is the lowest score. 100 is the highest score. You are scoring based on how many assigned collections the agent has]
+
+        Training: [SINGLE NUMBER BETWEEN 0-100. 0 is the lowest score. 100 is the highest score. You are scoring based on the agent's training performance]
+
+        Tokenizer: [SINGLE NUMBER BETWEEN 0-100. 0 is the lowest score. 100 is the highest score. You are scoring based on the agent's tokenizer performance]
+
+        Lora: [SINGLE NUMBER BETWEEN 0-100. 0 is the lowest score. 100 is the highest score. You are scoring based on the agent's Lora performance]
+
+        Sprite: [SINGLE NUMBER BETWEEN 0-100. 0 is the lowest score. 100 is the highest score. You are scoring based on the agent's sprite sheet performance]
+
+        Global: [SINGLE NUMBER BETWEEN 0-100. 0 is the lowest score. 100 is the highest score. You are giving a global score based on overall factors]
+
+        Required format rules:
+        
+        Each field must be on a new line
+        No explanatory text
+        Prices must be in exact eth wei format
+        Amount must be single integer
+        No ranges or approximate numbers
+        No additional spaces or formatting
+        No dollar signs or currency symbols
+        If you are unsure of a score, give something mid-range like 40-50
+        No parentheses or additional notes. Do not put quotation marks around any of the content.
+        
+        
+        Information about the Agent you are scoring:
+        (Use this information to evaluate and score the agent and write an interesting and useful comment).
+        
+            {}
+
+        "#,
+                agent_information
+            );
+
+            let mut messages = vec![];
+
+            messages.push(json!({
+                "role": "system",
+                "content": system_prompt
+            }));
+            messages.push(json!({
+                "role": "user",
+                "content": input_prompt
+            }));
+
+            let client = Client::new();
+            let request_body = json!({
+                "model": model,
+                "messages": messages
+            });
+
+            let response = client
+                .post(format!("{}chat/completions", VENICE_API))
+                .header("Content-Type", "application/json")
+                .header("Authorization", format!("Bearer {}", venice_key))
+                .json(&request_body)
+                .send()
+                .await;
+
+            let response = match response {
+                Ok(resp) => resp,
+                Err(e) => {
+                    eprintln!("Error sending request to Venice API: {}", e);
+                    return Err(e.into());
+                }
+            };
+            if response.status() == 200 {
+                let response_json: Value = response.json().await?;
+                let completion = response_json["choices"][0]["message"]["content"]
+                    .as_str()
+                    .unwrap_or("")
+                    .to_string();
+
+                println!("Venice call successful for comment: {}", completion);
+
+                Ok::<String, Box<dyn Error + Send + Sync>>(extract_values_spectate(&completion)?)
+            } else {
+                return Err(Box::new(io::Error::new(
+                    io::ErrorKind::Other,
+                    format!("Error in obtaining Venice prompt {:?}", response.status()),
+                )));
+            }
+        }
+        Err(err) => {
+            return Err(Box::new(io::Error::new(
+                io::ErrorKind::Other,
+                format!("Error in obtaining agent info {:?}", err),
+            )));
+        }
     }
 }
