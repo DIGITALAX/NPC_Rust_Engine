@@ -11,7 +11,7 @@ use std::error::Error;
 use strum::IntoEnumIterator;
 
 pub fn between(min: f32, max: f32) -> f32 {
-    let mut rng = rand::thread_rng();
+    let mut rng = thread_rng();
     rng.gen_range(min..=max)
 }
 

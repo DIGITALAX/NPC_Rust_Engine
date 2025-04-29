@@ -10,7 +10,7 @@ use ethers::{
     types::{transaction::eip2718::TypedTransaction, Bytes, Eip1559TransactionRequest},
     utils::hex,
 };
-use rand::Rng;
+use rand::{thread_rng, Rng};
 use reqwest::Client;
 use serde_json::{json, Value};
 use std::{
@@ -909,7 +909,7 @@ pub async fn find_comment(
 
         if let Some(posts) = json["data"]["posts"]["items"].as_array() {
             if !posts.is_empty() {
-                let mut rng = rand::thread_rng();
+                let mut rng = thread_rng();
                 let mut encontrado = None;
                 let mut indice_aleatorio: usize = 0;
 
@@ -1050,16 +1050,17 @@ pub async fn get_mentions(
 ) -> Result<Vec<Mention>, Box<dyn Error + Send + Sync>> {
     let client = initialize_api();
     let query = json!({
-        "query": r#"
-            query Notifications($request: NotificationRequest!)   {
-                notifications(request: $request) {
-                   ... on MentionNotification {
-                    __typename
+       "query": r#"
+    query Notifications($request: NotificationRequest!) {
+        notifications(request: $request) {
+            items {
+                __typename
+                ... on MentionNotification {
                     id
                     post {
                         id
                         metadata {
-                             __typename
+                            __typename
                             ... on ArticleMetadata {
                                 content
                             }
@@ -1073,11 +1074,13 @@ pub async fn get_mentions(
                                 content
                             }
                         }
-                   }
-                 }
+                    }
                 }
             }
-        "#,
+        }
+    }
+"#,
+
         "variables": {
             "request": {
                 "filter": {
@@ -1111,10 +1114,14 @@ pub async fn get_mentions(
                 Ok(mentions
                     .iter()
                     .filter(|mention| mention["id"] != ultima_mencion)
-                    .map(|mention| Mention {
-                        id: mention["id"].to_string(),
-                        content: mention["post"]["content"].to_string(),
-                        post_id: mention["post"]["id"].to_string(),
+                    .filter_map(|mention| {
+                        let id = mention["id"].as_str()?.to_string();
+                        let post_id = mention["post"]["id"].as_str()?.to_string();
+                    
+                        let metadata = &mention["post"]["metadata"];
+                        let content = metadata["content"].as_str().unwrap_or("").to_string();
+                    
+                        Some(Mention { id, post_id, content })
                     })
                     .collect())
             } else {
