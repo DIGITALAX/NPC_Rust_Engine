@@ -623,37 +623,41 @@ impl NPCAleatorio {
 
         match get_mentions(&access_tokens, &self.ultima_mencion).await {
             Ok(menciones) => {
-                self.ultima_mencion = menciones.last().unwrap().id.clone();
-                for mencion in menciones {
-                    match call_mention(
-                        &mencion.content,
-                        &format_instructions(&self.npc.prompt),
-                        &self.npc.prompt.model,
-                    )
-                    .await
-                    {
-                        Ok(content) => {
-                            match formatear_pub(
-                                Some(content),
-                                None,
-                                LensType::Comment,
-                                &mencion.post_id,
-                                &self.escena,
-                                &access_tokens,
-                                &self.npc.etiqueta,
-                            )
-                            .await
-                            {
-                                Ok(()) => {
-                                    println!("Mention response sent");
-                                }
-                                Err(err) => {
-                                    eprintln!("Error in sending mention response {}", err);
+                if let Some(ultima) = menciones.last() {
+                    self.ultima_mencion = ultima.id.clone();
+                    for mencion in menciones {
+                        match call_mention(
+                            &mencion.content,
+                            &format_instructions(&self.npc.prompt),
+                            &self.npc.prompt.model,
+                        )
+                        .await
+                        {
+                            Ok(content) => {
+                                match formatear_pub(
+                                    Some(content),
+                                    None,
+                                    LensType::Comment,
+                                    &mencion.post_id,
+                                    &self.escena,
+                                    &access_tokens,
+                                    &self.npc.etiqueta,
+                                )
+                                .await
+                                {
+                                    Ok(()) => {
+                                        println!("Mention response sent");
+                                    }
+                                    Err(err) => {
+                                        eprintln!("Error in sending mention response {}", err);
+                                    }
                                 }
                             }
+                            Err(err) => eprintln!("Error in venice mention {}", err),
                         }
-                        Err(err) => eprintln!("Error in venice mention {}", err),
                     }
+                } else {
+                    eprintln!("No mentione");
                 }
             }
             Err(err) => {
