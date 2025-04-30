@@ -1125,7 +1125,8 @@ pub async fn get_mentions(
                     })
                     .collect())
             } else {
-                return Err("Error: Unexpected Structure for notifications".into());
+                eprintln!("Error: with notifications data");
+                return Ok(Vec::new());
             }
         } else {
             eprintln!("Error: with notifications data");

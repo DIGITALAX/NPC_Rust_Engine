@@ -266,7 +266,11 @@ pub async fn handle_escenas() -> Result<Vec<Escena>, Box<dyn Error + Send + Sync
                         movimientos_max: sprite.movimientos_max,
                         escala: sprite.escala.clone(),
                         publicacion_reloj: sprite.publicacion_reloj,
-                        amigos: sprite.amigos.clone(),
+                        amigos: sprite
+                            .amigos
+                            .iter()
+                            .filter_map(|amigo| agents.get(amigo).map(|a| a.billetera.clone()))
+                            .collect(),
                         account_address: half.account_address.clone(),
                         prompt: half.prompt.clone(),
                     })
