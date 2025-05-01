@@ -677,7 +677,6 @@ impl NPCAleatorio {
             let mut imagen = String::from("");
             let mut descripcion = String::from("");
 
-
             if lens_tipo == LensType::Autograph {
                 match handle_collections(&self.npc.billetera, self.registro_colecciones.clone())
                     .await

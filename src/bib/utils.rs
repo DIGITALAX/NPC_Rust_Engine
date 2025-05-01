@@ -110,90 +110,115 @@ pub async fn fetch_metadata(uri: &str) -> Option<Value> {
 }
 
 pub fn extract_values_spectate(input: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let comment_re = Regex::new(r"(?m)^Comment:\s*(.+)")?;
-    let model_re = Regex::new(r"(?m)^Model:\s*(\d+)")?;
-    let scene_re = Regex::new(r"(?m)^Scene:\s*(\d+)")?;
-    let chat_context_re = Regex::new(r"(?m)^ChatContext:\s*(\d+)")?;
-    let appearance_re = Regex::new(r"(?m)^Appearance:\s*(\d+)")?;
-    let collections_re = Regex::new(r"(?m)^Collections:\s*(\d+)")?;
-    let personality_re = Regex::new(r"(?m)^Personality:\s*(\d+)")?;
-    let training_re = Regex::new(r"(?m)^Training:\s*(\d+)")?;
-    let tokenizer_re = Regex::new(r"(?m)^Tokenizer:\s*(\d+)")?;
-    let lora_re = Regex::new(r"(?m)^Lora:\s*(\d+)")?;
-    let sprite_re = Regex::new(r"(?m)^Sprite:\s*(\d+)")?;
-    let global_re = Regex::new(r"(?m)^Global:\s*(\d+)")?;
+    let comment_re = Regex::new(r"(?mi)^Comment:\s*(.+)")?;
+    let model_re = Regex::new(r"(?mi)^\s*Model:\s*(\d+)")?;
+    let scene_re = Regex::new(r"(?mi)^\s*Scene:\s*(\d+)")?;
+    let chat_context_re = Regex::new(r"(?mi)^\s*ChatContext:\s*(\d+)")?;
+    let appearance_re = Regex::new(r"(?mi)^\s*Appearance:\s*(\d+)")?;
+    let collections_re = Regex::new(r"(?mi)^\s*Collections:\s*(\d+)")?;
+    let personality_re = Regex::new(r"(?mi)^\s*Personality:\s*(\d+)")?;
+    let training_re = Regex::new(r"(?mi)^\s*Training:\s*(\d+)")?;
+    let tokenizer_re = Regex::new(r"(?mi)^\s*Tokenizer:\s*(\d+)")?;
+    let lora_re = Regex::new(r"(?mi)^\s*Lora:\s*(\d+)")?;
+    let sprite_re = Regex::new(r"(?mi)^\s*Sprite:\s*(\d+)")?;
+    let global_re = Regex::new(r"(?mi)^\s*Global:\s*(\d+)")?;
 
-    let comment = comment_re
-        .captures(input)
-        .and_then(|cap| cap.get(1).map(|m| m.as_str()))
-        .unwrap_or_default()
-        .to_string();
-
-    let model: U256 = model_re
+    let model: u64 = model_re
         .captures(input)
         .and_then(|cap| cap.get(1))
-        .and_then(|m| U256::from_dec_str(m.as_str()).ok())
-        .unwrap_or(U256::zero());
+        .and_then(|m| parse_u64(m.as_str()))
+        .unwrap_or(0);
 
-    let scene: U256 = scene_re
+    let scene: u64 = scene_re
         .captures(input)
         .and_then(|cap| cap.get(1))
-        .and_then(|m| U256::from_dec_str(m.as_str()).ok())
-        .unwrap_or(U256::zero());
+        .and_then(|m| parse_u64(m.as_str()))
+        .unwrap_or(0);
 
-    let chat_context: U256 = chat_context_re
+    let chat_context: u64 = chat_context_re
         .captures(input)
         .and_then(|cap| cap.get(1))
-        .and_then(|m| U256::from_dec_str(m.as_str()).ok())
-        .unwrap_or(U256::zero());
+        .and_then(|m| parse_u64(m.as_str()))
+        .unwrap_or(0);
 
-    let appearance: U256 = appearance_re
+    let appearance: u64 = appearance_re
         .captures(input)
         .and_then(|cap| cap.get(1))
-        .and_then(|m| U256::from_dec_str(m.as_str()).ok())
-        .unwrap_or(U256::zero());
+        .and_then(|m| parse_u64(m.as_str()))
+        .unwrap_or(0);
 
-    let collections: U256 = collections_re
+    let collections: u64 = collections_re
         .captures(input)
         .and_then(|cap| cap.get(1))
-        .and_then(|m| U256::from_dec_str(m.as_str()).ok())
-        .unwrap_or(U256::zero());
+        .and_then(|m| parse_u64(m.as_str()))
+        .unwrap_or(0);
 
-    let personality: U256 = personality_re
+    let personality: u64 = personality_re
         .captures(input)
         .and_then(|cap| cap.get(1))
-        .and_then(|m| U256::from_dec_str(m.as_str()).ok())
-        .unwrap_or(U256::zero());
+        .and_then(|m| parse_u64(m.as_str()))
+        .unwrap_or(0);
 
-    let training: U256 = training_re
+    let training: u64 = training_re
         .captures(input)
         .and_then(|cap| cap.get(1))
-        .and_then(|m| U256::from_dec_str(m.as_str()).ok())
-        .unwrap_or(U256::zero());
+        .and_then(|m| parse_u64(m.as_str()))
+        .unwrap_or(0);
 
-    let tokenizer: U256 = tokenizer_re
+    let tokenizer: u64 = tokenizer_re
         .captures(input)
         .and_then(|cap| cap.get(1))
-        .and_then(|m| U256::from_dec_str(m.as_str()).ok())
-        .unwrap_or(U256::zero());
+        .and_then(|m| parse_u64(m.as_str()))
+        .unwrap_or(0);
 
-    let lora: U256 = lora_re
+    let lora: u64 = lora_re
         .captures(input)
         .and_then(|cap| cap.get(1))
-        .and_then(|m| U256::from_dec_str(m.as_str()).ok())
-        .unwrap_or(U256::zero());
+        .and_then(|m| parse_u64(m.as_str()))
+        .unwrap_or(0);
 
-    let sprite: U256 = sprite_re
+    let sprite: u64 = sprite_re
         .captures(input)
         .and_then(|cap| cap.get(1))
-        .and_then(|m| U256::from_dec_str(m.as_str()).ok())
-        .unwrap_or(U256::zero());
+        .and_then(|m| parse_u64(m.as_str()))
+        .unwrap_or(0);
 
-    let global: U256 = global_re
+    let global: u64 = global_re
         .captures(input)
         .and_then(|cap| cap.get(1))
-        .and_then(|m| U256::from_dec_str(m.as_str()).ok())
-        .unwrap_or(U256::zero());
+        .and_then(|m| parse_u64(m.as_str()))
+        .unwrap_or(0);
+
+    let comment = if let Some(caps) = comment_re.captures(input) {
+        caps.get(1)
+            .map(|m| m.as_str())
+            .unwrap_or_default()
+            .to_string()
+    } else {
+        let first_metric_pos = input
+            .find("Model:")
+            .or_else(|| input.find("Global:"))
+            .unwrap_or(input.len());
+        input[..first_metric_pos].trim().to_string()
+    };
+
+    println!(
+        "Extracted Values: {}",
+        json!({
+            "comment": comment,
+            "model": model,
+            "scene": scene,
+            "chatContext": chat_context,
+            "appearance":appearance,
+            "collections": collections,
+            "personality": personality,
+            "training": training,
+            "tokenizer": tokenizer,
+            "lora": lora,
+            "spriteSheet":sprite ,
+            "global":global ,
+        })
+    );
 
     Ok(to_string(&json!({
         "comment": comment,
@@ -210,4 +235,12 @@ pub fn extract_values_spectate(input: &str) -> Result<String, Box<dyn Error + Se
         "global":global ,
     }))
     .unwrap())
+}
+
+fn parse_u64(s: &str) -> Option<u64> {
+    if s.trim().starts_with("0x") {
+        u64::from_str_radix(s.trim_start_matches("0x"), 16).ok()
+    } else {
+        s.trim().parse::<u64>().ok()
+    }
 }
