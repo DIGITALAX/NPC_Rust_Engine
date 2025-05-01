@@ -376,7 +376,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 432_000,
+                    publicacion_reloj: 172_800_000,
                     amigos: vec![
                         String::from("Xander"),
                         String::from("Ethan"),
@@ -401,7 +401,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 259_200,
+                    publicacion_reloj: 175_341_176,
                     amigos: vec![
                         String::from("Kostas"),
                         String::from("Tully"),
@@ -426,7 +426,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 10.0,
-                    publicacion_reloj: 345_600,
+                    publicacion_reloj: 177_882_352,
                     amigos: vec![
                         String::from("Tariq"),
                         String::from("Liam"),
@@ -452,7 +452,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 10.0,
-                    publicacion_reloj: 229_200,
+                    publicacion_reloj: 180_423_529,
                     amigos: vec![
                         String::from("Sophia"),
                         String::from("Bruno"),
@@ -700,7 +700,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 219_200,
+                    publicacion_reloj: 182_964_705,
                     amigos: vec![
                         String::from("Yasmine"),
                         String::from("Xander"),
@@ -726,7 +726,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 221_200,
+                    publicacion_reloj: 185_505_882,
                     amigos: vec![
                         String::from("Suri"),
                         String::from("Kostas"),
@@ -751,7 +751,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 241_200,
+                    publicacion_reloj: 188_047_059,
                     amigos: vec![
                         String::from("Carlos"),
                         String::from("Tariq"),
@@ -776,7 +776,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 180_000,
+                    publicacion_reloj: 190_588_235,
                     amigos: vec![
                         String::from("Mia"),
                         String::from("Sophia"),
@@ -802,7 +802,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 323_000,
+                    publicacion_reloj: 193_129_412,
                     amigos: vec![
                         String::from("Isabella"),
                         String::from("Yasmine"),
@@ -1084,7 +1084,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    publicacion_reloj: 423_000,
+                    publicacion_reloj: 195_670_588,
                     amigos: vec![
                         String::from("Mila"),
                         String::from("Suri"),
@@ -1110,7 +1110,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 198_000,
+                    publicacion_reloj: 198_211_765,
                     amigos: vec![
                         String::from("Ingrid"),
                         String::from("Carlos"),
@@ -1135,7 +1135,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 298_000,
+                    publicacion_reloj: 200_752_941,
                     amigos: vec![
                         String::from("Zaid"),
                         String::from("Mia"),
@@ -1160,7 +1160,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 315_060,
+                    publicacion_reloj: 203_294_118,
                     amigos: vec![
                         String::from("Kai"),
                         String::from("Isabella"),
@@ -1186,7 +1186,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 295_060,
+                    publicacion_reloj: 205_835_294,
                     amigos: vec![
                         String::from("Scarlett"),
                         String::from("Mila"),
@@ -1760,7 +1760,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    publicacion_reloj: 225_060,
+                    publicacion_reloj: 208_376_471,
                     amigos: vec![
                         String::from("Anaya"),
                         String::from("Ingrid"),
@@ -1786,7 +1786,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 273_120,
+                    publicacion_reloj: 210_917_647,
                     amigos: vec![
                         String::from("Javi"),
                         String::from("Carlos"),
@@ -1810,7 +1810,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 291_185,
+                    publicacion_reloj: 213_458_824,
                     amigos: vec![
                         String::from("Rafael"),
                         String::from("Kai"),
@@ -1835,7 +1835,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 215_900,
+                    publicacion_reloj: 216_000_000,
                     amigos: vec![
                         String::from("Dimitra"),
                         String::from("Scarlett"),
@@ -2200,7 +2200,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    publicacion_reloj: 419_000,
+                    publicacion_reloj: 218_541_176,
                     amigos: vec![
                         String::from("Javi"),
                         String::from("Anaya"),
@@ -2225,7 +2225,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 172_800,
+                    publicacion_reloj: 221_082_353,
                     amigos: vec![
                         String::from("Hugo"),
                         String::from("Johan"),
@@ -2250,7 +2250,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 152_800,
+                    publicacion_reloj: 223_623_529,
                     amigos: vec![
                         String::from("Rafael"),
                         String::from("Zaid"),
@@ -2274,7 +2274,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 192_500,
+                    publicacion_reloj: 226_164_706,
                     amigos: vec![
                         String::from("Freya"),
                         String::from("Dimitra"),
@@ -2729,7 +2729,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    publicacion_reloj: 185_500,
+                    publicacion_reloj: 228_705_882,
                     amigos: vec![
                         String::from("Zane"),
                         String::from("Scarlett"),
@@ -2754,7 +2754,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 122_500,
+                    publicacion_reloj: 231_247_059,
                     amigos: vec![
                         String::from("Henry"),
                         String::from("Hugo"),
@@ -2779,7 +2779,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 212_500,
+                    publicacion_reloj: 233_788_235,
                     amigos: vec![
                         String::from("Ingrid"),
                         String::from("Suri"),
@@ -2802,7 +2802,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 204_500,
+                    publicacion_reloj: 236_329_412,
                     amigos: vec![
                         String::from("Harper"),
                         String::from("Freya"),
@@ -3233,7 +3233,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    publicacion_reloj: 172_100,
+                    publicacion_reloj: 238_870_588,
                     amigos: vec![
                         String::from("Yasmine"),
                         String::from("Kai"),
@@ -3256,7 +3256,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 132_100,
+                    publicacion_reloj: 241_411_765,
                     amigos: vec![
                         String::from("Henry"),
                         String::from("Javi"),
@@ -3280,7 +3280,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 199_900,
+                    publicacion_reloj: 243_952_941,
                     amigos: vec![
                         String::from("Gabriel"),
                         String::from("Aidan"),
@@ -3305,7 +3305,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 200_900,
+                    publicacion_reloj: 246_494_118,
                     amigos: vec![
                         String::from("Xander"),
                         String::from("Aidan"),
@@ -3646,7 +3646,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    publicacion_reloj: 321_900,
+                    publicacion_reloj: 249_035_294,
                     amigos: vec![
                         String::from("Leila"),
                         String::from("Javi"),
@@ -3672,7 +3672,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 259_200,
+                    publicacion_reloj: 251_576_471,
                     amigos: vec![
                         String::from("Freya"),
                         String::from("Zaid"),
@@ -3698,7 +3698,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 6.0,
-                    publicacion_reloj: 219_200,
+                    publicacion_reloj: 254_117_647,
                     amigos: vec![
                         String::from("Aidan"),
                         String::from("Bruno"),
@@ -3724,7 +3724,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 152_150,
+                    publicacion_reloj: 256_658_824,
                     amigos: vec![
                         String::from("Gabriel"),
                         String::from("Anaya"),
@@ -3750,7 +3750,7 @@ pub static LISTA_ESCENA: Lazy<[EmptyEscena; 8]> = Lazy::new(|| {
                     marco_final: 143.0,
                     escala: Escala { x: 0.5, y: 0.5 },
                     movimientos_max: 4.0,
-                    publicacion_reloj: 199_900,
+                    publicacion_reloj: 259_200_000,
                     amigos: vec![
                         String::from("Aidan"),
                         String::from("Hana"),
