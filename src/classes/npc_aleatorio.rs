@@ -104,16 +104,16 @@ impl NPCAleatorio {
             self.reloj_au += delta_time;
         }
 
-        if self.reloj_au >= 604_800_000 {
-            self.add_au_agent();
-            self.reloj_au = 0;
-        }
+        // if self.reloj_au >= 604_800_000 {
+        //     self.add_au_agent();
+        //     self.reloj_au = 0;
+        // }
 
-        if self.ultimo_tiempo_comprobacion >= self.npc.publicacion_reloj {
-            self.ultimo_tiempo_comprobacion = 0;
-            self.comprobar_actividad();
-            self.agent_spectate();
-        }
+        // if self.ultimo_tiempo_comprobacion >= self.npc.publicacion_reloj {
+        //     self.ultimo_tiempo_comprobacion = 0;
+        //     self.comprobar_actividad();
+        //     self.agent_spectate();
+        // }
     }
 
     fn elegir_direccion_aleatoria(&mut self) {
