@@ -168,6 +168,7 @@ pub struct Sprite {
     pub prompt: Prompt,
 }
 
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub enum Movimiento {
     Move,
@@ -351,11 +352,11 @@ pub struct NPCAleatorio {
     pub escena: String,
     pub ultimo_tiempo_comprobacion: u64,
     pub spectator_rewards_contrato: Arc<
-    ContractInstance<
-        Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
-        SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
+        ContractInstance<
+            Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,
+            SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>,
+        >,
     >,
->,
     pub autograph_catalog_contrato: Arc<
         ContractInstance<
             Arc<SignerMiddleware<Arc<Provider<Http>>, Wallet<SigningKey>>>,

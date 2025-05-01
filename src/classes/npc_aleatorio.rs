@@ -657,7 +657,7 @@ impl NPCAleatorio {
                         }
                     }
                 } else {
-                    eprintln!("No mentione");
+                    eprintln!("No mention");
                 }
             }
             Err(err) => {
@@ -676,6 +676,7 @@ impl NPCAleatorio {
         if lens_tipo == LensType::Autograph || lens_tipo == LensType::Catalog {
             let mut imagen = String::from("");
             let mut descripcion = String::from("");
+
 
             if lens_tipo == LensType::Autograph {
                 match handle_collections(&self.npc.billetera, self.registro_colecciones.clone())

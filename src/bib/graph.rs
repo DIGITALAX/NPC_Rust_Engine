@@ -22,8 +22,8 @@ pub async fn handle_collections(
 
     let query = json!({
         "query": r#"
-        query(npc: String!) {
-            agentCollections(where: {npc: $npc}) {
+        query($npc: String!) {
+            agentCollections_collections(where: {npc_contains: $npc}) {
                 collections {
                    collectionId
                    metadata {
@@ -35,11 +35,7 @@ pub async fn handle_collections(
         }
         "#,
         "variables": {
-            "request": {
-                "where": {
-                    "npc": address
-                }
-            }
+            "npc": address
         }
     });
 
@@ -56,8 +52,9 @@ pub async fn handle_collections(
     match res {
         Ok(response) => {
             let parsed: Value = response.json().await?;
+
             let empty_vec = vec![];
-            let agent_collections = &parsed["data"]["agentCollections"]
+            let agent_collections = &parsed["data"]["agentCollections_collections"]
                 .as_array()
                 .unwrap_or(&empty_vec)[0];
 
@@ -442,71 +439,72 @@ pub async fn handle_agent_info(agent: &str) -> Result<String, Box<dyn Error + Se
 
     let parsed: Value = res.json().await?;
     let empty_vec = vec![];
-    let first_agent = parsed["data"]["agents"]
+    if let Some(first_agent) = parsed["data"]["agents"]
         .as_array()
         .unwrap_or(&empty_vec)
-        .first();
-
-    if let Some(agent_data) = first_agent {
-        let activities = agent_data["activity"].as_array().unwrap_or(&empty_vec);
-        if let Some(activity) = activities.first() {
+        .first()
+    {
+        if let Some(activity) = first_agent["activity"]
+            .as_array()
+            .unwrap_or(&empty_vec)
+            .first()
+        {
             first_activity = activity.clone();
         }
+    }
 
-        let query_agents = json!({
-            "query": r#"
-                query {
-                    agentCreateds(first: 100, where: { studio: true }) {
-                        wallets
-                        SkyhuntersAgentManager_id
-                        creator
-                        uri
-                        metadata {
-                            title
-                            bio
-                            lore
-                            adjectives
-                            style
-                            knowledge
-                            messageExamples
-                            model
-                            cover
-                            customInstructions
-                        }
+    let query_agents = json!({
+        "query": r#"
+            query {
+                agentCreateds(first: 100, where: { studio: true }) {
+                    wallets
+                    SkyhuntersAgentManager_id
+                    creator
+                    uri
+                    metadata {
+                        title
+                        bio
+                        lore
+                        adjectives
+                        style
+                        knowledge
+                        messageExamples
+                        model
+                        cover
+                        customInstructions
                     }
                 }
+    }
             "#
-        });
+    });
 
-        let res2 = client
-            .post(format!(
-                "{}{}/subgraphs/id/5XK1Z5BL6TGMmpJV4irttCu4RgAePp7sPLKnPZfXVCcK",
-                GRAPH_URI, graph_key
-            ))
-            .json(&query_agents)
-            .send()
-            .await?;
+    let res2 = client
+        .post(format!(
+            "{}{}/subgraphs/id/5XK1Z5BL6TGMmpJV4irttCu4RgAePp7sPLKnPZfXVCcK",
+            GRAPH_URI, graph_key
+        ))
+        .json(&query_agents)
+        .send()
+        .await?;
 
-        let parsed2: Value = res2.json().await?;
-        let agents_created = parsed2["data"]["agentCreateds"]
+    let parsed2: Value = res2.json().await?;
+    let agents_created = parsed2["data"]["agentCreateds"]
+        .as_array()
+        .unwrap_or(&empty_vec);
+
+    let matching_agent = agents_created.iter().find(|agent_obj| {
+        agent_obj["wallets"]
             .as_array()
-            .unwrap_or(&empty_vec);
+            .unwrap_or(&vec![])
+            .iter()
+            .filter_map(|wallet| wallet.as_str())
+            .any(|wallet_str| wallet_str.to_lowercase() == agent.to_lowercase())
+    });
 
-        let matching_agent = agents_created.iter().find(|agent_obj| {
-            agent_obj["wallets"]
-                .as_array()
-                .unwrap_or(&vec![])
-                .iter()
-                .filter_map(|wallet| wallet.as_str())
-                .any(|wallet_str| wallet_str.to_lowercase() == agent.to_lowercase())
-        });
-        if let Some(found_agent) = matching_agent {
-            info = found_agent.clone();
-        } else {
-            return Err("No matching agent found".into());
-        }
+    if let Some(found_agent) = matching_agent {
+        info = found_agent.clone();
     } else {
-        return Err("No agent found".into());
+        return Err("No matching agent metadata found".into());
     }
 
     Ok(serde_json::to_string(&json!({
