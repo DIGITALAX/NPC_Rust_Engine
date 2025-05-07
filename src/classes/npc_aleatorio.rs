@@ -108,7 +108,6 @@ impl NPCAleatorio {
             self.add_au_agent();
             self.reloj_au = 0;
         }
-
         if self.ultimo_tiempo_comprobacion >= self.npc.publicacion_reloj {
             self.ultimo_tiempo_comprobacion = 0;
             self.comprobar_actividad();

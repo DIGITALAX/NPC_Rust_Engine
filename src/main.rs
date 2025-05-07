@@ -1,12 +1,11 @@
 use dotenv::dotenv;
 use futures_util::{SinkExt, StreamExt};
 use serde_json::{from_str, json, to_string, Value};
-use std::{collections::HashMap, env, net::SocketAddr, sync::Arc, time::Duration};
+use std::{collections::HashMap, env, net::SocketAddr, sync::Arc, time::Instant};
 use tokio::{
     net::{TcpListener, TcpStream},
     spawn,
     sync::RwLock,
-    time::{self},
 };
 use tokio_tungstenite::{
     accept_hdr_async,
@@ -328,6 +327,8 @@ async fn manejar_conexion(
 
 async fn bucle_juego(escenas: Arc<RwLock<HashMap<String, EscenaEstudio>>>) {
     loop {
+        let tick_inicio = Instant::now();
+
         let escenas_clonadas: HashMap<_, _>;
         {
             let escenas_guard = escenas.read().await;
@@ -336,15 +337,18 @@ async fn bucle_juego(escenas: Arc<RwLock<HashMap<String, EscenaEstudio>>>) {
 
         let mut escenas_actualizadas = HashMap::new();
 
+
+
         for (clave, mut escena) in escenas_clonadas {
-            escena.ejecutar_bucle(1000);
+            let ahora = Instant::now();
+            let delta_time = ahora.duration_since(tick_inicio).as_millis() as u64;
+            let delta_time = if delta_time == 0 { 1 } else { delta_time };
+            escena.ejecutar_bucle(delta_time);
             escenas_actualizadas.insert(clave, escena);
         }
         {
             let mut escenas_guard = escenas.write().await;
             *escenas_guard = escenas_actualizadas;
         }
-
-        time::sleep(Duration::from_secs(1)).await;
     }
 }
