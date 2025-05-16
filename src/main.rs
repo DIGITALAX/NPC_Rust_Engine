@@ -104,19 +104,19 @@ async fn manejar_conexion(
                         if let Some(origen) = origen {
                             match origen.to_str() {
                                 Ok(origen_str) => {
-                                    if origen_str == "https://www.npcstudio.xyz"
-                                        || origen_str == "https://npc.digitalax.xyz"
-                                        || origen_str
-                                            == "https://glorious-eft-deeply.ngrok-free.app"
-                                        || origen_str == "https://npcstudio.xyz"
-                                        || origen_str == "https://skyhunters.agentmeme.xyz"
-                                    {
-                                        return Ok(respuesta);
-                                    } else {
-                                        return Err(ErrorResponse::new(Some(
-                                            "Forbidden".to_string(),
-                                        )));
-                                    }
+                                    // if origen_str == "https://www.npcstudio.xyz"
+                                    //     || origen_str == "https://npc.digitalax.xyz"
+                                    //     || origen_str
+                                    //         == "https://glorious-eft-deeply.ngrok-free.app"
+                                    //     || origen_str == "https://npcstudio.xyz"
+                                    //     || origen_str == "https://skyhunters.agentmeme.xyz"
+                                    // {
+                                    return Ok(respuesta);
+                                    // } else {
+                                    //     return Err(ErrorResponse::new(Some(
+                                    //         "Forbidden".to_string(),
+                                    //     )));
+                                    // }
                                 }
                                 Err(e) => {
                                     eprintln!("Error al procesar el encabezado origin: {:?}", e);
@@ -326,8 +326,13 @@ async fn manejar_conexion(
 }
 
 async fn bucle_juego(escenas: Arc<RwLock<HashMap<String, EscenaEstudio>>>) {
+    let mut tick_anterior = Instant::now();
+
     loop {
         let tick_inicio = Instant::now();
+        let delta_time = tick_inicio.duration_since(tick_anterior).as_millis() as u64;
+
+        tick_anterior = tick_inicio;
 
         let escenas_clonadas: HashMap<_, _>;
         {
@@ -336,19 +341,22 @@ async fn bucle_juego(escenas: Arc<RwLock<HashMap<String, EscenaEstudio>>>) {
         }
 
         let mut escenas_actualizadas = HashMap::new();
-
-
-
         for (clave, mut escena) in escenas_clonadas {
-            let ahora = Instant::now();
-            let delta_time = ahora.duration_since(tick_inicio).as_millis() as u64;
-            let delta_time = if delta_time == 0 { 1 } else { delta_time };
             escena.ejecutar_bucle(delta_time);
             escenas_actualizadas.insert(clave, escena);
         }
+
         {
             let mut escenas_guard = escenas.write().await;
             *escenas_guard = escenas_actualizadas;
+        }
+
+        let trabajo_duracion = tick_inicio.elapsed();
+        let trabajo_ms = trabajo_duracion.as_millis() as i64;
+
+        let sleep_ms = 1000 - trabajo_ms;
+        if sleep_ms > 0 {
+            tokio::time::sleep(std::time::Duration::from_millis(sleep_ms as u64)).await;
         }
     }
 }

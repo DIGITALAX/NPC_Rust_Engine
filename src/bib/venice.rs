@@ -579,7 +579,7 @@ pub async fn call_spectate(
             );
 
             let input_prompt = format!(
-                r#"Score the activity and performance of the given agent. Your response must follow this exact format with no deviations or additional text:
+                r#"Score the activity and performance of the given agent. Your response must follow this exact format with no deviations or additional text. Remember do not use your name ever, only the name of the agent given below:
     
         Comment: [Overall Comment on the agent's activity and performance, giving a judgement and evaluation - MAX 500 WORDS. Only put the comment here. Do not put a comment anywhere else in your response] 
             
