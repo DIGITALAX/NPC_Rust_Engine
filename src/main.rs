@@ -104,19 +104,19 @@ async fn manejar_conexion(
                         if let Some(origen) = origen {
                             match origen.to_str() {
                                 Ok(origen_str) => {
-                                    // if origen_str == "https://www.npcstudio.xyz"
-                                    //     || origen_str == "https://npc.digitalax.xyz"
-                                    //     || origen_str
-                                    //         == "https://glorious-eft-deeply.ngrok-free.app"
-                                    //     || origen_str == "https://npcstudio.xyz"
-                                    //     || origen_str == "https://skyhunters.agentmeme.xyz"
-                                    // {
-                                    return Ok(respuesta);
-                                    // } else {
-                                    //     return Err(ErrorResponse::new(Some(
-                                    //         "Forbidden".to_string(),
-                                    //     )));
-                                    // }
+                                    if origen_str == "https://www.npcstudio.xyz"
+                                        || origen_str == "https://npc.digitalax.xyz"
+                                        || origen_str
+                                            == "https://glorious-eft-deeply.ngrok-free.app"
+                                        || origen_str == "https://npcstudio.xyz"
+                                        || origen_str == "https://skyhunters.agentmeme.xyz"
+                                    {
+                                        return Ok(respuesta);
+                                    } else {
+                                        return Err(ErrorResponse::new(Some(
+                                            "Forbidden".to_string(),
+                                        )));
+                                    }
                                 }
                                 Err(e) => {
                                     eprintln!("Error al procesar el encabezado origin: {:?}", e);
