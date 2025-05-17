@@ -330,7 +330,7 @@ async fn bucle_juego(escenas: Arc<RwLock<HashMap<String, EscenaEstudio>>>) {
 
     loop {
         let tick_inicio = Instant::now();
-        let delta_time = tick_inicio.duration_since(tick_anterior).as_millis() as u64;
+        let delta_time = tick_inicio.duration_since(tick_anterior).as_secs() as u64;
 
         tick_anterior = tick_inicio;
 
@@ -352,7 +352,7 @@ async fn bucle_juego(escenas: Arc<RwLock<HashMap<String, EscenaEstudio>>>) {
         }
 
         let trabajo_duracion = tick_inicio.elapsed();
-        let trabajo_ms = trabajo_duracion.as_millis() as i64;
+        let trabajo_ms = trabajo_duracion.as_secs() as i64;
 
         let sleep_ms = 1000 - trabajo_ms;
         if sleep_ms > 0 {

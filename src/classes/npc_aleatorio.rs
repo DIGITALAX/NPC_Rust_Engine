@@ -108,8 +108,10 @@ impl NPCAleatorio {
             self.add_au_agent();
             self.reloj_au = 0;
         }
+
         if self.ultimo_tiempo_comprobacion >= self.npc.publicacion_reloj {
             self.ultimo_tiempo_comprobacion = 0;
+
             self.comprobar_actividad();
             self.agent_spectate();
         }
@@ -467,11 +469,13 @@ impl NPCAleatorio {
 
         self.manija.spawn(async move {
             let amount = calculate_amount(npc_clone.npc.billetera.clone()).await;
-
             if amount > U256::from(0) {
                 let method = npc_clone
                     .spectator_rewards_contrato
-                    .method::<U256, H256>("addAgentAU", amount);
+                    .method::<(Address, U256), H256>(
+                        "addAgentAU",
+                        (H160::from_str(&npc_clone.npc.billetera).unwrap(), amount),
+                    );
 
                 match method {
                     Ok(call) => {
